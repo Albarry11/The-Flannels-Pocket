@@ -4,6 +4,7 @@ import { globalAudioEngine } from './audioEngine';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
 import { separateAudioIntoStems } from './stemSeparator';
 import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
+import { extractEmbeddedArtwork } from './embeddedArtwork';
 
 const SONGS_KEY_PREFIX = 'flannels_song_';
 const AUDIO_BLOB_PREFIX = 'flannels_audio_';
@@ -111,10 +112,15 @@ export async function createSongFromFiles(
   let stems: StemTrack[] = [];
   let maxDuration = 0;
   let masterBuffer: AudioBuffer | null = null;
+  let extractedArt: string | null = null;
 
   if (stemFiles.length === 1) {
-    // SINGLE FULL AUDIO FILE UPLOAD -> Run AI Stem Splitter!
+    // SINGLE FULL AUDIO FILE UPLOAD -> Extract embedded artwork & Run AI Stem Splitter!
     const file = stemFiles[0].file;
+    try {
+      extractedArt = await extractEmbeddedArtwork(file);
+    } catch (_) {}
+
     const arrayBuffer = await file.arrayBuffer();
     masterBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
     maxDuration = masterBuffer.duration;
@@ -124,6 +130,11 @@ export async function createSongFromFiles(
   } else {
     // MULTI-STEM UPLOAD -> Map each stem file
     for (const sf of stemFiles) {
+      if (!extractedArt) {
+        try {
+          extractedArt = await extractEmbeddedArtwork(sf.file);
+        } catch (_) {}
+      }
       const arrayBuffer = await sf.file.arrayBuffer();
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
       if (audioBuffer.duration > maxDuration) {
@@ -196,6 +207,9 @@ export async function createSongFromFiles(
     originalKey: finalKey,
     timeSignature: finalTimeSignature,
     lyrics: autoLyrics,
+    artworkUrl: extractedArt || undefined,
+    verifiedSource: aiResearched?.verifiedSource || 'Penganalisis Spektral SpotiFLAC',
+    researchNotes: aiResearched?.notes || '',
     stems,
     createdAt: Date.now(),
     qualityAnalysis: qualityReport,

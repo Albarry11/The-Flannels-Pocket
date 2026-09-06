@@ -63,6 +63,8 @@ export interface Song {
   lyrics?: string;      // raw LRC or plain text
   createdAt: number;
   artworkUrl?: string;  // Image URL / cover art
+  verifiedSource?: string; // e.g. "SongBPM / Tunebat / Master Audio Recording"
+  researchNotes?: string;  // e.g. "Progresi verse C - Em - F - G, tuning A440"
   qualityAnalysis?: AudioQualityReport;
   replayGain?: ReplayGainReport;
   bpmKeyAnalysis?: BpmKeyAnalysis;

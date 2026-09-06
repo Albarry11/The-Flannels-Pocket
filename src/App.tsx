@@ -9,7 +9,7 @@ import { VerticalStemMixer } from './components/VerticalStemMixer';
 import { CoverSongLibrary } from './components/CoverSongLibrary';
 import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
-import { Sliders, Folder, FileText, Brain, Loader2 } from 'lucide-react';
+import { Sliders, Folder, FileText, Brain, Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
@@ -18,6 +18,7 @@ export function App() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('mixer');
+  const [isNavOpen, setIsNavOpen] = useState<boolean>(true); // Point 7: Nav Bar Hide & Show
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -32,7 +33,7 @@ export function App() {
   const [countInActive, setCountInActive] = useState<boolean>(false);
   const [countInBeat, setCountInBeat] = useState<number>(1);
 
-  // Integrated Metronome State in Master Player (Point 2)
+  // Integrated Metronome State in Master Player (Point 2 & 4)
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
 
@@ -166,7 +167,7 @@ export function App() {
     globalAudioEngine.setReplayGain(gainDb, next);
   };
 
-  // Metronome in player control bar (Point 2)
+  // Metronome in player control bar (Point 2 & 4)
   const handleToggleMetronomeClick = () => {
     const next = !metronomeClickActive;
     setMetronomeClickActive(next);
@@ -326,9 +327,22 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex text-[#0f2942] font-sans selection:bg-sky-500 selection:text-white">
-      {/* 1. Navbar Flush to the Absolute Edge of the Frame (Point 3 & 4: No logo/emote) */}
-      <aside className="fixed left-0 top-0 bottom-0 z-50 w-16 md:w-20 bg-white/70 backdrop-blur-2xl border-r border-white/80 flex flex-col items-center py-6 justify-center shadow-[4px_0_24px_rgba(2,132,199,0.1)]">
+    <div className="min-h-screen flex text-[#0f2942] font-sans selection:bg-sky-500 selection:text-white relative">
+      {/* Sidebar Toggle Floating Button (Point 7: Nav Bar Hide & Show) */}
+      <button
+        onClick={() => setIsNavOpen(!isNavOpen)}
+        className="fixed left-2.5 top-3 z-50 p-2 rounded-full bg-white/80 border border-sky-300 shadow-md text-sky-800 hover:text-sky-600 hover:bg-white transition active:scale-90"
+        title={isNavOpen ? 'Sembunyikan Menu Samping' : 'Tampilkan Menu Samping'}
+      >
+        {isNavOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+      </button>
+
+      {/* 1. Navbar Flush to the Absolute Left Frame (Point 3 & 7) */}
+      <aside
+        className={`fixed left-0 top-0 bottom-0 z-40 w-16 md:w-20 bg-white/75 backdrop-blur-2xl border-r border-white/80 flex flex-col items-center py-16 justify-center shadow-[4px_0_24px_rgba(2,132,199,0.1)] transition-transform duration-300 ${
+          isNavOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         {/* Navigation Buttons (Mixer, Library, Lirik, Tilikan) */}
         <div className="flex flex-col gap-4 w-full px-2">
           <button
@@ -378,7 +392,7 @@ export function App() {
                 ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
                 : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
             }`}
-            title="Tilikan (AI Music Brain & Analyzer)"
+            title="Tilikan"
           >
             <Brain className="w-5 h-5" />
             <span className="text-[9px] font-bold tracking-tight">Tilikan</span>
@@ -386,18 +400,23 @@ export function App() {
         </div>
       </aside>
 
-      {/* 2. Main Content Area (Offset by left sidebar width) */}
-      <div className="flex-1 flex flex-col pl-16 md:pl-20 min-w-0 min-h-screen">
-        
-        {/* Header: The Flannels pocket (Point 4: corrected title, no logo/emote) */}
-        <Header
-          currentSong={currentSong}
-          activeSoloNames={activeSoloNames}
-          onClearAllSolos={handleClearAllSolos}
-        />
+      {/* 2. Main Content Area (Smooth padding adjustment when sidebar toggled) */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 min-h-screen transition-all duration-300 ${
+          isNavOpen ? 'pl-16 md:pl-20' : 'pl-0'
+        }`}
+      >
+        {/* Seamless Header (Point 1 & 4) */}
+        <div className={isNavOpen ? 'pl-0' : 'pl-12'}>
+          <Header
+            currentSong={currentSong}
+            activeSoloNames={activeSoloNames}
+            onClearAllSolos={handleClearAllSolos}
+          />
+        </div>
 
-        {/* Main Spacious View (Light Fresh Frutiger Aero Theme) */}
-        <main className="flex-1 p-3 sm:p-5 pb-40 overflow-y-auto">
+        {/* Main Spacious View with generous bottom clearance (Point 5: scale robust & no overlap) */}
+        <main className="flex-1 p-3 sm:p-5 pb-56 sm:pb-64 overflow-y-auto">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
@@ -449,7 +468,7 @@ export function App() {
           )}
         </main>
 
-        {/* 3. Master Player (Glassy iOS Floating Capsule with Integrated Metronome) (Point 2 & 5) */}
+        {/* 3. Master Player (Glassy iOS Floating Capsule with Attached Metronome & Key) (Point 2, 4, 6) */}
         <MasterPlayer
           isPlaying={isPlaying}
           currentTime={currentTime}

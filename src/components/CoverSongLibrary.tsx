@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import type { Song, StemRole } from '../types';
 import { createSongFromFiles, deleteSongFromStorage, saveSongToStorage } from '../services/storage';
 import { createProceduralDemoSong } from '../services/proceduralSongs';
-import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon } from 'lucide-react';
+import { extractEmbeddedArtwork } from '../services/embeddedArtwork';
+import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon, ShieldCheck } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 import { exportSongPackage } from '../services/cloudDatabase';
 
@@ -80,19 +81,29 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const artworkInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Smart file metadata & track number parsing (e.g. "07 Swellow - Tak Berdaya" -> Artist: Swellow, Title: Tak Berdaya)
     if (files.length === 1 && !newTitle) {
-      const nameWithoutExt = files[0].name.replace(/\.[^/.]+$/, '');
-      if (nameWithoutExt.includes('-')) {
-        const parts = nameWithoutExt.split('-');
+      let cleanName = files[0].name.replace(/\.[^/.]+$/, '');
+      cleanName = cleanName.replace(/^\d+[\s\.\-_]+/, ''); // Strip leading numbers
+      if (cleanName.includes('-')) {
+        const parts = cleanName.split('-');
         setNewArtist(parts[0].trim());
         setNewTitle(parts.slice(1).join('-').trim());
       } else {
-        setNewTitle(nameWithoutExt);
+        setNewTitle(cleanName);
       }
+
+      // Point 2: Otomatis ekstrak embedded album art ID3/FLAC dari file persis seperti Windows File Explorer!
+      try {
+        const embedded = await extractEmbeddedArtwork(files[0]);
+        if (embedded) {
+          setCustomArtwork(embedded);
+        }
+      } catch (_) {}
     }
 
     const detected: { role: StemRole; name: string; file: File }[] = [];
@@ -145,7 +156,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
 
     try {
       setIsProcessing(true);
-      setProcessingStatus('Mempersiapkan audio...');
+      setProcessingStatus('Mempersiapkan audio & mengekstrak cover...');
 
       const finalArtwork = customArtwork || generateAeroArtwork(newTitle || 'Cover Song', newArtist || 'The Flannels');
 
@@ -204,6 +215,8 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
       24
     );
     demo.artworkUrl = generateAeroArtwork('Midnight Groove', 'The Flannels');
+    demo.verifiedSource = 'The Flannels Studio Master Session';
+    demo.researchNotes = 'Progresi funk Em7 - Am7 - Bm7, tempo 115 BPM';
     await saveSongToStorage(demo);
     await onRefreshSongs();
     onSelectSong(demo);
@@ -223,7 +236,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               Library Lagu Cover The Flannels
             </h2>
             <p className="text-xs text-sky-700 font-medium">
-              Koleksi Lagu & Cover Artwork • AI Stem Separator
+              Koleksi Lagu & Cover Artwork Otomatis • AI Stem Separator
             </p>
           </div>
         </div>
@@ -256,8 +269,8 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pr-1">
+      {/* Main Content with generous bottom padding (Point 5: scale robust & no overlap) */}
+      <div className="flex-1 overflow-y-auto pr-1 pb-36">
         {view === 'list' ? (
           songs.length === 0 ? (
             /* Empty State */
@@ -268,7 +281,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               <div>
                 <h3 className="text-base font-extrabold text-[#0f2942]">Library Masih Kosong</h3>
                 <p className="text-xs text-[#1e3a5f] mt-1 font-medium">
-                  Unggah file lagu cover (MP3/FLAC). AI akan otomatis memisahkan vokal dan instrumen serta membuat gambar album!
+                  Unggah file lagu cover (MP3/FLAC). AI akan otomatis memisahkan vokal dan instrumen serta mengekstrak gambar album dari file!
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-2 pt-2">
@@ -288,7 +301,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               </div>
             </div>
           ) : (
-            /* Song Cards Grid with Album Artwork (Point 6) */
+            /* Song Cards Grid with Album Artwork (Point 2 & 6) */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {songs.map((song) => {
                 const isSelected = song.id === currentSongId;
@@ -303,8 +316,8 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                         : 'bg-white/80 border-sky-200/70 hover:border-sky-300 hover:bg-white'
                     }`}
                   >
-                    {/* Song Album Cover Image (Point 6) */}
-                    <div className="relative flex-shrink-0 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden shadow-md border border-white">
+                    {/* Song Album Cover Image from ID3/FLAC or Aero Canvas (Point 2 & 6) */}
+                    <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md border border-white bg-sky-100">
                       <img
                         src={artwork}
                         alt={song.title}
@@ -343,6 +356,14 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                         </span>
                       </div>
 
+                      {/* Verified Source Attribution Badge (Point 4) */}
+                      {song.verifiedSource && (
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-800 font-bold mt-1.5">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                          <span className="truncate">{song.verifiedSource}</span>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-sky-100">
                         <button
                           onClick={() => onSelectSong(song)}
@@ -371,14 +392,14 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             </div>
           )
         ) : (
-          /* Upload View */
-          <div className="space-y-4 max-w-xl mx-auto">
+          /* Upload View with Robust Scaling & No Overlap (Point 5) */
+          <div className="space-y-4 max-w-xl mx-auto pb-10">
             <div className="p-4 rounded-2xl bg-sky-100/90 border border-sky-300 text-xs text-sky-950 space-y-1 shadow-xs">
               <span className="font-extrabold text-sky-900 block text-sm">
-                ✨ AI Stem Separator & Album Artwork
+                ✨ AI Multi-Stage Stem Separator & Album Artwork
               </span>
               <p className="font-medium">
-                Cukup unggah <strong>1 file lagu utuh</strong> (MP3/FLAC/WAV). AI akan memisahkan vokal dan instrumen secara multi-stage dan meriset BPM/Key resmi dari Google Gemini!
+                Cukup pilih <strong>1 file lagu audio</strong> (MP3/FLAC/WAV). AI akan otomatis memisahkan vokal, rhythm guitar, lead guitar, bass, dan drum, serta mengekstrak gambar album dari file audio!
               </p>
             </div>
 
@@ -389,7 +410,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Contoh: Dan"
+                  placeholder="Contoh: Tak Berdaya"
                   className="w-full bg-white border border-sky-300 rounded-xl px-3 py-2 text-xs text-[#0f2942] focus:outline-none focus:border-sky-500 shadow-xs"
                 />
               </div>
@@ -399,13 +420,13 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                   type="text"
                   value={newArtist}
                   onChange={(e) => setNewArtist(e.target.value)}
-                  placeholder="Sheila On 7"
+                  placeholder="Swellow"
                   className="w-full bg-white border border-sky-300 rounded-xl px-3 py-2 text-xs text-[#0f2942] focus:outline-none focus:border-sky-500 shadow-xs"
                 />
               </div>
             </div>
 
-            {/* Custom Artwork Picker */}
+            {/* Artwork Preview Box */}
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/80 border border-sky-200">
               <div
                 onClick={() => artworkInputRef.current?.click()}
@@ -419,9 +440,13 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                 )}
               </div>
               <div className="text-xs">
-                <span className="font-bold text-[#0f2942] block">Gambar Cover Lagu (Opsional)</span>
+                <span className="font-bold text-[#0f2942] block">
+                  {customArtwork ? 'Cover Album Terdeteksi' : 'Gambar Cover Lagu'}
+                </span>
                 <span className="text-[11px] text-sky-700">
-                  {customArtwork ? 'Gambar kustom terpilih' : 'Klik ikon untuk unggah gambar JPG/PNG, atau biarkan AI membuatkan otomatis.'}
+                  {customArtwork
+                    ? 'Cover diekstrak dari file lagu atau gambar kustom.'
+                    : 'Akan diekstrak otomatis dari metadata ID3/FLAC saat file dipilih.'}
                 </span>
                 <input
                   ref={artworkInputRef}
@@ -443,7 +468,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                 Pilih File Audio Lagu (FLAC, WAV, MP3)
               </p>
               <p className="text-[11px] text-sky-700">
-                1 file audio utuh untuk AI split otomatis, atau multi-stem.
+                1 file lagu utuh untuk AI split otomatis, atau multi-stem.
               </p>
               <input
                 ref={fileInputRef}
@@ -457,7 +482,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
 
             {/* Selected File List */}
             {stemUploads.length > 0 && (
-              <div className="p-3 rounded-xl bg-white border border-sky-200 space-y-2 text-xs">
+              <div className="p-3 rounded-2xl bg-white border border-sky-200 space-y-2 text-xs max-h-36 overflow-y-auto">
                 <span className="text-[11px] font-bold text-sky-900 uppercase">
                   File Terpilih ({stemUploads.length}):
                 </span>
@@ -472,24 +497,26 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               </div>
             )}
 
-            {/* Submit Button */}
-            <button
-              onClick={handleProcessUpload}
-              disabled={isProcessing || stemUploads.length === 0}
-              className="w-full py-3 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-extrabold transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{processingStatus || 'Memproses Lagu...'}</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Pisahkan Stem & Simpan ke Library</span>
-                </>
-              )}
-            </button>
+            {/* Submit Button (Always in view, generous spacing) */}
+            <div className="pt-2">
+              <button
+                onClick={handleProcessUpload}
+                disabled={isProcessing || stemUploads.length === 0}
+                className="w-full py-3.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-extrabold transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 disabled:opacity-50 active:scale-98"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{processingStatus || 'Memproses Lagu...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Pisahkan Stem & Simpan ke Library</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
