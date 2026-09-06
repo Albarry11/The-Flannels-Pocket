@@ -2,35 +2,34 @@ import type { Song, AIBrainConfig, AICoachingReport } from '../types';
 
 const AI_CONFIG_KEY = 'flannels_ai_brain_config';
 
-export const POPULAR_MUSIC_MODELS = [
-  { id: 'ag/gemini-3.8-flash', name: 'Gemini 3.8 Flash (Cepat, Akurat, Web Search Aktif)', provider: 'Local AI 20128' },
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet (Terbaik untuk Aransemen & Teori Musik)', provider: 'Anthropic' },
-  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1 (Penalaran Mendalam)', provider: 'DeepSeek' },
-  { id: 'groq/llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Versatile)', provider: 'Groq' },
-];
+// User directive: Gunakan 1 model ini saja: ag/gemini-3.8-flash-high
+export const LOCKED_AI_MODEL = 'ag/gemini-3.8-flash-high';
 
 const DEFAULT_AI_CONFIG: AIBrainConfig = {
   endpoint: 'http://localhost:20128/v1',
   apiKey: '',
-  model: 'ag/gemini-3.8-flash',
+  model: LOCKED_AI_MODEL,
 };
 
 export function getAIBrainConfig(): AIBrainConfig {
   try {
     const raw = localStorage.getItem(AI_CONFIG_KEY);
     if (!raw) return DEFAULT_AI_CONFIG;
-    return { ...DEFAULT_AI_CONFIG, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_AI_CONFIG, ...parsed, model: LOCKED_AI_MODEL };
   } catch {
     return DEFAULT_AI_CONFIG;
   }
 }
 
 export function saveAIBrainConfig(config: AIBrainConfig): void {
-  localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
+  // Always enforce the locked model
+  localStorage.setItem(AI_CONFIG_KEY, JSON.stringify({ ...config, model: LOCKED_AI_MODEL }));
 }
 
 /**
- * Riset BPM dan Tangga Nada Resmi lagu via AI Web Search
+ * Riset BPM dan Tangga Nada Resmi lagu via AI Web Search (Model: ag/gemini-3.8-flash-high)
+ * Dilatih dengan aturan pencarian database musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax)
  */
 export async function researchSongBpmAndKeyWithAI(
   songTitle: string,
@@ -39,17 +38,23 @@ export async function researchSongBpmAndKeyWithAI(
   const config = getAIBrainConfig();
   const cleanEndpoint = config.endpoint.replace(/\/$/, '');
 
-  const prompt = `Riset BPM dan Tangga Nada Resmi untuk lagu berikut:
-Judul: "${songTitle}"
-${artistName ? `Artis/Penyanyi: "${artistName}"` : ''}
+  const prompt = `Anda adalah musicologist profesional dengan kapabilitas web search musik tingkat tinggi.
+Tugas Anda: Riset BPM rekaman studio resmi dan Tangga Nada Asli (Key) untuk lagu berikut:
+Judul Lagu: "${songTitle}"
+${artistName ? `Penyanyi / Band: "${artistName}"` : ''}
 
-Tentukan tempo rekaman studio resmi (BPM), tangga nada dasar asli (Key, contoh: "G", "Em", "C#m"), dan birama (contoh: "4/4", "6/8").
-Jawab HANYA dalam format JSON valid (tanpa markdown tambahan):
+INSTRUKSI RISET KETAT:
+1. Telusuri data resmi dari arsip musik terverifikasi (seperti SongBPM, Tunebat, Musicstax, Beatport, dan partitur chord asli).
+2. Periksa progresi akord lagu untuk memastikan Root Key yang benar (contoh: "Dan - Sheila On 7" verse-nya E-G#m-A-B maka Key = "E", Peterpan "Menghapus Jejakmu" = "G", Dewa 19 "Kangen" = "D").
+3. Jangan menebak sembarangan atau memberikan angka perkiraan acak. Pastikan akurat dengan versi rekaman studio master.
+4. Jawab HANYA dalam format JSON valid (tanpa teks pembuka atau penutup):
 {
-  "bpm": 120,
-  "key": "Em",
+  "title": "${songTitle}",
+  "artist": "${artistName || ''}",
+  "bpm": 135,
+  "key": "E",
   "timeSignature": "4/4",
-  "notes": "Deskripsi singkat tempo dan ritme"
+  "notes": "Detail album, tahun rilis, dan progresi akord kunci"
 }`;
 
   try {
@@ -64,19 +69,19 @@ Jawab HANYA dalam format JSON valid (tanpa markdown tambahan):
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: config.model || 'ag/gemini-3.8-flash',
+        model: LOCKED_AI_MODEL,
         messages: [
-          { role: 'system', content: 'Anda adalah basis data musik dan ensiklopedia tempo lagu resmi. Jawab selalu dalam format valid JSON saja.' },
+          { role: 'system', content: 'Anda adalah basis data musik dan ensiklopedia tempo lagu resmi. Jawab selalu dalam format JSON valid saja.' },
           { role: 'user', content: prompt },
         ],
         stream: false,
-        temperature: 0.2,
+        temperature: 0.1,
       }),
     });
 
     if (!res.ok) return null;
     const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -88,13 +93,13 @@ Jawab HANYA dalam format JSON valid (tanpa markdown tambahan):
       };
     }
   } catch (err) {
-    console.warn('AI song research failed, fallback to audio analyzer:', err);
+    console.warn('AI song research failed:', err);
   }
   return null;
 }
 
 /**
- * Generate Lirik & Akord Otomatis via AI
+ * Generate Lirik & Akord Otomatis via AI (Model: ag/gemini-3.8-flash-high)
  */
 export async function generateLyricsAndChordsWithAI(
   songTitle: string,
@@ -103,16 +108,15 @@ export async function generateLyricsAndChordsWithAI(
   const config = getAIBrainConfig();
   const cleanEndpoint = config.endpoint.replace(/\/$/, '');
 
-  const prompt = `Buatkan lirik lengkap dengan format timestamp LRC tersinkronisasi dan akord gitar/keyboard di dalam kurung siku [Chord] untuk lagu:
+  const prompt = `Anda adalah transkripter lirik dan akord musik profesional.
+Tugas Anda: Buatkan lirik lengkap lagu dengan akord format [Chord] dan timestamp sinkron format [mm:ss.xx] untuk lagu:
 Judul: "${songTitle}"
-${artistName ? `Artis: "${artistName}"` : ''}
+${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-Format output persis seperti contoh:
-[00:00.00] (Intro) [Em] [C] [D]
-[00:15.00] [Em] Bait pertama lirik [C] lanjutan kata [D]
-[00:30.00] [G] Bagian reff dimulai [D]...
-
-Berikan HANYA teks LRC tersinkronisasi tanpa kalimat pembuka atau penutup.`;
+ATURAN:
+1. Pastikan akord yang disematkan di dalam kurung siku [Chord] akurat dengan nada dasar lagu studio aslinya.
+2. Timestamp [mm:ss.xx] harus teratur per baris lirik (misal [00:15.50][Em] Lirik bait...).
+3. Berikan HANYA teks LRC murni tanpa intro/outro percakapan.`;
 
   try {
     const headers: Record<string, string> = {
@@ -126,20 +130,19 @@ Berikan HANYA teks LRC tersinkronisasi tanpa kalimat pembuka atau penutup.`;
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: config.model || 'ag/gemini-3.8-flash',
+        model: LOCKED_AI_MODEL,
         messages: [
           { role: 'system', content: 'Anda adalah master transkripsi lirik dan akord musik. Keluarkan teks LRC murni dengan akord dalam [Chord].' },
           { role: 'user', content: prompt },
         ],
         stream: false,
-        temperature: 0.3,
+        temperature: 0.2,
       }),
     });
 
     if (!res.ok) return null;
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content?.trim() || '';
-    // Strip markdown code fences if present
     return content.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
   } catch (err) {
     console.warn('AI lyrics generation failed:', err);
@@ -158,12 +161,12 @@ export function generateLocalRuleBasedCoaching(song: Song): AICoachingReport {
   const durationSec = Math.floor(song.duration % 60);
 
   const safeNotes = isMinor ? '1 - b3 - 4 - 5 - b7 (Minor Pentatonic)' : '1 - 2 - 3 - 5 - 6 (Major Pentatonic)';
-  const grooveStyle = bpm < 90 ? 'Slow Ballad / Soul Groove' : bpm < 125 ? 'Mid-tempo Rock / Pop Groove' : 'Driving High-energy Funk/Rock';
+  const grooveStyle = bpm < 90 ? 'Slow Ballad / Soul Groove' : bpm < 125 ? 'Mid-tempo Rock / Pop' : 'High-energy Funk/Rock';
 
   return {
     songTitle: song.title,
-    musicalSummary: `Lagu "${song.title}" (${key}, ${bpm} BPM, durasi ${durationMin}:${durationSec.toString().padStart(2, '0')}). Gaya ritme: ${grooveStyle}. Karakter harmonik ${isMinor ? 'Minor (reflektif/moody)' : 'Major (energik/terang)'}.`,
-    keyAdvice: `Tangga nada asli lagu ini adalah ${key}. Jika range vokal vokalis terasa tegang di nada tinggi, gunakan fitur Transpose -2 semitone pada Master Player untuk menurunkan 1 nada utuh.`,
+    musicalSummary: `Lagu "${song.title}" (${key}, ${bpm} BPM, durasi ${durationMin}:${durationSec.toString().padStart(2, '0')}). Gaya ritme: ${grooveStyle}. Karakter harmonik ${isMinor ? 'Minor' : 'Major'}.`,
+    keyAdvice: `Tangga nada asli adalah ${key}. Jika range vokal vokalis terasa tegang di nada tinggi, gunakan fitur Transpose -2 semitone pada Master Player untuk menurunkan 1 nada utuh.`,
     rehearsalPlan: [
       'Bagian 1: Latihan isolasi Rhythm Section (Solo Bass + Drums) untuk mengunci ketukan beat di tempo ' + bpm + ' BPM.',
       'Bagian 2: Tambahkan Rhythm Guitar untuk mengisi harmonic groove dan comping pada baris ketukan 2 & 4.',
@@ -224,7 +227,7 @@ export function generateLocalRuleBasedCoaching(song: Song): AICoachingReport {
 }
 
 /**
- * Panggil model AI untuk analisis musik komprehensif
+ * Analisis aransemen musik komprehensif via ag/gemini-3.8-flash-high
  */
 export async function fetchAIBrainAnalysis(
   song: Song,
@@ -233,9 +236,9 @@ export async function fetchAIBrainAnalysis(
   const config = getAIBrainConfig();
   const cleanEndpoint = config.endpoint.replace(/\/$/, '');
 
-  onProgress?.(`Menganalisis musik via AI (${config.model})...`);
+  onProgress?.(`Membedah aransemen via ${LOCKED_AI_MODEL}...`);
 
-  const prompt = `Anda adalah produser musik profesional dan mentor band untuk grup musik The Flannels (formasi: Vokalis, Gitaris Lead, Gitaris Rhythm, Bassist, Drummer).
+  const prompt = `Anda adalah produser musik profesional dan mentor band The Flannels (formasi: Vokalis, Gitaris Lead, Gitaris Rhythm, Bassist, Drummer).
 
 Analisis detail lagu latihan berikut:
 - Judul: "${song.title}"
@@ -245,9 +248,8 @@ Analisis detail lagu latihan berikut:
 - Birama: ${song.timeSignature || '4/4'}
 - Durasi: ${Math.round(song.duration)} detik
 - Stems: ${song.stems.map((s) => s.name).join(', ')}
-${song.lyrics ? `- Petikan Lirik:\n${song.lyrics.slice(0, 400)}` : ''}
 
-Berikan respons JSON SAJA dengan format persis berikut (tanpa markdown tambahan):
+Berikan respons JSON valid SAJA:
 {
   "songTitle": "${song.title}",
   "musicalSummary": "Ringkasan karakter musik, dinamika lagu, dan nuansa emosional",
@@ -300,13 +302,13 @@ Berikan respons JSON SAJA dengan format persis berikut (tanpa markdown tambahan)
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: config.model || 'ag/gemini-3.8-flash',
+        model: LOCKED_AI_MODEL,
         messages: [
           { role: 'system', content: 'Anda adalah master produser musik aransemen band The Flannels. Jawab selalu dalam format valid JSON saja.' },
           { role: 'user', content: prompt },
         ],
         stream: false,
-        temperature: 0.3,
+        temperature: 0.2,
       }),
     });
 
@@ -315,7 +317,7 @@ Berikan respons JSON SAJA dengan format persis berikut (tanpa markdown tambahan)
     }
 
     const data = await res.json();
-    const rawContent = data.choices?.[0]?.message?.content?.trim() || '';
+    const rawContent = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]) as AICoachingReport;
@@ -328,7 +330,7 @@ Berikan respons JSON SAJA dengan format persis berikut (tanpa markdown tambahan)
 }
 
 /**
- * Tanya jawab interaktif dengan AI Music Producer
+ * Tanya jawab interaktif dengan AI Music Producer via ag/gemini-3.8-flash-high
  */
 export async function askAIBandProducer(
   question: string,
@@ -349,7 +351,7 @@ export async function askAIBandProducer(
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: config.model || 'ag/gemini-3.8-flash',
+        model: LOCKED_AI_MODEL,
         messages: [
           {
             role: 'system',
@@ -358,7 +360,7 @@ export async function askAIBandProducer(
           { role: 'user', content: question },
         ],
         stream: false,
-        temperature: 0.5,
+        temperature: 0.3,
         max_tokens: 600,
       }),
     });
@@ -371,6 +373,6 @@ export async function askAIBandProducer(
     const data = await res.json();
     return data.choices?.[0]?.message?.content?.trim() || 'Tidak ada respons dari AI.';
   } catch (err) {
-    return 'Layanan AI lokal tidak dapat dihubungi. Pastikan server AI aktif di ' + config.endpoint;
+    return 'Layanan AI lokal tidak dapat dihubungi di ' + config.endpoint;
   }
 }

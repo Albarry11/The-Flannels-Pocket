@@ -9,10 +9,9 @@ import { VerticalStemMixer } from './components/VerticalStemMixer';
 import { CoverSongLibrary } from './components/CoverSongLibrary';
 import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
-import { MetronomeDrawer } from './components/MetronomeDrawer';
-import { Sliders, Folder, FileText, Brain, Radio, Loader2 } from 'lucide-react';
+import { Sliders, Folder, FileText, Brain, Loader2 } from 'lucide-react';
 
-export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain' | 'metronome';
+export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
 export function App() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -33,11 +32,15 @@ export function App() {
   const [countInActive, setCountInActive] = useState<boolean>(false);
   const [countInBeat, setCountInBeat] = useState<number>(1);
 
+  // Integrated Metronome State in Master Player (Point 2)
+  const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
+  const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
+
   // Real-time VU Levels for stems
   const [stemLevels, setStemLevels] = useState<Record<string, number>>({});
   const vuAnimationFrameRef = useRef<number | null>(null);
 
-  // Load song library on mount (Base library starts empty as requested in Point 3)
+  // Load song library on mount
   const refreshSongs = useCallback(async () => {
     try {
       const stored = await listAllSongsFromStorage();
@@ -100,8 +103,9 @@ export function App() {
     setIsPlaying(false);
     setPitchSemitones(0);
     setLoopRegion({ enabled: false, start: 0, end: song.duration });
+    setMetronomeBpm(song.bpm);
     globalMetronome.setBpm(song.bpm);
-    setActiveTab('mixer'); // Switch to mixer console when a song is chosen
+    setActiveTab('mixer');
   };
 
   const handlePlay = () => {
@@ -160,6 +164,22 @@ export function App() {
     setReplayGainEnabled(next);
     const gainDb = currentSong?.replayGain?.recommendedGainDb || 0;
     globalAudioEngine.setReplayGain(gainDb, next);
+  };
+
+  // Metronome in player control bar (Point 2)
+  const handleToggleMetronomeClick = () => {
+    const next = !metronomeClickActive;
+    setMetronomeClickActive(next);
+    globalAudioEngine.setMetronomeSync(next, 0.8);
+  };
+
+  const handleMetronomeBpmChange = (newBpm: number) => {
+    const clamped = Math.max(30, Math.min(260, newBpm));
+    setMetronomeBpm(clamped);
+    globalMetronome.setBpm(clamped);
+    if (currentSong) {
+      currentSong.bpm = clamped;
+    }
   };
 
   // Stems manipulation (SEAMLESS - NO AUDIO RESTART!)
@@ -297,6 +317,7 @@ export function App() {
     if (!currentSong) return;
     const updated = { ...currentSong, bpm, originalKey: key };
     setCurrentSong(updated);
+    setMetronomeBpm(bpm);
     globalMetronome.setBpm(bpm);
     await saveSongToStorage(updated);
   };
@@ -305,7 +326,7 @@ export function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#040814] text-cyan-200 gap-3">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#030814] text-cyan-200 gap-3">
         <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
         <h2 className="text-base font-bold text-white tracking-tight">The Flannel pocket</h2>
         <p className="text-xs text-slate-400">Menyiapkan workstation musik...</p>
@@ -314,82 +335,88 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#040814] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
-      {/* Top Header without logo/emote (Point 5) */}
-      <Header
-        currentSong={currentSong}
-        activeSoloNames={activeSoloNames}
-        onClearAllSolos={handleClearAllSolos}
-      />
+    <div className="min-h-screen flex bg-[#030814] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
+      {/* 1. Sleek Vertical Sidebar Nav Flush Against the Absolute Left Frame (Point 3) */}
+      <aside className="fixed left-0 top-0 bottom-0 z-50 w-16 md:w-20 bg-[#030814]/90 backdrop-blur-2xl border-r border-white/15 flex flex-col items-center py-4 justify-between shadow-2xl">
+        {/* Top Logo text */}
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-cyan-500/30 border border-white/20 mb-1">
+            FP
+          </div>
+          <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest hidden md:inline">Pocket</span>
+        </div>
 
-      {/* Main Spacious App Body with Vertical Navigation Sidebar (Point 8) */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-2 sm:p-4 gap-3">
-        
-        {/* Sleek Vertical Navigation Sidebar */}
-        <aside className="w-full md:w-56 flex-shrink-0 flex md:flex-col gap-1.5 p-2 rounded-2xl bg-[#070f1e]/80 border border-cyan-500/20 backdrop-blur-xl shadow-lg justify-around md:justify-start">
+        {/* Center Icons */}
+        <div className="flex flex-col gap-3 w-full px-2">
           <button
             onClick={() => setActiveTab('mixer')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition w-full ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
               activeTab === 'mixer'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
-                : 'text-slate-400 hover:text-white hover:bg-[#0c1930]'
+                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
+            title="Mixer Console"
           >
-            <Sliders className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Mixer Console</span>
+            <Sliders className="w-5 h-5" />
+            <span className="text-[9px] font-bold tracking-tight">Mixer</span>
           </button>
 
           <button
             onClick={() => setActiveTab('library')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition w-full ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
               activeTab === 'library'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
-                : 'text-slate-400 hover:text-white hover:bg-[#0c1930]'
+                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
+            title="Library Lagu Cover"
           >
-            <Folder className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Library Lagu</span>
+            <Folder className="w-5 h-5" />
+            <span className="text-[9px] font-bold tracking-tight">Library</span>
           </button>
 
           <button
             onClick={() => setActiveTab('lyrics')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition w-full ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
               activeTab === 'lyrics'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
-                : 'text-slate-400 hover:text-white hover:bg-[#0c1930]'
+                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
+            title="Lirik & Chord"
           >
-            <FileText className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Lirik & Chord</span>
+            <FileText className="w-5 h-5" />
+            <span className="text-[9px] font-bold tracking-tight">Lirik</span>
           </button>
 
           <button
             onClick={() => setActiveTab('brain')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition w-full ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
               activeTab === 'brain'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
-                : 'text-slate-400 hover:text-white hover:bg-[#0c1930]'
+                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
+            title="AI Brain & Analisis"
           >
-            <Brain className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">AI Brain & Analisis</span>
+            <Brain className="w-5 h-5" />
+            <span className="text-[9px] font-bold tracking-tight">AI Brain</span>
           </button>
+        </div>
 
-          <button
-            onClick={() => setActiveTab('metronome')}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition w-full ${
-              activeTab === 'metronome'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
-                : 'text-slate-400 hover:text-white hover:bg-[#0c1930]'
-            }`}
-          >
-            <Radio className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Metronome</span>
-          </button>
-        </aside>
+        {/* Bottom indicator */}
+        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#38bdf8]" />
+      </aside>
 
-        {/* Center Workspace Content */}
-        <main className="flex-1 flex flex-col min-w-0 pb-36">
+      {/* 2. Main Content Area (Offset by left sidebar width) */}
+      <div className="flex-1 flex flex-col pl-16 md:pl-20 min-w-0 min-h-screen">
+        
+        {/* Header (The Flannel pocket - No logo, no emote) (Point 5) */}
+        <Header
+          currentSong={currentSong}
+          activeSoloNames={activeSoloNames}
+          onClearAllSolos={handleClearAllSolos}
+        />
+
+        {/* Main Spacious View */}
+        <main className="flex-1 p-3 sm:p-5 pb-40 overflow-y-auto">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
@@ -440,49 +467,40 @@ export function App() {
               onUpdateSongInfo={handleUpdateSongInfo}
             />
           )}
-
-          {activeTab === 'metronome' && (
-            <div className="p-4 rounded-3xl bg-[#080f1e]/80 border border-cyan-500/25 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-              <MetronomeDrawer
-                isOpen={true}
-                onClose={() => setActiveTab('mixer')}
-                defaultBpm={currentSong?.bpm || 115}
-                songBpm={currentSong?.bpm}
-                isSongPlaying={isPlaying}
-              />
-            </div>
-          )}
         </main>
 
+        {/* 3. Master Player (Glassy iOS Floating Capsule with Integrated Metronome) (Point 2 & 5) */}
+        <MasterPlayer
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={currentSong?.duration || 0}
+          speed={speed}
+          pitchSemitones={pitchSemitones}
+          masterVolume={masterVolume}
+          loopRegion={loopRegion}
+          replayGainEnabled={replayGainEnabled}
+          currentSong={currentSong}
+          countInActive={countInActive}
+          countInBeat={countInBeat}
+          metronomeClickActive={metronomeClickActive}
+          metronomeBpm={metronomeBpm}
+          onPlay={handlePlay}
+          onPlayWithCountIn={handlePlayWithCountIn}
+          onPause={handlePause}
+          onStop={handleStop}
+          onSeek={handleSeek}
+          onSpeedChange={handleSpeedChange}
+          onPitchChange={handlePitchChange}
+          onMasterVolumeChange={handleMasterVolumeChange}
+          onToggleLoop={handleToggleLoop}
+          onSetLoopStart={handleSetLoopStart}
+          onSetLoopEnd={handleSetLoopEnd}
+          onClearLoop={handleClearLoop}
+          onToggleReplayGain={handleToggleReplayGain}
+          onToggleMetronomeClick={handleToggleMetronomeClick}
+          onMetronomeBpmChange={handleMetronomeBpmChange}
+        />
       </div>
-
-      {/* Persistent Master Player Bottom Bar (WMP 11/12 Aero Frutiger) */}
-      <MasterPlayer
-        isPlaying={isPlaying}
-        currentTime={currentTime}
-        duration={currentSong?.duration || 0}
-        speed={speed}
-        pitchSemitones={pitchSemitones}
-        masterVolume={masterVolume}
-        loopRegion={loopRegion}
-        replayGainEnabled={replayGainEnabled}
-        currentSong={currentSong}
-        countInActive={countInActive}
-        countInBeat={countInBeat}
-        onPlay={handlePlay}
-        onPlayWithCountIn={handlePlayWithCountIn}
-        onPause={handlePause}
-        onStop={handleStop}
-        onSeek={handleSeek}
-        onSpeedChange={handleSpeedChange}
-        onPitchChange={handlePitchChange}
-        onMasterVolumeChange={handleMasterVolumeChange}
-        onToggleLoop={handleToggleLoop}
-        onSetLoopStart={handleSetLoopStart}
-        onSetLoopEnd={handleSetLoopEnd}
-        onClearLoop={handleClearLoop}
-        onToggleReplayGain={handleToggleReplayGain}
-      />
     </div>
   );
 }
