@@ -22,15 +22,19 @@ export class AudioEngine {
   private pitchSemitones: number = 0;
   private loopRegion: LoopRegion = { enabled: false, start: 0, end: 0 };
 
+  // Synced Metronome Click Track state
+  private metronomeSyncEnabled: boolean = false;
+  private metronomeVolume: number = 0.7;
+  private lastScheduledBeat: number = -1;
+
   private animationFrameId: number | null = null;
   private onTimeUpdateCallback?: (time: number) => void;
   private onEndedCallback?: () => void;
+  private onBeatTickCallback?: (beat: number, isDownbeat: boolean) => void;
 
-  constructor() {
-    // AudioContext will be initialized on first user interaction
-  }
+  constructor() {}
 
-  private initContext(): AudioContext {
+  public getContext(): AudioContext {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
@@ -39,10 +43,6 @@ export class AudioEngine {
       this.ctx.resume();
     }
     return this.ctx;
-  }
-
-  public getContext(): AudioContext {
-    return this.initContext();
   }
 
   public setSong(song: Song) {
@@ -59,9 +59,9 @@ export class AudioEngine {
 
   private setupNodes() {
     if (!this.currentSong) return;
-    const ctx = this.initContext();
+    const ctx = this.getContext();
 
-    // Clean old nodes
+    // Disconnect old nodes
     this.stemNodes.forEach((nodes) => {
       try {
         nodes.source?.stop();
@@ -70,7 +70,7 @@ export class AudioEngine {
     });
     this.stemNodes.clear();
 
-    // Master nodes
+    // Master bus
     this.masterGainNode = ctx.createGain();
     this.masterGainNode.gain.value = 1.0;
 
@@ -109,17 +109,18 @@ export class AudioEngine {
       });
     });
 
-    this.applyMuteSolo();
+    this.applyMuteSoloInternal();
   }
 
   public play() {
     if (this.isPlaying || !this.currentSong) return;
-    const ctx = this.initContext();
+    const ctx = this.getContext();
 
     this.isPlaying = true;
     this.startTime = ctx.currentTime - (this.pauseOffset / this.speed);
+    this.lastScheduledBeat = -1;
 
-    // Create and connect fresh AudioBufferSourceNodes
+    // Create fresh AudioBufferSourceNodes
     this.currentSong.stems.forEach((stem) => {
       if (!stem.audioBuffer) return;
       const nodes = this.stemNodes.get(stem.id);
@@ -128,12 +129,11 @@ export class AudioEngine {
       const source = ctx.createBufferSource();
       source.buffer = stem.audioBuffer;
       source.playbackRate.value = this.speed;
-      source.detune.value = this.pitchSemitones * 100; // 100 cents per semitone
+      source.detune.value = this.pitchSemitones * 100;
 
       source.connect(nodes.gainNode);
       nodes.source = source;
 
-      // Start with offset
       const offset = Math.min(this.pauseOffset, stem.audioBuffer.duration);
       source.start(0, offset);
     });
@@ -143,7 +143,7 @@ export class AudioEngine {
 
   public pause() {
     if (!this.isPlaying) return;
-    const ctx = this.initContext();
+    const ctx = this.getContext();
     this.isPlaying = false;
     this.pauseOffset = (ctx.currentTime - this.startTime) * this.speed;
 
@@ -164,6 +164,7 @@ export class AudioEngine {
   public stop() {
     this.pause();
     this.pauseOffset = 0;
+    this.lastScheduledBeat = -1;
     if (this.onTimeUpdateCallback) {
       this.onTimeUpdateCallback(0);
     }
@@ -175,12 +176,39 @@ export class AudioEngine {
       this.pause();
     }
     this.pauseOffset = Math.max(0, Math.min(timeInSeconds, this.currentSong?.duration || 0));
+    this.lastScheduledBeat = -1;
     if (this.onTimeUpdateCallback) {
       this.onTimeUpdateCallback(this.pauseOffset);
     }
     if (wasPlaying) {
       this.play();
     }
+  }
+
+  /**
+   * Play with 1-bar (4-beat) count-in for rehearsals
+   */
+  public playWithCountIn(onCountBeat: (beat: number) => void, onComplete: () => void) {
+    if (this.isPlaying) return;
+    const ctx = this.getContext();
+    const bpm = (this.currentSong?.bpm || 120) * this.speed;
+    const beatInterval = 60 / bpm;
+
+    let beat = 1;
+    onCountBeat(beat);
+    this.playMetronomeTick(ctx.currentTime, true);
+
+    const intervalId = setInterval(() => {
+      beat++;
+      if (beat <= 4) {
+        onCountBeat(beat);
+        this.playMetronomeTick(ctx.currentTime, false);
+      } else {
+        clearInterval(intervalId);
+        onComplete();
+        this.play();
+      }
+    }, beatInterval * 1000);
   }
 
   public setSpeed(speed: number) {
@@ -206,15 +234,15 @@ export class AudioEngine {
   }
 
   public setMasterVolume(vol: number) {
-    if (this.masterGainNode) {
-      this.masterGainNode.gain.value = Math.max(0, Math.min(1, vol));
+    if (this.masterGainNode && this.ctx) {
+      this.masterGainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, vol)), this.ctx.currentTime, 0.02);
     }
   }
 
   public setReplayGain(gainDb: number, enabled: boolean) {
     if (this.replayGainNode && this.ctx) {
       const linearGain = enabled ? Math.pow(10, gainDb / 20) : 1.0;
-      this.replayGainNode.gain.setValueAtTime(linearGain, this.ctx.currentTime);
+      this.replayGainNode.gain.setTargetAtTime(linearGain, this.ctx.currentTime, 0.02);
     }
   }
 
@@ -222,9 +250,9 @@ export class AudioEngine {
     const stem = this.currentSong?.stems.find((s) => s.id === stemId);
     if (stem) stem.volume = vol;
     const nodes = this.stemNodes.get(stemId);
-    if (nodes) {
-      nodes.gainNode.gain.value = vol;
-      this.applyMuteSolo();
+    if (nodes && this.ctx) {
+      nodes.gainNode.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.02);
+      this.applyMuteSoloInternal();
     }
   }
 
@@ -241,7 +269,7 @@ export class AudioEngine {
     const stem = this.currentSong?.stems.find((s) => s.id === stemId);
     if (stem) {
       stem.muted = !stem.muted;
-      this.applyMuteSolo();
+      this.applyMuteSoloInternal();
     }
   }
 
@@ -249,12 +277,31 @@ export class AudioEngine {
     const stem = this.currentSong?.stems.find((s) => s.id === stemId);
     if (stem) {
       stem.solo = !stem.solo;
-      this.applyMuteSolo();
+      this.applyMuteSoloInternal();
     }
   }
 
-  public applyMuteSolo() {
+  /**
+   * KUNCI QUICK KULIK: Update status mute/solo tanpa mematikan atau me-restart playback lagu!
+   */
+  public updateStemMuteSoloBatch(updatedStems: { id: string; muted: boolean; solo: boolean }[]) {
     if (!this.currentSong) return;
+
+    // Update in-place on currentSong stems
+    updatedStems.forEach((updated) => {
+      const existing = this.currentSong?.stems.find((s) => s.id === updated.id);
+      if (existing) {
+        existing.muted = updated.muted;
+        existing.solo = updated.solo;
+      }
+    });
+
+    // Apply smoothly via gain ramping without interrupting audio
+    this.applyMuteSoloInternal();
+  }
+
+  private applyMuteSoloInternal() {
+    if (!this.currentSong || !this.ctx) return;
     const anySolo = this.currentSong.stems.some((s) => s.solo);
 
     this.currentSong.stems.forEach((stem) => {
@@ -268,7 +315,8 @@ export class AudioEngine {
         effectiveVol = 0;
       }
 
-      nodes.gainNode.gain.value = effectiveVol;
+      // Smooth gain transition to eliminate audio clicks
+      nodes.gainNode.gain.setTargetAtTime(effectiveVol, this.ctx!.currentTime, 0.015);
     });
   }
 
@@ -301,11 +349,47 @@ export class AudioEngine {
     return max / 128;
   }
 
-  public getMasterSpectrum(): Uint8Array {
+  public getMasterSpectrum(targetArray?: Uint8Array): Uint8Array {
     if (!this.masterAnalyserNode) return new Uint8Array(0);
-    const data = new Uint8Array(this.masterAnalyserNode.frequencyBinCount);
-    this.masterAnalyserNode.getByteFrequencyData(data);
+    const length = this.masterAnalyserNode.frequencyBinCount;
+    const data = targetArray || new Uint8Array(length);
+    // Cast to Uint8Array to satisfy DOM ArrayBufferLike type check
+    this.masterAnalyserNode.getByteFrequencyData(data as unknown as Uint8Array<ArrayBuffer>);
     return data;
+  }
+
+  public getMasterWaveform(targetArray?: Uint8Array): Uint8Array {
+    if (!this.masterAnalyserNode) return new Uint8Array(0);
+    const length = this.masterAnalyserNode.fftSize;
+    const data = targetArray || new Uint8Array(length);
+    this.masterAnalyserNode.getByteTimeDomainData(data as unknown as Uint8Array<ArrayBuffer>);
+    return data;
+  }
+
+  // Synced Metronome Click Configuration
+  public setMetronomeSync(enabled: boolean, volume: number = 0.7) {
+    this.metronomeSyncEnabled = enabled;
+    this.metronomeVolume = volume;
+  }
+
+  private playMetronomeTick(time: number, isDownbeat: boolean) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    const freq = isDownbeat ? 1400 : 900;
+    osc.frequency.setValueAtTime(freq, time);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + 0.035);
+
+    const vol = (isDownbeat ? 1.0 : 0.6) * this.metronomeVolume;
+    gain.gain.setValueAtTime(vol, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
   }
 
   public onTimeUpdate(cb: (time: number) => void) {
@@ -316,10 +400,33 @@ export class AudioEngine {
     this.onEndedCallback = cb;
   }
 
+  public onBeatTick(cb: (beat: number, isDownbeat: boolean) => void) {
+    this.onBeatTickCallback = cb;
+  }
+
   private startProgressLoop() {
     const checkTime = () => {
       if (!this.isPlaying) return;
       const current = this.getCurrentTime();
+
+      // Synced Metronome Click Scheduler
+      if (this.metronomeSyncEnabled && this.currentSong && this.ctx) {
+        const songBpm = (this.currentSong.bpm || 120) * this.speed;
+        const beatSec = 60 / songBpm;
+        const totalBeatsElapsed = Math.floor(current / beatSec);
+
+        if (totalBeatsElapsed > this.lastScheduledBeat) {
+          this.lastScheduledBeat = totalBeatsElapsed;
+          const beatInBar = totalBeatsElapsed % 4;
+          const isDownbeat = beatInBar === 0;
+
+          // Schedule click tick
+          this.playMetronomeTick(this.ctx.currentTime, isDownbeat);
+          if (this.onBeatTickCallback) {
+            this.onBeatTickCallback(beatInBar, isDownbeat);
+          }
+        }
+      }
 
       // Check loop boundary
       if (this.loopRegion.enabled && this.loopRegion.end > this.loopRegion.start) {

@@ -22,8 +22,8 @@ const CAMELOT_MAP: Record<string, string> = {
 };
 
 /**
- * Penganalisis Kualitas Audio & Deteksi Lossless FLAC
- * Mengadopsi inspeksi spektral frekuensi tinggi seperti SpotiFLAC
+ * Penganalisis Kualitas Audio & Deteksi Lossless FLAC Multi-Window (SpotiFLAC Enhanced)
+ * Menguji 3 jendela waktu (20%, 50%, 75%) agar intro hening tidak memicu false lossy alarm
  */
 export async function analyzeAudioQuality(buffer: AudioBuffer): Promise<AudioQualityReport> {
   const sampleRate = buffer.sampleRate;
@@ -31,10 +31,9 @@ export async function analyzeAudioQuality(buffer: AudioBuffer): Promise<AudioQua
   const channelData = buffer.getChannelData(0);
   const length = channelData.length;
 
-  // 1. Calculate Peak & RMS amplitude
+  // 1. Peak & RMS amplitude
   let sumSquares = 0;
   let peak = 0;
-  // Sample up to 100,000 points to keep execution responsive
   const step = Math.max(1, Math.floor(length / 100000));
   let count = 0;
   for (let i = 0; i < length; i += step) {
@@ -48,70 +47,91 @@ export async function analyzeAudioQuality(buffer: AudioBuffer): Promise<AudioQua
   const rmsDb = rms > 0 ? 20 * Math.log10(rms) : -96;
   const dynamicRangeScore = Math.max(0, Math.min(20, Math.round(peakDb - rmsDb)));
 
-  // 2. High Frequency Cutoff & Spectral Rolloff analysis
-  // We use OfflineAudioContext to run FFT and measure high frequency energy
+  // 2. Multi-Window FFT Spectral Rolloff Analysis (20%, 50%, 75% of track duration)
   const fftSize = 4096;
-  const offlineCtx = new OfflineAudioContext(1, Math.min(buffer.length, sampleRate * 10), sampleRate);
-  const source = offlineCtx.createBufferSource();
-  source.buffer = buffer;
-  const analyser = offlineCtx.createAnalyser();
-  analyser.fftSize = fftSize;
-  source.connect(analyser);
-  analyser.connect(offlineCtx.destination);
-  source.start(0);
-
-  // Render a slice
-  await offlineCtx.startRendering();
-
-  const freqData = new Float32Array(analyser.frequencyBinCount);
-  analyser.getFloatFrequencyData(freqData);
-
   const binWidth = sampleRate / fftSize;
-  let cutoffFrequency = 22050;
+  const windowSliceDuration = Math.min(6, buffer.duration * 0.2);
+  const sliceSamples = Math.floor(windowSliceDuration * sampleRate);
+
+  const samplePositions = [
+    Math.floor(length * 0.2), // Verse
+    Math.floor(length * 0.5), // Reff / Chorus
+    Math.floor(length * 0.75), // Climax / Solo
+  ];
+
+  let maxDetectedCutoff = 0;
   let hasEnergyAbove20k = false;
   let hasEnergyAbove18k = false;
   let hasEnergyAbove16k = false;
 
-  // Inspect bins from 15 kHz up to Nyquist
-  for (let i = 0; i < freqData.length; i++) {
-    const freq = i * binWidth;
-    const db = freqData[i];
-    // Active energy threshold (-75 dBFS)
-    if (db > -75) {
-      if (freq >= 16000) hasEnergyAbove16k = true;
-      if (freq >= 18000) hasEnergyAbove18k = true;
-      if (freq >= 20000) hasEnergyAbove20k = true;
-      cutoffFrequency = Math.max(cutoffFrequency, Math.round(freq));
+  for (const pos of samplePositions) {
+    if (pos + sliceSamples > length) continue;
+
+    // Create slice buffer
+    const sliceBuffer = new OfflineAudioContext(1, sliceSamples, sampleRate);
+    const sliceData = sliceBuffer.createBuffer(1, sliceSamples, sampleRate);
+    const sliceChannel = sliceData.getChannelData(0);
+
+    for (let i = 0; i < sliceSamples; i++) {
+      sliceChannel[i] = channelData[pos + i];
+    }
+
+    const source = sliceBuffer.createBufferSource();
+    source.buffer = sliceData;
+    const analyser = sliceBuffer.createAnalyser();
+    analyser.fftSize = fftSize;
+    source.connect(analyser);
+    analyser.connect(sliceBuffer.destination);
+    source.start(0);
+
+    await sliceBuffer.startRendering();
+
+    const freqData = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatFrequencyData(freqData);
+
+    for (let i = 0; i < freqData.length; i++) {
+      const freq = i * binWidth;
+      const db = freqData[i];
+      // Active spectral energy threshold
+      if (db > -78) {
+        if (freq >= 16000) hasEnergyAbove16k = true;
+        if (freq >= 18000) hasEnergyAbove18k = true;
+        if (freq >= 20000) hasEnergyAbove20k = true;
+        if (freq > maxDetectedCutoff) {
+          maxDetectedCutoff = Math.round(freq);
+        }
+      }
     }
   }
 
-  // Determine classification
+  // Classification logic based on genuine spectral rolloff
   let classification: AudioQualityReport['classification'] = 'Lossless (FLAC Tier 1)';
   let isLossless = true;
-  let notes = 'Spektrum frekuensi utuh hingga >20kHz tanpa cutoff artifisial. Kualitas FLAC studio.';
+  let notes = 'Spektrum frekuensi utuh hingga >20kHz tanpa cutoff artifisial. Kualitas FLAC studio murni.';
+  let finalCutoff = maxDetectedCutoff > 0 ? maxDetectedCutoff : Math.round(sampleRate / 2);
 
   if (!hasEnergyAbove16k) {
     classification = 'Lossy / Compressed (MP3/AAC)';
-    cutoffFrequency = Math.min(cutoffFrequency, 16000);
+    finalCutoff = Math.min(finalCutoff, 16000);
     isLossless = false;
     notes = 'Terdeteksi cutoff tajam di ~16kHz (khas kompresi lossy MP3 128kbps).';
   } else if (!hasEnergyAbove18k) {
     classification = 'Lossy / Compressed (MP3/AAC)';
-    cutoffFrequency = Math.min(cutoffFrequency, 18500);
+    finalCutoff = Math.min(finalCutoff, 18500);
     isLossless = false;
     notes = 'Terdeteksi cutoff di ~18.5kHz (khas kompresi MP3 192kbps).';
   } else if (!hasEnergyAbove20k) {
     classification = 'Near-Lossless (Hi-Res Tier 2)';
-    cutoffFrequency = Math.min(cutoffFrequency, 20000);
+    finalCutoff = Math.min(finalCutoff, 20000);
     isLossless = false;
-    notes = 'Spektrum terpotong di kisaran 20kHz (khas MP3 320kbps atau lossy transcode).';
+    notes = 'Spektrum terpotong di kisaran 20kHz (khas MP3 320kbps atau transcode lossy).';
   }
 
   return {
     sampleRate,
     channels,
     bitDepthEstimate: sampleRate >= 96000 ? 24 : 16,
-    cutoffFrequency: Math.min(cutoffFrequency, Math.round(sampleRate / 2)),
+    cutoffFrequency: Math.min(finalCutoff, Math.round(sampleRate / 2)),
     classification,
     dynamicRangeScore,
     peakAmplitudeDb: Math.round(peakDb * 10) / 10,
@@ -129,9 +149,9 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
   const sampleRate = buffer.sampleRate;
   const length = channelData.length;
 
-  // --- 1. BPM Estimation via Energy Peaks ---
-  const windowSize = Math.floor(sampleRate * 0.05); // 50ms window
-  const hopSize = Math.floor(sampleRate * 0.025);   // 25ms hop
+  // 1. BPM Estimation via Energy Peaks & Autocorrelation
+  const windowSize = Math.floor(sampleRate * 0.05);
+  const hopSize = Math.floor(sampleRate * 0.025);
   const numFrames = Math.floor((length - windowSize) / hopSize);
   const energy = new Float32Array(numFrames);
 
@@ -145,7 +165,6 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
     energy[f] = sum;
   }
 
-  // Autocorrelation for BPM range 70 to 180 BPM
   const minLag = Math.floor((60 / 180) * (sampleRate / hopSize));
   const maxLag = Math.floor((60 / 70) * (sampleRate / hopSize));
 
@@ -167,7 +186,7 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
   const detectedBpm = Math.round((60 / (bestLag * (hopSize / sampleRate))));
   const clampedBpm = detectedBpm >= 60 && detectedBpm <= 200 ? detectedBpm : 120;
 
-  // --- 2. Musical Key Detection via Chroma Vector ---
+  // 2. Musical Key Detection via Chroma Vector
   const chroma = new Float64Array(12);
   const fftSize = 4096;
   const numSlices = 8;
@@ -175,10 +194,9 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
 
   for (let s = 1; s <= numSlices; s++) {
     const start = s * sliceHop;
-    // Simple DFT for standard musical notes from C2 to B5
     for (let n = 0; n < 12; n++) {
       for (let octave = 2; octave <= 5; octave++) {
-        const midi = octave * 12 + n + 12; // C2 is midi 24
+        const midi = octave * 12 + n + 12;
         const freq = 440 * Math.pow(2, (midi - 69) / 12);
         if (freq > sampleRate / 2) continue;
 
@@ -197,20 +215,17 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
     }
   }
 
-  // Normalize chroma
   let chromaNorm = 0;
   for (let i = 0; i < 12; i++) chromaNorm += chroma[i];
   if (chromaNorm > 0) {
     for (let i = 0; i < 12; i++) chroma[i] /= chromaNorm;
   }
 
-  // Match against Krumhansl-Schmuckler profiles
   let bestScore = -Infinity;
   let bestKeyIndex = 0;
   let bestScale: 'major' | 'minor' = 'minor';
 
   for (let root = 0; root < 12; root++) {
-    // Major correlation
     let scoreMajor = 0;
     for (let i = 0; i < 12; i++) {
       scoreMajor += chroma[(root + i) % 12] * KS_MAJOR[i];
@@ -221,7 +236,6 @@ export async function analyzeBpmAndKey(buffer: AudioBuffer): Promise<BpmKeyAnaly
       bestScale = 'major';
     }
 
-    // Minor correlation
     let scoreMinor = 0;
     for (let i = 0; i < 12; i++) {
       scoreMinor += chroma[(root + i) % 12] * KS_MINOR[i];
@@ -255,7 +269,6 @@ export function calculateReplayGain(buffer: AudioBuffer, targetLufs = -14): Repl
   const channelData = buffer.getChannelData(0);
   const length = channelData.length;
 
-  // Calculate RMS with high-pass weighting approximation
   let sumSq = 0;
   let peak = 0;
   const step = Math.max(1, Math.floor(length / 80000));
@@ -269,11 +282,8 @@ export function calculateReplayGain(buffer: AudioBuffer, targetLufs = -14): Repl
   }
 
   const rms = Math.sqrt(sumSq / count);
-  // Approximate LUFS: standard full scale sine is -3.01 dBFS, LUFS is weighted RMS - 0.69 dB
   const estimatedLufs = rms > 0.00001 ? 20 * Math.log10(rms) - 0.7 : -70;
   const truePeakDb = peak > 0 ? 20 * Math.log10(peak) : -96;
-
-  // ReplayGain offset to reach target (e.g. -14 LUFS)
   const recommendedGainDb = Math.round((targetLufs - estimatedLufs) * 10) / 10;
 
   return {

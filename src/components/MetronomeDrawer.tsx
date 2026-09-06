@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Volume2, X, Music, Radio } from 'lucide-react';
+import { Play, Pause, Volume2, X, Music, Radio, Link2 } from 'lucide-react';
 import { globalMetronome } from '../services/metronomeEngine';
+import { globalAudioEngine } from '../services/audioEngine';
 import type { MetronomeSound } from '../services/metronomeEngine';
 
 interface MetronomeDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   defaultBpm?: number;
+  songBpm?: number;
+  isSongPlaying?: boolean;
 }
 
 export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
   isOpen,
   onClose,
   defaultBpm,
+  songBpm,
+  isSongPlaying,
 }) => {
-  const [bpm, setBpm] = useState<number>(defaultBpm || 115);
+  const [bpm, setBpm] = useState<number>(defaultBpm || songBpm || 115);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [syncToSong, setSyncToSong] = useState<boolean>(true);
   const [beatsPerBar, setBeatsPerBar] = useState<number>(4);
   const [currentBeat, setCurrentBeat] = useState<number>(0);
   const [isDownbeat, setIsDownbeat] = useState<boolean>(false);
@@ -23,27 +29,49 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
   const [volume, setVolume] = useState<number>(0.8);
 
   useEffect(() => {
-    if (defaultBpm) {
-      setBpm(defaultBpm);
-      globalMetronome.setBpm(defaultBpm);
+    if (songBpm && syncToSong) {
+      setBpm(songBpm);
+      globalMetronome.setBpm(songBpm);
     }
-  }, [defaultBpm]);
+  }, [songBpm, syncToSong]);
 
   useEffect(() => {
     globalMetronome.onBeat((beat, downbeat) => {
       setCurrentBeat(beat);
       setIsDownbeat(downbeat);
     });
+
+    globalAudioEngine.onBeatTick((beat, downbeat) => {
+      if (syncToSong) {
+        setCurrentBeat(beat);
+        setIsDownbeat(downbeat);
+      }
+    });
+
     return () => {
       globalMetronome.stop();
     };
-  }, []);
+  }, [syncToSong]);
+
+  // Sync to song click track hook
+  useEffect(() => {
+    globalAudioEngine.setMetronomeSync(syncToSong, volume);
+  }, [syncToSong, volume]);
 
   if (!isOpen) return null;
 
   const handleTogglePlay = () => {
     const running = globalMetronome.toggle();
     setIsPlaying(running);
+  };
+
+  const handleToggleSync = () => {
+    const next = !syncToSong;
+    setSyncToSong(next);
+    if (next && songBpm) {
+      setBpm(songBpm);
+      globalMetronome.setBpm(songBpm);
+    }
   };
 
   const handleBpmChange = (newBpm: number) => {
@@ -72,20 +100,22 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
     globalMetronome.setVolume(v);
   };
 
+  const isMetronomeActive = isPlaying || (syncToSong && isSongPlaying);
+
   return (
     <div className="fixed inset-x-0 bottom-24 z-50 px-4 pointer-events-none">
-      <div className="max-w-md mx-auto bg-flannel-card/95 backdrop-blur-xl border border-amber-500/40 rounded-3xl p-5 shadow-2xl pointer-events-auto shadow-amber-500/10">
+      <div className="max-w-md mx-auto bg-[#071120]/95 backdrop-blur-2xl border border-amber-500/50 rounded-3xl p-5 shadow-2xl pointer-events-auto shadow-amber-500/15">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-flannel-border pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-              <Radio className="w-4 h-4" />
+        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
+              <Radio className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="text-sm font-bold text-white tracking-tight">Akustik Metronome</h3>
-                {isPlaying && isDownbeat && (
+                {isMetronomeActive && isDownbeat && (
                   <span className="text-[9px] bg-amber-400 text-black px-1.5 rounded font-black animate-pulse">
                     BAR
                   </span>
@@ -94,29 +124,45 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
               <p className="text-[11px] text-slate-400">Web Audio Precision Clock (No Drift)</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Sync to Song toggle button */}
+            <button
+              onClick={handleToggleSync}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 border ${
+                syncToSong
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50 shadow-sm'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              }`}
+              title="Sinkronkan ketukan otomatis dengan lagu yang sedang dimainkan"
+            >
+              <Link2 className="w-3 h-3" />
+              <span>{syncToSong ? 'Sync ON' : 'Sync OFF'}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Visual Beat Indicator Dots */}
         <div className="flex justify-center items-center gap-3 my-3">
           {Array.from({ length: beatsPerBar }).map((_, idx) => {
-            const isActive = isPlaying && currentBeat === idx;
+            const isActive = isMetronomeActive && currentBeat === idx;
             const isFirst = idx === 0;
 
             return (
               <div
                 key={idx}
-                className={`w-5 h-5 rounded-full transition-all duration-75 flex items-center justify-center text-[10px] font-bold ${
+                className={`w-6 h-6 rounded-full transition-all duration-75 flex items-center justify-center text-[11px] font-extrabold ${
                   isActive
                     ? isFirst
-                      ? 'bg-amber-400 scale-125 shadow-lg shadow-amber-400/80 text-black'
-                      : 'bg-indigo-400 scale-110 shadow-md shadow-indigo-400/50 text-black'
-                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+                      ? 'bg-amber-400 scale-125 shadow-[0_0_12px_#f59e0b] text-black'
+                      : 'bg-cyan-400 scale-110 shadow-[0_0_10px_#06b6d4] text-black'
+                    : 'bg-slate-800/80 text-slate-500 border border-slate-700'
                 }`}
               >
                 {idx + 1}
@@ -129,13 +175,13 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
         <div className="flex items-center justify-center gap-3 my-4">
           <button
             onClick={() => handleBpmChange(bpm - 5)}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono font-bold text-slate-300 border border-slate-700"
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono font-bold text-slate-300 border border-slate-700 active:scale-95"
           >
             -5
           </button>
           <button
             onClick={() => handleBpmChange(bpm - 1)}
-            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-300 border border-slate-700 flex items-center justify-center"
+            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-300 border border-slate-700 flex items-center justify-center active:scale-95"
           >
             -
           </button>
@@ -144,20 +190,20 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
             <span className="text-4xl font-mono font-extrabold text-white tracking-tight">
               {bpm}
             </span>
-            <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-widest">
-              BPM
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+              BPM {syncToSong && <span className="text-cyan-300 lowercase font-normal">(synced)</span>}
             </span>
           </div>
 
           <button
             onClick={() => handleBpmChange(bpm + 1)}
-            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-300 border border-slate-700 flex items-center justify-center"
+            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-300 border border-slate-700 flex items-center justify-center active:scale-95"
           >
             +
           </button>
           <button
             onClick={() => handleBpmChange(bpm + 5)}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono font-bold text-slate-300 border border-slate-700"
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono font-bold text-slate-300 border border-slate-700 active:scale-95"
           >
             +5
           </button>
@@ -170,14 +216,14 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
           max="240"
           value={bpm}
           onChange={(e) => handleBpmChange(parseInt(e.target.value))}
-          className="w-full h-2 mb-4"
+          className="w-full h-2 mb-4 accent-amber-400"
         />
 
         {/* Tap Tempo & Play/Stop */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             onClick={handleTap}
-            className="py-3 px-4 rounded-xl bg-flannel-panel hover:bg-slate-800 border border-flannel-border text-slate-200 text-xs font-bold uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5"
+            className="py-3 px-4 rounded-xl bg-[#091526] hover:bg-slate-800 border border-cyan-500/30 text-slate-200 text-xs font-bold uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5 shadow"
           >
             <Music className="w-3.5 h-3.5 text-amber-400" />
             <span>Tap Tempo</span>
@@ -185,10 +231,10 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
 
           <button
             onClick={handleTogglePlay}
-            className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5 shadow-lg ${
+            className={`py-3 px-4 rounded-xl font-extrabold text-xs uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-1.5 shadow-lg ${
               isPlaying
-                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30'
-                : 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/25'
+                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                : 'bg-gradient-to-r from-amber-400 to-amber-600 hover:opacity-90 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
             }`}
           >
             {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
@@ -197,8 +243,7 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
         </div>
 
         {/* Time Signature & Sound Selection */}
-        <div className="space-y-3 pt-3 border-t border-flannel-border text-xs">
-          {/* Time Signature */}
+        <div className="space-y-3 pt-3 border-t border-cyan-500/20 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-[11px] uppercase">Birama:</span>
             <div className="flex gap-1">
@@ -208,7 +253,7 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
                   onClick={() => handleBeatsPerBarChange(ts)}
                   className={`px-2.5 py-1 rounded-lg font-mono font-bold transition ${
                     beatsPerBar === ts
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      ? 'bg-amber-500/25 text-amber-300 border border-amber-500/50'
                       : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                   }`}
                 >
@@ -218,7 +263,6 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
             </div>
           </div>
 
-          {/* Sound Presets */}
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-[11px] uppercase">Suara:</span>
             <div className="flex gap-1">
@@ -228,7 +272,7 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
                   onClick={() => handleSoundChange(snd)}
                   className={`px-2 py-1 rounded-lg text-[11px] capitalize transition ${
                     sound === snd
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold'
+                      ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/50 font-bold'
                       : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                   }`}
                 >
@@ -238,10 +282,9 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
             </div>
           </div>
 
-          {/* Volume */}
           <div className="flex items-center justify-between pt-1">
             <span className="text-slate-400 text-[11px] uppercase flex items-center gap-1">
-              <Volume2 className="w-3.5 h-3.5" /> Vol:
+              <Volume2 className="w-3.5 h-3.5 text-cyan-400" /> Click Vol:
             </span>
             <input
               type="range"
@@ -250,7 +293,7 @@ export const MetronomeDrawer: React.FC<MetronomeDrawerProps> = ({
               step="0.05"
               value={volume}
               onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-              className="w-36 h-1.5"
+              className="w-36 h-2 accent-cyan-400"
             />
           </div>
         </div>

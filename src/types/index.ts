@@ -65,10 +65,43 @@ export interface Song {
   qualityAnalysis?: AudioQualityReport;
   replayGain?: ReplayGainReport;
   bpmKeyAnalysis?: BpmKeyAnalysis;
+  cloudSynced?: boolean;
 }
 
 export interface LoopRegion {
   enabled: boolean;
   start: number;
   end: number;
+}
+
+export interface CloudDbConfig {
+  provider: 'supabase' | 'custom';
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  bucketName: string;
+  autoSync: boolean;
+  lastSyncTime?: number;
+}
+
+export interface AIBrainConfig {
+  endpoint: string;
+  apiKey: string;
+  model: string;
+  customModelName?: string;
+}
+
+export interface AIPersonilGuide {
+  personil: 'Vocal' | 'Lead' | 'Rhythm' | 'Bass' | 'Drums';
+  focus: string;
+  tips: string[];
+  keyChordsOrPattern: string;
+}
+
+export interface AICoachingReport {
+  songTitle: string;
+  musicalSummary: string;
+  keyAdvice: string;
+  rehearsalPlan: string[];
+  personilGuides: AIPersonilGuide[];
+  mixDoctorNotes: string;
 }

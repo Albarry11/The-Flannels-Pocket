@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 import type { Song, StemRole } from '../types';
 import { createSongFromFiles, deleteSongFromStorage } from '../services/storage';
-import { createProceduralDemoSong } from '../services/proceduralSongs';
-import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, X, Sparkles } from 'lucide-react';
+import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, X, Sparkles, Cloud, Database } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 
 interface FileManagerModalProps {
@@ -12,6 +11,8 @@ interface FileManagerModalProps {
   currentSongId: string | null;
   onSelectSong: (song: Song) => void;
   onRefreshSongs: () => Promise<void>;
+  onOpenCloudSync: () => void;
+  onLoadDemoSong: () => Promise<void>;
 }
 
 export const FileManagerModal: React.FC<FileManagerModalProps> = ({
@@ -21,6 +22,8 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
   currentSongId,
   onSelectSong,
   onRefreshSongs,
+  onOpenCloudSync,
+  onLoadDemoSong,
 }) => {
   const [activeView, setActiveView] = useState<'list' | 'upload'>('list');
   const [newTitle, setNewTitle] = useState('');
@@ -75,7 +78,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
 
     try {
       setIsProcessing(true);
-      setProcessingStatus('Mendekode audio & menjalankan Penganalisis Kualitas SpotiFLAC...');
+      setProcessingStatus('Mendekode audio & menjalankan Penganalisis Kualitas SpotiFLAC multi-window...');
       const song = await createSongFromFiles(
         newTitle || 'Lagu Baru The Flannels',
         newArtist || 'The Flannels',
@@ -96,27 +99,6 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
     }
   };
 
-  const handleGenerateSunsetDemo = async () => {
-    try {
-      setIsProcessing(true);
-      setProcessingStatus('Menghasilkan stem audio studio "Sunset Drive"...');
-      const song = await createProceduralDemoSong(
-        'Sunset Drive (Indie Rock)',
-        'The Flannels',
-        128,
-        'A',
-        26
-      );
-      await onRefreshSongs();
-      onSelectSong(song);
-      setIsProcessing(false);
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setIsProcessing(false);
-    }
-  };
-
   const handleDeleteSong = async (songId: string) => {
     if (confirm('Hapus lagu ini dari penyimpanan browser?')) {
       await deleteSongFromStorage(songId);
@@ -126,20 +108,20 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-flannel-card border border-flannel-border rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-[#0b1322] border border-cyan-500/40 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden shadow-cyan-500/10">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-flannel-border bg-flannel-panel/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-cyan-500/20 bg-gradient-to-r from-blue-950/60 to-cyan-950/40 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
               <Folder className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white tracking-tight">
-                Manajer File & Lagu The Flannels
+                Manajer File Lagu The Flannels
               </h2>
               <p className="text-xs text-slate-400">
-                Penyimpanan Lokal Offline (IndexedDB) & Koleksi Stem FLAC
+                Penyimpanan Koleksi Lagu & Stem FLAC
               </p>
             </div>
           </div>
@@ -147,7 +129,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveView(activeView === 'list' ? 'upload' : 'list')}
-              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-cyan-500/20"
             >
               {activeView === 'list' ? (
                 <>
@@ -172,24 +154,65 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
           {activeView === 'list' ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Koleksi Lagu Rehearsal ({songs.length})
                 </span>
                 <button
-                  onClick={handleGenerateSunsetDemo}
-                  disabled={isProcessing}
-                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold"
-                  title="Generate demo lagu kedua: Sunset Drive (Indie Rock)"
+                  onClick={() => {
+                    onClose();
+                    onOpenCloudSync();
+                  }}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-bold"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Load Demo "Sunset Drive" (128 BPM)</span>
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span>Sinkronisasi Cloud</span>
                 </button>
               </div>
 
               {songs.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <Music2 className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                  <p className="text-sm">Belum ada lagu yang tersimpan.</p>
+                <div className="text-center py-12 px-4 rounded-2xl bg-[#070e1b] border border-cyan-500/20 space-y-4">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+                    <Music2 className="w-7 h-7 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Library Lagu Masih Kosong</h3>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      Mulai dengan mengunggah stem lagu band kamu, menghubungkan database cloud Supabase, atau mencoba demo studio bawaan.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    <button
+                      onClick={() => setActiveView('upload')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-cyan-500/20"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Unggah File Stem Baru</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenCloudSync();
+                      }}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition flex items-center gap-1.5"
+                    >
+                      <Database className="w-3.5 h-3.5" />
+                      <span>Buka Cloud Database</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setIsProcessing(true);
+                        setProcessingStatus('Membuat audio stem demo studio The Flannels...');
+                        await onLoadDemoSong();
+                        setIsProcessing(false);
+                      }}
+                      disabled={isProcessing}
+                      className="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{isProcessing ? 'Memproses Demo...' : 'Muat Demo "Midnight Groove"'}</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2.5">
@@ -201,8 +224,8 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                         key={song.id}
                         className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 ${
                           isSelected
-                            ? 'bg-indigo-950/20 border-indigo-500/50 shadow-md shadow-indigo-500/10'
-                            : 'bg-flannel-panel border-flannel-border hover:border-slate-700'
+                            ? 'bg-cyan-950/30 border-cyan-400/60 shadow-lg shadow-cyan-500/10'
+                            : 'bg-[#070e1b] border-slate-800 hover:border-slate-700'
                         }`}
                       >
                         <div
@@ -217,15 +240,20 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                               {song.title}
                             </h4>
                             {isSelected && (
-                              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-semibold">
+                              <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 px-2 py-0.5 rounded-full font-bold">
                                 Sedang Diputar
+                              </span>
+                            )}
+                            {song.cloudSynced && (
+                              <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">
+                                Cloud
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
                             <span>{song.artist}</span>
                             <span>•</span>
-                            <span>{song.bpm} BPM</span>
+                            <span className="text-cyan-400">{song.bpm} BPM</span>
                             <span>•</span>
                             <span className="text-amber-400">{song.originalKey}</span>
                             <span>•</span>
@@ -243,7 +271,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                             }}
                             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                               isSelected
-                                ? 'bg-indigo-600 text-white'
+                                ? 'bg-cyan-500 text-black font-extrabold'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                             }`}
                           >
@@ -268,19 +296,19 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1">
+                  <label className="text-xs text-slate-300 font-bold block mb-1">
                     Judul Lagu
                   </label>
                   <input
                     type="text"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Contoh: Ku Ingin Kau Tahu"
-                    className="w-full bg-slate-900 border border-flannel-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="Contoh: Terjebak Nostalgia"
+                    className="w-full bg-[#070e1b] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1">
+                  <label className="text-xs text-slate-300 font-bold block mb-1">
                     Nama Artis / Band
                   </label>
                   <input
@@ -288,7 +316,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                     value={newArtist}
                     onChange={(e) => setNewArtist(e.target.value)}
                     placeholder="The Flannels"
-                    className="w-full bg-slate-900 border border-flannel-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-[#070e1b] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                   />
                 </div>
               </div>
@@ -296,14 +324,14 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
               {/* Upload Drop Area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-700 hover:border-indigo-500/70 rounded-2xl p-6 text-center cursor-pointer bg-flannel-dark/40 transition flex flex-col items-center justify-center gap-2 group"
+                className="border-2 border-dashed border-cyan-500/30 hover:border-cyan-400 rounded-2xl p-6 text-center cursor-pointer bg-[#070e1b] transition flex flex-col items-center justify-center gap-2 group"
               >
-                <Upload className="w-8 h-8 text-slate-500 group-hover:text-indigo-400 transition" />
-                <p className="text-xs font-semibold text-slate-200">
+                <Upload className="w-8 h-8 text-cyan-500 group-hover:scale-110 transition" />
+                <p className="text-xs font-bold text-slate-200">
                   Klik untuk memilih file audio (FLAC, WAV, MP3, OGG)
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Bisa memilih banyak file sekaligus (Vocal.flac, Drums.wav, Bass.mp3, dll.)
+                  Dapat memilih sekaligus file stem: Vocal.flac, Lead.wav, Rhythm.wav, Bass.flac, Drums.flac
                 </p>
                 <input
                   ref={fileInputRef}
@@ -315,22 +343,21 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                 />
               </div>
 
-              {/* Uploaded Stems Mapping */}
+              {/* Selected Stems Mapping */}
               {stemUploads.length > 0 && (
                 <div className="space-y-2">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                     File Stem Terpilih ({stemUploads.length})
                   </span>
                   <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
                     {stemUploads.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-flannel-border text-xs gap-3"
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-[#070e1b] border border-cyan-500/20 text-xs gap-3"
                       >
                         <span className="truncate text-slate-300 font-mono flex-1">
                           {item.file.name}
                         </span>
-                        {/* Role selector */}
                         <select
                           value={item.role}
                           onChange={(e) => {
@@ -339,7 +366,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                               prev.map((s, i) => (i === idx ? { ...s, role: newRole } : s))
                             );
                           }}
-                          className="bg-slate-800 text-slate-200 text-xs rounded-lg px-2 py-1 border border-slate-700"
+                          className="bg-slate-800 text-cyan-200 text-xs rounded-lg px-2 py-1 border border-slate-700"
                         >
                           <option value="vocal">Vokal</option>
                           <option value="lead">Lead Guitar</option>
@@ -367,7 +394,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
                 <button
                   onClick={handleCreateSong}
                   disabled={isProcessing || stemUploads.length === 0}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:opacity-95 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-extrabold transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <>
@@ -387,7 +414,7 @@ export const FileManagerModal: React.FC<FileManagerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-flannel-border bg-flannel-panel/30 flex justify-end">
+        <div className="p-4 border-t border-cyan-500/20 bg-[#070e1b] flex justify-end">
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition border border-slate-700"

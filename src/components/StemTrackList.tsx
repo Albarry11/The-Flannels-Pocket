@@ -22,42 +22,42 @@ const ROLE_CONFIG: Record<
     label: 'Vocal',
     personil: 'Vokalis',
     color: '#f43f5e',
-    bgBadge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    bgBadge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
     icon: <Mic className="w-4 h-4" />,
   },
   lead: {
     label: 'Lead Guitar',
     personil: 'Gitaris Lead',
     color: '#f59e0b',
-    bgBadge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    bgBadge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     icon: <Guitar className="w-4 h-4" />,
   },
   rhythm: {
     label: 'Rhythm Guitar',
     personil: 'Gitaris Rhythm',
     color: '#10b981',
-    bgBadge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    bgBadge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     icon: <Music className="w-4 h-4" />,
   },
   bass: {
     label: 'Bass',
     personil: 'Bassist',
     color: '#06b6d4',
-    bgBadge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    bgBadge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
     icon: <Disc className="w-4 h-4" />,
   },
   drums: {
     label: 'Drums',
     personil: 'Drummer',
     color: '#8b5cf6',
-    bgBadge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    bgBadge: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
     icon: <Sliders className="w-4 h-4" />,
   },
   other: {
     label: 'Other / Master',
     personil: 'Backing',
     color: '#64748b',
-    bgBadge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+    bgBadge: 'bg-slate-500/20 text-slate-300 border-slate-500/40',
     icon: <Volume2 className="w-4 h-4" />,
   },
 };
@@ -76,13 +76,19 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
   const anySoloActive = stems.some((s) => s.solo);
 
   return (
-    <div className="flex flex-col gap-3 max-w-7xl mx-auto px-4 py-4 sm:px-6">
-      <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-flannel-border pb-2">
-        <span>Stem Tracks & Personil Mix ({stems.length} Stems)</span>
-        <span className="hidden sm:inline">M = Mute • S = Solo (Isolasi Bagian Latihan)</span>
+    <div className="flex flex-col gap-3 max-w-7xl mx-auto px-3 sm:px-6 py-4">
+      {/* Title Bar */}
+      <div className="flex items-center justify-between text-xs text-cyan-300/70 uppercase tracking-wider font-semibold border-b border-cyan-500/20 pb-2">
+        <span className="flex items-center gap-2 text-white">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          Stem Tracks & Multi-Solo Mixer ({stems.length} Stems)
+        </span>
+        <span className="hidden sm:inline text-slate-400">
+          M = Mute • S = Solo • Sentuh bar untuk membedah instrumen
+        </span>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         {stems.map((stem) => {
           const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.other;
           const level = stemLevels[stem.id] || 0;
@@ -91,64 +97,74 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
           return (
             <div
               key={stem.id}
-              className={`bg-flannel-card border rounded-2xl p-3.5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm hover:border-slate-700 ${
+              className={`rounded-2xl p-3 sm:p-4 transition-all flex flex-col gap-2.5 shadow-lg border relative overflow-hidden ${
                 stem.solo
-                  ? 'border-amber-500/60 shadow-amber-500/5 bg-amber-950/10'
+                  ? 'bg-gradient-to-r from-amber-950/40 via-[#0e1b2f] to-[#0a1424] border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                  : stem.muted
+                  ? 'bg-[#080d18]/60 border-rose-500/30 opacity-60'
                   : isSilenced
-                  ? 'opacity-60 border-flannel-border bg-flannel-dark/40'
-                  : 'border-flannel-border'
+                  ? 'bg-[#070e1b]/70 border-cyan-500/15 opacity-40'
+                  : 'bg-gradient-to-r from-[#0c182c]/85 via-[#091426]/90 to-[#070e1c] border-cyan-500/25 hover:border-cyan-400/50'
               }`}
             >
-              {/* Left: Role Info & Mute/Solo Buttons */}
-              <div className="flex items-center justify-between md:justify-start gap-3 min-w-[240px]">
-                {/* Icon & Name */}
+              {/* Glossy top edge highlight (Aero style) */}
+              <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+              {/* Row 1: Header (Role info & Ergonomic M/S Buttons) */}
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shadow-inner"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner relative overflow-hidden"
                     style={{
-                      backgroundColor: `${roleInfo.color}20`,
+                      backgroundColor: `${roleInfo.color}25`,
                       color: roleInfo.color,
-                      border: `1px solid ${roleInfo.color}40`,
+                      border: `1px solid ${roleInfo.color}50`,
                     }}
                   >
+                    <div className="absolute inset-x-0 top-0 h-1/2 bg-white/20 pointer-events-none" />
                     {roleInfo.icon}
                   </div>
                   <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold text-white tracking-tight">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-sm font-bold text-white tracking-tight">
                         {stem.name}
                       </span>
                       <span
-                        className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${roleInfo.bgBadge}`}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleInfo.bgBadge}`}
                       >
                         {roleInfo.personil}
                       </span>
+                      {stem.solo && (
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500 text-black animate-pulse shadow-sm">
+                          SOLO ON
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[11px] text-slate-400 block">
-                      {isSilenced ? (stem.muted ? 'Muted' : 'Silenced by Solo') : 'Active Audio'}
+                    <span className="text-[11px] text-slate-400 block font-mono">
+                      {stem.muted ? 'Muted' : isSilenced ? 'Disenyapkan oleh Solo' : 'Aktif'}
                     </span>
                   </div>
                 </div>
 
-                {/* Mute (M) & Solo (S) Buttons */}
-                <div className="flex items-center gap-1.5 ml-auto md:ml-4">
+                {/* Touch-Friendly Ergonomic Mute & Solo Buttons (44px target) */}
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => onToggleMute(stem.id)}
-                    className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition ${
+                    className={`min-w-[44px] min-h-[44px] px-3 rounded-xl font-bold text-xs flex items-center justify-center transition shadow ${
                       stem.muted
-                        ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                        ? 'bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_0_12px_rgba(244,63,94,0.6)] border border-rose-300'
+                        : 'bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 active:scale-95'
                     }`}
-                    title={stem.muted ? 'Unmute' : 'Mute Track'}
+                    title={stem.muted ? 'Unmute track' : 'Mute track'}
                   >
                     M
                   </button>
                   <button
                     onClick={() => onToggleSolo(stem.id)}
-                    className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition ${
+                    className={`min-w-[44px] min-h-[44px] px-3 rounded-xl font-extrabold text-xs flex items-center justify-center transition shadow ${
                       stem.solo
-                        ? 'bg-amber-500 text-black shadow-md shadow-amber-500/30 font-extrabold'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                        ? 'bg-gradient-to-b from-amber-400 to-amber-600 text-black shadow-[0_0_16px_rgba(245,158,11,0.8)] border border-amber-200'
+                        : 'bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 active:scale-95'
                     }`}
                     title={stem.solo ? 'Matikan Solo' : 'Solo Track Ini'}
                   >
@@ -157,8 +173,8 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
                 </div>
               </div>
 
-              {/* Center: Interactive Waveform Canvas */}
-              <div className="flex-1 w-full min-h-[48px] max-h-[56px] relative flex items-center">
+              {/* Row 2: Full Width Interactive Waveform Canvas */}
+              <div className="w-full relative">
                 <StemWaveform
                   audioBuffer={stem.audioBuffer}
                   color={roleInfo.color}
@@ -169,15 +185,11 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
                 />
               </div>
 
-              {/* Right: Controls (Volume Fader, Pan, LED VU Meter) */}
-              <div className="flex items-center gap-4 justify-between md:justify-end min-w-[250px]">
-                {/* Pan Knob/Slider */}
-                <div className="flex flex-col items-center gap-0.5">
-                  <div className="flex justify-between w-16 text-[10px] font-mono text-slate-400">
-                    <span>L</span>
-                    <span>{stem.pan === 0 ? 'C' : stem.pan < 0 ? `${Math.round(Math.abs(stem.pan) * 100)}` : `${Math.round(stem.pan * 100)}`}</span>
-                    <span>R</span>
-                  </div>
+              {/* Row 3: Mixer Controls (Pan, Volume Fader, VU Meter) */}
+              <div className="flex items-center justify-between gap-3 pt-1 border-t border-cyan-500/10">
+                {/* Pan Fader */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono text-cyan-300/70 uppercase">Pan:</span>
                   <input
                     type="range"
                     min="-1"
@@ -185,15 +197,18 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
                     step="0.05"
                     value={stem.pan}
                     onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                    className="w-16 h-1.5"
-                    title={`Pan: ${stem.pan}`}
+                    className="w-20 sm:w-24 h-2 accent-cyan-400"
+                    title={`Pan: ${stem.pan === 0 ? 'Center' : stem.pan < 0 ? `L${Math.round(Math.abs(stem.pan)*100)}` : `R${Math.round(stem.pan*100)}`}`}
                   />
+                  <span className="text-[10px] font-mono text-slate-300 min-w-[2.2rem]">
+                    {stem.pan === 0 ? 'C' : stem.pan < 0 ? `L${Math.round(Math.abs(stem.pan) * 100)}` : `R${Math.round(stem.pan * 100)}`}
+                  </span>
                 </div>
 
-                {/* Volume Slider */}
-                <div className="flex items-center gap-2">
+                {/* Volume Fader & LED VU Meter */}
+                <div className="flex items-center gap-2 ml-auto">
                   <span className="text-slate-400 text-xs">
-                    {stem.volume === 0 ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    {stem.volume === 0 ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />}
                   </span>
                   <input
                     type="range"
@@ -202,24 +217,24 @@ export const StemTrackList: React.FC<StemTrackListProps> = ({
                     step="0.01"
                     value={stem.volume}
                     onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                    className="w-24 sm:w-28 h-1.5"
+                    className="w-24 sm:w-36 h-2.5 accent-cyan-400 cursor-pointer"
                     title={`Volume: ${Math.round(stem.volume * 100)}%`}
                   />
-                  <span className="text-[11px] font-mono text-slate-300 w-8 text-right">
+                  <span className="text-[11px] font-mono text-cyan-300 w-9 text-right font-bold">
                     {Math.round(stem.volume * 100)}%
                   </span>
-                </div>
 
-                {/* LED VU Meter Bar */}
-                <div className="w-2.5 h-9 bg-slate-900 rounded-sm overflow-hidden flex flex-col-reverse p-0.5 border border-slate-800">
-                  <div
-                    className="w-full rounded-xs transition-all duration-75"
-                    style={{
-                      height: `${Math.min(100, Math.round(level * 100))}%`,
-                      backgroundColor: level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#10b981',
-                      boxShadow: level > 0.1 ? `0 0 4px ${level > 0.8 ? '#ef4444' : '#10b981'}` : 'none',
-                    }}
-                  />
+                  {/* 12-Segment Retro Peak LED VU Meter */}
+                  <div className="w-3 h-8 bg-[#040812] rounded overflow-hidden flex flex-col-reverse p-0.5 border border-cyan-500/30 shadow-inner">
+                    <div
+                      className="w-full rounded transition-all duration-75"
+                      style={{
+                        height: `${Math.min(100, Math.round(level * 100))}%`,
+                        backgroundColor: level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#06b6d4',
+                        boxShadow: level > 0.1 ? `0 0 6px ${level > 0.85 ? '#ef4444' : '#06b6d4'}` : 'none',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -256,19 +271,29 @@ const StemWaveform: React.FC<StemWaveformProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const width = rect.width;
+    const height = 48;
+
+    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+    }
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
 
     if (!audioBuffer) {
-      // Draw placeholder dashed line
       ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
       ctx.stroke();
+      ctx.restore();
       return;
     }
 
@@ -293,16 +318,20 @@ const StemWaveform: React.FC<StemWaveformProps> = ({
       const y = (height - barHeight) / 2;
 
       if (i <= playheadX) {
-        ctx.fillStyle = isSilenced ? '#64748b' : color;
+        ctx.fillStyle = isSilenced ? '#475569' : color;
       } else {
         ctx.fillStyle = isSilenced ? '#1e293b' : `${color}40`;
       }
       ctx.fillRect(i, y, 1.5, barHeight);
     }
 
-    // Draw playhead cursor
+    // Draw Playhead
     ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 4;
     ctx.fillRect(playheadX - 1, 0, 2, height);
+
+    ctx.restore();
   }, [audioBuffer, color, currentTime, duration, isSilenced]);
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -317,11 +346,9 @@ const StemWaveform: React.FC<StemWaveformProps> = ({
   return (
     <canvas
       ref={canvasRef}
-      width={600}
-      height={48}
       onClick={handleClick}
-      className="w-full h-11 bg-flannel-panel/50 rounded-xl cursor-pointer border border-flannel-border/50 hover:border-slate-600 transition"
-      title="Klik untuk melompat ke bagian ini"
+      className="w-full h-12 bg-[#050b16]/70 rounded-xl cursor-pointer border border-cyan-500/15 hover:border-cyan-400/40 transition block"
+      title="Klik untuk melompat ke bagian lagu ini"
     />
   );
 };

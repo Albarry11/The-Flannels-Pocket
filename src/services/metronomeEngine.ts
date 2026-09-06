@@ -1,7 +1,8 @@
+import { globalAudioEngine } from './audioEngine';
+
 export type MetronomeSound = 'woodblock' | 'beep' | 'rimshot' | 'cowbell';
 
 export class MetronomeEngine {
-  private ctx: AudioContext | null = null;
   private isRunning: boolean = false;
   private bpm: number = 115;
   private beatsPerBar: number = 4;
@@ -18,15 +19,8 @@ export class MetronomeEngine {
 
   constructor() {}
 
-  private initContext(): AudioContext {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtx();
-    }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-    return this.ctx;
+  private getContext(): AudioContext {
+    return globalAudioEngine.getContext();
   }
 
   public setBpm(newBpm: number) {
@@ -51,7 +45,7 @@ export class MetronomeEngine {
 
   public start() {
     if (this.isRunning) return;
-    const ctx = this.initContext();
+    const ctx = this.getContext();
     this.isRunning = true;
     this.currentBeat = 0;
     this.nextNoteTime = ctx.currentTime + 0.05;
@@ -89,8 +83,8 @@ export class MetronomeEngine {
   }
 
   private scheduler() {
-    if (!this.ctx) return;
-    while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTimeSec) {
+    const ctx = this.getContext();
+    while (this.nextNoteTime < ctx.currentTime + this.scheduleAheadTimeSec) {
       this.scheduleNote(this.currentBeat, this.nextNoteTime);
       this.nextNote();
     }
@@ -103,18 +97,16 @@ export class MetronomeEngine {
   }
 
   private scheduleNote(beatNumber: number, time: number) {
-    if (!this.ctx) return;
+    const ctx = this.getContext();
     const isDownbeat = beatNumber === 0;
 
-    // Trigger visual callback via setTimeout aligned with note time
-    const delayMs = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    const delayMs = Math.max(0, (time - ctx.currentTime) * 1000);
     setTimeout(() => {
       if (this.isRunning && this.onBeatCallback) {
         this.onBeatCallback(beatNumber, isDownbeat);
       }
     }, delayMs);
 
-    // Audio synthesis based on sound choice
     switch (this.sound) {
       case 'beep':
         this.playBeep(time, isDownbeat);
@@ -133,12 +125,12 @@ export class MetronomeEngine {
   }
 
   private playWoodblock(time: number, isDownbeat: boolean) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    const ctx = this.getContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
     osc.type = 'sine';
-    const freq = isDownbeat ? 1200 : 800;
+    const freq = isDownbeat ? 1250 : 850;
     osc.frequency.setValueAtTime(freq, time);
     osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + 0.04);
 
@@ -147,15 +139,15 @@ export class MetronomeEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(ctx.destination);
     osc.start(time);
     osc.stop(time + 0.06);
   }
 
   private playBeep(time: number, isDownbeat: boolean) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    const ctx = this.getContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
     osc.type = 'square';
     osc.frequency.setValueAtTime(isDownbeat ? 1760 : 880, time);
@@ -165,15 +157,15 @@ export class MetronomeEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(ctx.destination);
     osc.start(time);
     osc.stop(time + 0.04);
   }
 
   private playRimshot(time: number, isDownbeat: boolean) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    const ctx = this.getContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(isDownbeat ? 480 : 320, time);
@@ -184,17 +176,17 @@ export class MetronomeEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(ctx.destination);
     osc.start(time);
     osc.stop(time + 0.06);
   }
 
   private playCowbell(time: number, isDownbeat: boolean) {
-    if (!this.ctx) return;
-    const osc1 = this.ctx.createOscillator();
-    const osc2 = this.ctx.createOscillator();
-    const bandpass = this.ctx.createBiquadFilter();
-    const gain = this.ctx.createGain();
+    const ctx = this.getContext();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const bandpass = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
 
     osc1.type = 'square';
     osc2.type = 'square';
@@ -213,7 +205,7 @@ export class MetronomeEngine {
     osc1.connect(bandpass);
     osc2.connect(bandpass);
     bandpass.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(ctx.destination);
 
     osc1.start(time);
     osc2.start(time);
@@ -225,7 +217,6 @@ export class MetronomeEngine {
     const now = Date.now();
     this.tapTimestamps.push(now);
 
-    // Keep last 5 taps and ignore taps older than 2.5s
     if (this.tapTimestamps.length > 5) {
       this.tapTimestamps.shift();
     }
