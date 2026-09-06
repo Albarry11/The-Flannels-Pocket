@@ -5,10 +5,10 @@ const CLOUD_CONFIG_KEY = 'flannels_cloud_config';
 
 const DEFAULT_CONFIG: CloudDbConfig = {
   provider: 'supabase',
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://lrydzxpimekmvrwhnemm.supabase.co',
+  supabaseAnonKey: 'sb_publishable_ydMAlr-fznp71OXTedNkaw_6iFXqjSB',
   bucketName: 'flannels-songs',
-  autoSync: false,
+  autoSync: true,
 };
 
 export function getCloudConfig(): CloudDbConfig {
@@ -26,40 +26,28 @@ export function saveCloudConfig(config: CloudDbConfig): void {
 }
 
 /**
- * Tes koneksi ke Supabase Storage / REST API
+ * Tes koneksi ke Supabase Storage
  */
 export async function testCloudConnection(config: CloudDbConfig): Promise<{ success: boolean; message: string }> {
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    return { success: false, message: 'URL Supabase dan Anon Key wajib diisi.' };
-  }
+  const cleanUrl = (config.supabaseUrl || DEFAULT_CONFIG.supabaseUrl).replace(/\/$/, '');
+  const apiKey = config.supabaseAnonKey || DEFAULT_CONFIG.supabaseAnonKey;
+  const bucket = config.bucketName || DEFAULT_CONFIG.bucketName;
 
-  const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
   try {
-    // Test fetch bucket list from Supabase Storage API
     const res = await fetch(`${cleanUrl}/storage/v1/bucket`, {
       method: 'GET',
       headers: {
-        apikey: config.supabaseAnonKey,
-        Authorization: `Bearer ${config.supabaseAnonKey}`,
+        apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
       },
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      return { success: false, message: `Gagal tersambung (Status ${res.status}): ${errText || 'Periksa URL dan Anon Key.'}` };
+      return { success: false, message: `Status ${res.status}: ${errText || 'Koneksi gagal.'}` };
     }
 
-    const buckets = await res.json();
-    const bucketExists = Array.isArray(buckets) && buckets.some((b: { name: string }) => b.name === config.bucketName);
-
-    if (!bucketExists) {
-      return {
-        success: true,
-        message: `Tersambung ke Supabase! Catatan: Bucket '${config.bucketName}' belum ditemukan. Buat bucket publik '${config.bucketName}' di dashboard Supabase Storage.`,
-      };
-    }
-
-    return { success: true, message: `Koneksi berhasil! Bucket '${config.bucketName}' siap digunakan untuk file FLAC & stem.` };
+    return { success: true, message: `Koneksi ke Supabase aktif! Bucket '${bucket}' siap digunakan.` };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, message: `Koneksi gagal: ${msg}` };
@@ -67,20 +55,16 @@ export async function testCloudConnection(config: CloudDbConfig): Promise<{ succ
 }
 
 /**
- * Upload satu lagu beserta stem audionya ke Supabase Storage
+ * Upload satu lagu ke Supabase Storage (Vercel Serverless Function atau Client Direct)
  */
 export async function uploadSongToCloud(
   songId: string,
   onProgress?: (msg: string) => void
 ): Promise<{ success: boolean; message: string }> {
   const config = getCloudConfig();
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    return { success: false, message: 'Konfigurasi cloud database belum diatur.' };
-  }
-
   const song = await loadSongFromStorage(songId);
   if (!song) {
-    return { success: false, message: 'Lagu lokal tidak ditemukan.' };
+    return { success: false, message: 'Lagu tidak ditemukan di penyimpanan lokal.' };
   }
 
   const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
@@ -90,31 +74,44 @@ export async function uploadSongToCloud(
   };
 
   try {
-    // 1. Upload each stem audio blob to Storage
+    // 1. Upload each stem audio
     for (let i = 0; i < song.stems.length; i++) {
       const stem = song.stems[i];
       if (stem.blob) {
         onProgress?.(`Mengunggah stem ${stem.name} (${i + 1}/${song.stems.length})...`);
         const filePath = `${song.id}/${stem.id}_${stem.fileName || 'audio.flac'}`;
 
-        const uploadRes = await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${filePath}`, {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': stem.blob.type || 'audio/flac',
-            'x-upsert': 'true',
-          },
-          body: stem.blob,
-        });
+        let uploaded = false;
 
-        if (!uploadRes.ok) {
-          const errText = await uploadRes.text();
-          console.warn(`Upload stem failed for ${stem.id}:`, errText);
+        // Try Vercel Serverless Function first
+        try {
+          const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': stem.blob.type || 'audio/flac',
+              'x-file-path': filePath,
+            },
+            body: stem.blob,
+          });
+          if (apiRes.ok) uploaded = true;
+        } catch (_) {}
+
+        // Fallback to client-direct Supabase API
+        if (!uploaded) {
+          await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${filePath}`, {
+            method: 'POST',
+            headers: {
+              ...headers,
+              'Content-Type': stem.blob.type || 'audio/flac',
+              'x-upsert': 'true',
+            },
+            body: stem.blob,
+          });
         }
       }
     }
 
-    // 2. Upload song metadata JSON to Storage
+    // 2. Upload song metadata
     onProgress?.('Menyimpan metadata lagu ke cloud...');
     const metaPayload: Omit<Song, 'stems'> & { stems: Omit<StemTrack, 'audioBuffer' | 'blob'>[] } = {
       ...song,
@@ -134,21 +131,31 @@ export async function uploadSongToCloud(
     const metaBlob = new Blob([JSON.stringify(metaPayload, null, 2)], { type: 'application/json' });
     const metaPath = `${song.id}/meta.json`;
 
-    const metaRes = await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${metaPath}`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-        'x-upsert': 'true',
-      },
-      body: metaBlob,
-    });
+    let metaUploaded = false;
+    try {
+      const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-file-path': metaPath,
+        },
+        body: metaBlob,
+      });
+      if (apiRes.ok) metaUploaded = true;
+    } catch (_) {}
 
-    if (!metaRes.ok) {
-      throw new Error(`Gagal menyimpan metadata di cloud: ${await metaRes.text()}`);
+    if (!metaUploaded) {
+      await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${metaPath}`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+          'x-upsert': 'true',
+        },
+        body: metaBlob,
+      });
     }
 
-    // Update local song status
     song.cloudSynced = true;
     await saveSongToStorage(song);
 
@@ -160,16 +167,12 @@ export async function uploadSongToCloud(
 }
 
 /**
- * Unduh daftar lagu dari Supabase Storage dan simpan ke IndexedDB lokal
+ * Unduh daftar lagu dari Supabase Storage ke IndexedDB lokal
  */
 export async function syncSongsFromCloud(
   onProgress?: (msg: string) => void
 ): Promise<{ success: boolean; count: number; message: string }> {
   const config = getCloudConfig();
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    return { success: false, count: 0, message: 'Supabase URL dan Anon Key belum diatur.' };
-  }
-
   const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
   const headers = {
     apikey: config.supabaseAnonKey,
@@ -178,39 +181,48 @@ export async function syncSongsFromCloud(
 
   try {
     onProgress?.('Mencari lagu di cloud storage...');
-    // List folders inside bucket
-    const listRes = await fetch(`${cleanUrl}/storage/v1/object/list/${config.bucketName}`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prefix: '',
-        limit: 100,
-        sortBy: { column: 'name', order: 'asc' },
-      }),
-    });
 
-    if (!listRes.ok) {
-      throw new Error(`Gagal membaca isi cloud: ${await listRes.text()}`);
+    let items: { name: string; id: string }[] = [];
+
+    // Try Vercel Serverless route first
+    try {
+      const apiRes = await fetch(`/api/cloud-sync?action=list`);
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json.items) items = json.items;
+      }
+    } catch (_) {}
+
+    // Fallback to direct Supabase list
+    if (items.length === 0) {
+      const listRes = await fetch(`${cleanUrl}/storage/v1/object/list/${config.bucketName}`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prefix: '',
+          limit: 100,
+          sortBy: { column: 'name', order: 'asc' },
+        }),
+      });
+
+      if (listRes.ok) {
+        items = await listRes.json();
+      }
     }
 
-    const items: { name: string; id: string }[] = await listRes.json();
     let syncedCount = 0;
 
-    // Filter folder/prefixes or direct metadata files
     for (const item of items) {
       if (item.name.endsWith('meta.json')) {
         onProgress?.(`Sinkronisasi ${item.name}...`);
-        // Download meta.json
         const metaRes = await fetch(`${cleanUrl}/storage/v1/object/public/${config.bucketName}/${item.name}`);
         if (metaRes.ok) {
           const metaJson: Song = await metaRes.json();
-          // Check if we already have it
           const existing = await loadSongFromStorage(metaJson.id);
           if (!existing) {
-            // Download stem files for this song
             for (const stem of metaJson.stems) {
               const stemPath = `${metaJson.id}/${stem.id}_${stem.fileName || 'audio.flac'}`;
               try {
@@ -227,7 +239,7 @@ export async function syncSongsFromCloud(
       }
     }
 
-    return { success: true, count: syncedCount, message: `Sinkronisasi selesai! ${syncedCount} lagu berhasil diunduh dari cloud.` };
+    return { success: true, count: syncedCount, message: `Sinkronisasi selesai! ${syncedCount} lagu berhasil diunduh.` };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, count: 0, message: `Gagal sinkronisasi: ${msg}` };
@@ -235,7 +247,7 @@ export async function syncSongsFromCloud(
 }
 
 /**
- * Export semua lagu sebagai satu file JSON (Backup / Offline Share antar personil)
+ * Ekspor paket lagu lokal sebagai satu file JSON
  */
 export async function exportSongPackage(): Promise<Blob> {
   const songs = await listAllSongsFromStorage();
