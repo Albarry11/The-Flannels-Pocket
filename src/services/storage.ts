@@ -2,19 +2,19 @@ import { get, set, del, keys } from 'idb-keyval';
 import type { Song, StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
+import { separateAudioIntoStems } from './stemSeparator';
+import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
 
 const SONGS_KEY_PREFIX = 'flannels_song_';
 const AUDIO_BLOB_PREFIX = 'flannels_audio_';
 
 export async function saveSongToStorage(song: Song): Promise<void> {
-  // Store audio blobs separately in IndexedDB to avoid serializing huge objects into one key
   for (const stem of song.stems) {
     if (stem.blob) {
       await set(`${AUDIO_BLOB_PREFIX}${stem.id}`, stem.blob);
     }
   }
 
-  // Create lightweight metadata representation
   const meta: Omit<Song, 'stems'> & { stems: Omit<StemTrack, 'audioBuffer' | 'blob'>[] } = {
     ...song,
     stems: song.stems.map((s) => ({
@@ -91,44 +91,65 @@ export async function deleteSongFromStorage(songId: string): Promise<void> {
 
 /**
  * Creates a new song from uploaded audio files
+ * If 1 single audio file is provided, automatically uses AI Stem Separation
+ * to generate Vocal, Lead Guitar, Rhythm Guitar, Bass, and Drums!
  */
 export async function createSongFromFiles(
   title: string,
   artist: string,
   stemFiles: { role: StemRole; name: string; file: File }[],
-  options?: { bpm?: number; key?: string; lyrics?: string }
+  options?: {
+    bpm?: number;
+    key?: string;
+    lyrics?: string;
+    onProgress?: (status: string) => void;
+  }
 ): Promise<Song> {
   const ctx = globalAudioEngine.getContext();
-  const stems: StemTrack[] = [];
+  options?.onProgress?.('Mendekode audio utama...');
+
+  let stems: StemTrack[] = [];
   let maxDuration = 0;
   let masterBuffer: AudioBuffer | null = null;
 
-  for (const sf of stemFiles) {
-    const arrayBuffer = await sf.file.arrayBuffer();
-    // decodeAudioData consumes arrayBuffer, clone if needed
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-    if (audioBuffer.duration > maxDuration) {
-      maxDuration = audioBuffer.duration;
-    }
-    if (!masterBuffer) {
-      masterBuffer = audioBuffer;
-    }
+  if (stemFiles.length === 1) {
+    // SINGLE FULL AUDIO FILE UPLOAD -> Run AI Stem Splitter!
+    const file = stemFiles[0].file;
+    const arrayBuffer = await file.arrayBuffer();
+    masterBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    maxDuration = masterBuffer.duration;
 
-    stems.push({
-      id: `stem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-      role: sf.role,
-      name: sf.name,
-      volume: 0.85,
-      pan: 0,
-      muted: false,
-      solo: false,
-      audioBuffer,
-      blob: sf.file,
-      fileName: sf.file.name,
-    });
+    options?.onProgress?.('AI Stem Splitter: Memisahkan vokal dan instrumen...');
+    stems = await separateAudioIntoStems(masterBuffer, options?.onProgress);
+  } else {
+    // MULTI-STEM UPLOAD -> Map each stem file
+    for (const sf of stemFiles) {
+      const arrayBuffer = await sf.file.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+      if (audioBuffer.duration > maxDuration) {
+        maxDuration = audioBuffer.duration;
+      }
+      if (!masterBuffer) {
+        masterBuffer = audioBuffer;
+      }
+
+      stems.push({
+        id: `stem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        role: sf.role,
+        name: sf.name,
+        volume: 0.85,
+        pan: 0,
+        muted: false,
+        solo: false,
+        audioBuffer,
+        blob: sf.file,
+        fileName: sf.file.name,
+      });
+    }
   }
 
-  // Run analytical engines if we have an audio buffer
+  // Audio analysis
+  options?.onProgress?.('SpotiFLAC: Menghitung kualitas audio & kelantangan LUFS...');
   let qualityReport;
   let bpmKeyReport;
   let replayGainReport;
@@ -145,15 +166,36 @@ export async function createSongFromFiles(
     } catch (_) {}
   }
 
+  // AI Web Research for official BPM & Key (Point 7)
+  options?.onProgress?.('AI Web Research: Meneliti BPM dan Tangga Nada resmi lagu...');
+  let aiResearched;
+  try {
+    aiResearched = await researchSongBpmAndKeyWithAI(title, artist);
+  } catch (_) {}
+
+  // AI Auto-LRC Lyrics & Chords generation (Point 10)
+  let autoLyrics = options?.lyrics || '';
+  if (!autoLyrics) {
+    options?.onProgress?.('AI Lyricist: Membuat lirik tersinkronisasi dan akord lagu...');
+    try {
+      const generated = await generateLyricsAndChordsWithAI(title, artist);
+      if (generated) autoLyrics = generated;
+    } catch (_) {}
+  }
+
+  const finalBpm = options?.bpm || aiResearched?.bpm || bpmKeyReport?.bpm || 120;
+  const finalKey = options?.key || aiResearched?.key || bpmKeyReport?.key || 'C';
+  const finalTimeSignature = aiResearched?.timeSignature || '4/4';
+
   const newSong: Song = {
     id: `song-${Date.now()}`,
-    title: title.trim() || 'Untitled Track',
+    title: title.trim() || 'Untitled Cover',
     artist: artist.trim() || 'The Flannels',
     duration: maxDuration,
-    bpm: options?.bpm || bpmKeyReport?.bpm || 120,
-    originalKey: options?.key || bpmKeyReport?.key || 'C',
-    timeSignature: '4/4',
-    lyrics: options?.lyrics || '',
+    bpm: finalBpm,
+    originalKey: finalKey,
+    timeSignature: finalTimeSignature,
+    lyrics: autoLyrics,
     stems,
     createdAt: Date.now(),
     qualityAnalysis: qualityReport,
@@ -161,6 +203,7 @@ export async function createSongFromFiles(
     replayGain: replayGainReport,
   };
 
+  options?.onProgress?.('Menyimpan ke library lagu...');
   await saveSongToStorage(newSong);
   return newSong;
 }
