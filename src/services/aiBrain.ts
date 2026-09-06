@@ -1,88 +1,142 @@
 import type { Song, AIBrainConfig, AICoachingReport } from '../types';
 
 const AI_CONFIG_KEY = 'flannels_ai_brain_config';
+export const GEMINI_KEY_STORAGE = 'flannels_gemini_api_key';
 
-// User directive: Gunakan 1 model ini saja: ag/gemini-3.8-flash-high
-export const LOCKED_AI_MODEL = 'ag/gemini-3.8-flash-high';
+export const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 const DEFAULT_AI_CONFIG: AIBrainConfig = {
-  endpoint: 'http://localhost:20128/v1',
+  endpoint: GEMINI_API_ENDPOINT,
   apiKey: '',
-  model: LOCKED_AI_MODEL,
+  model: 'gemini-flash-latest',
 };
 
 export function getAIBrainConfig(): AIBrainConfig {
   try {
     const raw = localStorage.getItem(AI_CONFIG_KEY);
-    if (!raw) return DEFAULT_AI_CONFIG;
+    const storedKey = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+    if (!raw) return { ...DEFAULT_AI_CONFIG, apiKey: storedKey };
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_AI_CONFIG, ...parsed, model: LOCKED_AI_MODEL };
+    return {
+      ...DEFAULT_AI_CONFIG,
+      ...parsed,
+      endpoint: GEMINI_API_ENDPOINT,
+      apiKey: parsed.apiKey || storedKey,
+      model: 'gemini-flash-latest',
+    };
   } catch {
     return DEFAULT_AI_CONFIG;
   }
 }
 
 export function saveAIBrainConfig(config: AIBrainConfig): void {
-  // Always enforce the locked model
-  localStorage.setItem(AI_CONFIG_KEY, JSON.stringify({ ...config, model: LOCKED_AI_MODEL }));
+  localStorage.setItem(
+    AI_CONFIG_KEY,
+    JSON.stringify({ ...config, endpoint: GEMINI_API_ENDPOINT, model: 'gemini-flash-latest' })
+  );
+  if (config.apiKey) {
+    localStorage.setItem(GEMINI_KEY_STORAGE, config.apiKey);
+  }
 }
 
 /**
- * Riset BPM dan Tangga Nada Resmi lagu via AI Web Search (Model: ag/gemini-3.8-flash-high)
- * Dilatih dengan aturan pencarian database musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax)
+ * Helper pemanggilan Google Gemini generateContent API
+ * Mendukung Vercel Serverless Proxy (/api/gemini) dan Direct Google Cloud API
+ */
+async function callGeminiGenerateContent(prompt: string): Promise<string> {
+  const config = getAIBrainConfig();
+  const apiKey = config.apiKey || localStorage.getItem(GEMINI_KEY_STORAGE) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          {
+            text: prompt,
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+    },
+  };
+
+  // 1. Coba panggil Vercel Serverless Function proxy (/api/gemini)
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (apiKey) {
+      headers['X-goog-api-key'] = apiKey;
+    }
+
+    const apiRes = await fetch('/api/gemini', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    }
+  } catch (_) {}
+
+  // 2. Direct Google Generative Language API
+  const directHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) {
+    directHeaders['X-goog-api-key'] = apiKey;
+  }
+
+  const res = await fetch(GEMINI_API_ENDPOINT, {
+    method: 'POST',
+    headers: directHeaders,
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error (${res.status}): ${errText.slice(0, 150)}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  return rawText;
+}
+
+/**
+ * Riset BPM dan Tangga Nada Resmi lagu via Google Gemini Flash
+ * Diproses secara santai, pelan, dan teliti dengan verifikasi silang database musik
  */
 export async function researchSongBpmAndKeyWithAI(
   songTitle: string,
   artistName?: string
 ): Promise<{ bpm: number; key: string; timeSignature: string; notes: string } | null> {
-  const config = getAIBrainConfig();
-  const cleanEndpoint = config.endpoint.replace(/\/$/, '');
-
-  const prompt = `Anda adalah musicologist profesional dengan kapabilitas web search musik tingkat tinggi.
-Tugas Anda: Riset BPM rekaman studio resmi dan Tangga Nada Asli (Key) untuk lagu berikut:
+  const prompt = `Anda adalah musicologist dan peneliti lagu yang sangat teliti, santai, dan mendalam.
+Tugas Anda: Lakukan riset dan verifikasi silang terhadap database musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax, Beatport, dan partitur sheet music resmi) untuk lagu:
 Judul Lagu: "${songTitle}"
-${artistName ? `Penyanyi / Band: "${artistName}"` : ''}
+${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-INSTRUKSI RISET KETAT:
-1. Telusuri data resmi dari arsip musik terverifikasi (seperti SongBPM, Tunebat, Musicstax, Beatport, dan partitur chord asli).
-2. Periksa progresi akord lagu untuk memastikan Root Key yang benar (contoh: "Dan - Sheila On 7" verse-nya E-G#m-A-B maka Key = "E", Peterpan "Menghapus Jejakmu" = "G", Dewa 19 "Kangen" = "D").
-3. Jangan menebak sembarangan atau memberikan angka perkiraan acak. Pastikan akurat dengan versi rekaman studio master.
-4. Jawab HANYA dalam format JSON valid (tanpa teks pembuka atau penutup):
+PEDOMAN KETELITIAN & AKURASI TINGGI:
+1. Luangkan analisis secara cermat. Prioritaskan keakuratan 100% di atas kecepatan.
+2. Analisis progresi akord lagu (verse & chorus) untuk menentukan Tangga Nada Asli (Key) secara pasti (misal: Sheila On 7 "Dan" verse C-Em-F-G atau E-G#m-A-B sesuai rekaman master studio, Peterpan "Menghapus Jejakmu" = G Mayor, Dewa 19 "Kangen" = D Mayor).
+3. Tentukan tempo metronom studio resmi (BPM) yang stabil.
+4. Format output WAJIB HANYA JSON valid (tanpa teks pengantar apapun):
 {
   "title": "${songTitle}",
   "artist": "${artistName || ''}",
   "bpm": 135,
   "key": "E",
   "timeSignature": "4/4",
-  "notes": "Detail album, tahun rilis, dan progresi akord kunci"
+  "notes": "Detail chord progresi, tuning, dan versi rekaman master resmi"
 }`;
 
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (config.apiKey) {
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
-    }
-
-    const res = await fetch(`${cleanEndpoint}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: LOCKED_AI_MODEL,
-        messages: [
-          { role: 'system', content: 'Anda adalah basis data musik dan ensiklopedia tempo lagu resmi. Jawab selalu dalam format JSON valid saja.' },
-          { role: 'user', content: prompt },
-        ],
-        stream: false,
-        temperature: 0.1,
-      }),
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const rawText = await callGeminiGenerateContent(prompt);
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
@@ -93,65 +147,39 @@ INSTRUKSI RISET KETAT:
       };
     }
   } catch (err) {
-    console.warn('AI song research failed:', err);
+    console.warn('Gemini song research failed, fallback to local estimation:', err);
   }
   return null;
 }
 
 /**
- * Generate Lirik & Akord Otomatis via AI (Model: ag/gemini-3.8-flash-high)
+ * Generate Lirik & Akord Otomatis via Google Gemini Flash
  */
 export async function generateLyricsAndChordsWithAI(
   songTitle: string,
   artistName?: string
 ): Promise<string | null> {
-  const config = getAIBrainConfig();
-  const cleanEndpoint = config.endpoint.replace(/\/$/, '');
-
   const prompt = `Anda adalah transkripter lirik dan akord musik profesional.
 Tugas Anda: Buatkan lirik lengkap lagu dengan akord format [Chord] dan timestamp sinkron format [mm:ss.xx] untuk lagu:
 Judul: "${songTitle}"
 ${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-ATURAN:
-1. Pastikan akord yang disematkan di dalam kurung siku [Chord] akurat dengan nada dasar lagu studio aslinya.
-2. Timestamp [mm:ss.xx] harus teratur per baris lirik (misal [00:15.50][Em] Lirik bait...).
+ATURAN KETELITIAN:
+1. Pastikan akord di dalam [Chord] akurat dan harmonis dengan progresi nada dasar lagu aslinya.
+2. Timestamp [mm:ss.xx] teratur per baris lirik.
 3. Berikan HANYA teks LRC murni tanpa intro/outro percakapan.`;
 
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (config.apiKey) {
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
-    }
-
-    const res = await fetch(`${cleanEndpoint}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: LOCKED_AI_MODEL,
-        messages: [
-          { role: 'system', content: 'Anda adalah master transkripsi lirik dan akord musik. Keluarkan teks LRC murni dengan akord dalam [Chord].' },
-          { role: 'user', content: prompt },
-        ],
-        stream: false,
-        temperature: 0.2,
-      }),
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content?.trim() || '';
-    return content.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
+    const rawText = await callGeminiGenerateContent(prompt);
+    return rawText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
   } catch (err) {
-    console.warn('AI lyrics generation failed:', err);
+    console.warn('Gemini lyrics generation failed:', err);
     return null;
   }
 }
 
 /**
- * Fallback algoritma musik pintar lokal
+ * Fallback algoritma musik lokal
  */
 export function generateLocalRuleBasedCoaching(song: Song): AICoachingReport {
   const bpm = song.bpm || 120;
@@ -161,7 +189,7 @@ export function generateLocalRuleBasedCoaching(song: Song): AICoachingReport {
   const durationSec = Math.floor(song.duration % 60);
 
   const safeNotes = isMinor ? '1 - b3 - 4 - 5 - b7 (Minor Pentatonic)' : '1 - 2 - 3 - 5 - 6 (Major Pentatonic)';
-  const grooveStyle = bpm < 90 ? 'Slow Ballad / Soul Groove' : bpm < 125 ? 'Mid-tempo Rock / Pop' : 'High-energy Funk/Rock';
+  const grooveStyle = bpm < 90 ? 'Slow Ballad / Soul' : bpm < 125 ? 'Mid-tempo Pop / Rock' : 'Driving High-energy Rock';
 
   return {
     songTitle: song.title,
@@ -227,20 +255,17 @@ export function generateLocalRuleBasedCoaching(song: Song): AICoachingReport {
 }
 
 /**
- * Analisis aransemen musik komprehensif via ag/gemini-3.8-flash-high
+ * Analisis aransemen musik via Google Gemini Flash
  */
 export async function fetchAIBrainAnalysis(
   song: Song,
   onProgress?: (text: string) => void
 ): Promise<AICoachingReport> {
-  const config = getAIBrainConfig();
-  const cleanEndpoint = config.endpoint.replace(/\/$/, '');
-
-  onProgress?.(`Membedah aransemen via ${LOCKED_AI_MODEL}...`);
+  onProgress?.('Membedah aransemen via Google Gemini Flash...');
 
   const prompt = `Anda adalah produser musik profesional dan mentor band The Flannels (formasi: Vokalis, Gitaris Lead, Gitaris Rhythm, Bassist, Drummer).
 
-Analisis detail lagu latihan berikut:
+Analisis detail lagu latihan berikut secara teliti:
 - Judul: "${song.title}"
 - Artis: "${song.artist}"
 - Tempo: ${song.bpm} BPM
@@ -291,88 +316,34 @@ Berikan respons JSON valid SAJA:
 }`;
 
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (config.apiKey) {
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
-    }
-
-    const res = await fetch(`${cleanEndpoint}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: LOCKED_AI_MODEL,
-        messages: [
-          { role: 'system', content: 'Anda adalah master produser musik aransemen band The Flannels. Jawab selalu dalam format valid JSON saja.' },
-          { role: 'user', content: prompt },
-        ],
-        stream: false,
-        temperature: 0.2,
-      }),
-    });
-
-    if (!res.ok) {
-      return generateLocalRuleBasedCoaching(song);
-    }
-
-    const data = await res.json();
-    const rawContent = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const rawText = await callGeminiGenerateContent(prompt);
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]) as AICoachingReport;
     }
     return generateLocalRuleBasedCoaching(song);
   } catch (err) {
-    console.warn('AI analysis fallback to local rules:', err);
+    console.warn('AI analysis fallback:', err);
     return generateLocalRuleBasedCoaching(song);
   }
 }
 
 /**
- * Tanya jawab interaktif dengan AI Music Producer via ag/gemini-3.8-flash-high
+ * Tanya jawab interaktif dengan AI Music Producer via Gemini
  */
 export async function askAIBandProducer(
   question: string,
   song: Song
 ): Promise<string> {
-  const config = getAIBrainConfig();
-  const cleanEndpoint = config.endpoint.replace(/\/$/, '');
+  const prompt = `Anda adalah Produser Musik Band The Flannels. Lagu yang sedang diulik: "${song.title}" (${song.originalKey}, ${song.bpm} BPM). Berikan jawaban taktis, musikal, dan langsung aplikatif untuk personil band.
+
+Pertanyaan personil: "${question}"`;
 
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (config.apiKey) {
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
-    }
-
-    const res = await fetch(`${cleanEndpoint}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: LOCKED_AI_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: `Anda adalah Produser Musik Band The Flannels. Lagu yang sedang diulik: "${song.title}" (${song.originalKey}, ${song.bpm} BPM). Berikan jawaban taktis, musikal, dan langsung aplikatif untuk personil band.`,
-          },
-          { role: 'user', content: question },
-        ],
-        stream: false,
-        temperature: 0.3,
-        max_tokens: 600,
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      return `Koneksi AI (${res.status}): ${errText.slice(0, 100)}`;
-    }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || 'Tidak ada respons dari AI.';
-  } catch (err) {
-    return 'Layanan AI lokal tidak dapat dihubungi di ' + config.endpoint;
+    const rawText = await callGeminiGenerateContent(prompt);
+    return rawText || 'Tidak ada respons dari AI Producer.';
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return `Koneksi Gemini bermasalah: ${msg}`;
   }
 }

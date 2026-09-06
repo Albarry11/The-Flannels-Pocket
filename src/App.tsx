@@ -182,7 +182,7 @@ export function App() {
     }
   };
 
-  // Stems manipulation (SEAMLESS - NO AUDIO RESTART!)
+  // Stems manipulation
   const handleVolumeChange = (stemId: string, vol: number) => {
     globalAudioEngine.setStemVolume(stemId, vol);
     if (currentSong) {
@@ -221,7 +221,7 @@ export function App() {
     globalAudioEngine.updateStemMuteSoloBatch(updated);
   };
 
-  // Quick Access Shortcuts (SEAMLESS - NO PLAYBACK RESTART!)
+  // Quick Access Shortcuts
   const handleSoloVocalOnly = () => {
     if (!currentSong) return;
     const updated = currentSong.stems.map((s) => ({
@@ -313,47 +313,30 @@ export function App() {
     await saveSongToStorage(updated);
   };
 
-  const handleUpdateSongInfo = async (bpm: number, key: string) => {
-    if (!currentSong) return;
-    const updated = { ...currentSong, bpm, originalKey: key };
-    setCurrentSong(updated);
-    setMetronomeBpm(bpm);
-    globalMetronome.setBpm(bpm);
-    await saveSongToStorage(updated);
-  };
-
   const activeSoloNames = currentSong?.stems.filter((s) => s.solo).map((s) => s.name) || [];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#030814] text-cyan-200 gap-3">
-        <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-        <h2 className="text-base font-bold text-white tracking-tight">The Flannel pocket</h2>
-        <p className="text-xs text-slate-400">Menyiapkan workstation musik...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center text-sky-800 gap-3">
+        <Loader2 className="w-10 h-10 text-sky-500 animate-spin" />
+        <h2 className="text-base font-bold text-[#0f2942] tracking-tight">The Flannels pocket</h2>
+        <p className="text-xs text-sky-700">Menyiapkan workstation musik...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-[#030814] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
-      {/* 1. Sleek Vertical Sidebar Nav Flush Against the Absolute Left Frame (Point 3) */}
-      <aside className="fixed left-0 top-0 bottom-0 z-50 w-16 md:w-20 bg-[#030814]/90 backdrop-blur-2xl border-r border-white/15 flex flex-col items-center py-4 justify-between shadow-2xl">
-        {/* Top Logo text */}
-        <div className="flex flex-col items-center">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-cyan-500/30 border border-white/20 mb-1">
-            FP
-          </div>
-          <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest hidden md:inline">Pocket</span>
-        </div>
-
-        {/* Center Icons */}
-        <div className="flex flex-col gap-3 w-full px-2">
+    <div className="min-h-screen flex text-[#0f2942] font-sans selection:bg-sky-500 selection:text-white">
+      {/* 1. Navbar Flush to the Absolute Edge of the Frame (Point 3 & 4: No logo/emote) */}
+      <aside className="fixed left-0 top-0 bottom-0 z-50 w-16 md:w-20 bg-white/70 backdrop-blur-2xl border-r border-white/80 flex flex-col items-center py-6 justify-center shadow-[4px_0_24px_rgba(2,132,199,0.1)]">
+        {/* Navigation Buttons (Mixer, Library, Lirik, Tilikan) */}
+        <div className="flex flex-col gap-4 w-full px-2">
           <button
             onClick={() => setActiveTab('mixer')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
               activeTab === 'mixer'
-                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
+                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
             }`}
             title="Mixer Console"
           >
@@ -363,10 +346,10 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('library')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
               activeTab === 'library'
-                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
+                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
             }`}
             title="Library Lagu Cover"
           >
@@ -376,10 +359,10 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('lyrics')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
               activeTab === 'lyrics'
-                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
+                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
             }`}
             title="Lirik & Chord"
           >
@@ -387,35 +370,33 @@ export function App() {
             <span className="text-[9px] font-bold tracking-tight">Lirik</span>
           </button>
 
+          {/* Point 8: Menu AI Brain rename jadi Tilikan */}
           <button
             onClick={() => setActiveTab('brain')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
               activeTab === 'brain'
-                ? 'bg-gradient-to-b from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
+                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
             }`}
-            title="AI Brain & Analisis"
+            title="Tilikan (AI Music Brain & Analyzer)"
           >
             <Brain className="w-5 h-5" />
-            <span className="text-[9px] font-bold tracking-tight">AI Brain</span>
+            <span className="text-[9px] font-bold tracking-tight">Tilikan</span>
           </button>
         </div>
-
-        {/* Bottom indicator */}
-        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#38bdf8]" />
       </aside>
 
       {/* 2. Main Content Area (Offset by left sidebar width) */}
       <div className="flex-1 flex flex-col pl-16 md:pl-20 min-w-0 min-h-screen">
         
-        {/* Header (The Flannel pocket - No logo, no emote) (Point 5) */}
+        {/* Header: The Flannels pocket (Point 4: corrected title, no logo/emote) */}
         <Header
           currentSong={currentSong}
           activeSoloNames={activeSoloNames}
           onClearAllSolos={handleClearAllSolos}
         />
 
-        {/* Main Spacious View */}
+        {/* Main Spacious View (Light Fresh Frutiger Aero Theme) */}
         <main className="flex-1 p-3 sm:p-5 pb-40 overflow-y-auto">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
@@ -464,7 +445,6 @@ export function App() {
               currentSong={currentSong}
               replayGainEnabled={replayGainEnabled}
               onToggleReplayGain={handleToggleReplayGain}
-              onUpdateSongInfo={handleUpdateSongInfo}
             />
           )}
         </main>

@@ -3,7 +3,6 @@ import type { Song, AICoachingReport } from '../types';
 import {
   fetchAIBrainAnalysis,
   askAIBandProducer,
-  researchSongBpmAndKeyWithAI,
 } from '../services/aiBrain';
 import {
   Brain,
@@ -16,7 +15,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Music,
-  Search,
   Mic,
   Guitar,
   Sliders,
@@ -26,16 +24,14 @@ interface AIBrainAndAnalyzerProps {
   currentSong: Song | null;
   replayGainEnabled: boolean;
   onToggleReplayGain: () => void;
-  onUpdateSongInfo?: (bpm: number, key: string) => void;
 }
 
 export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   currentSong,
   replayGainEnabled,
   onToggleReplayGain,
-  onUpdateSongInfo,
 }) => {
-  const [activeTab, setActiveTab] = useState<'coaching' | 'chat' | 'quality' | 'research'>('coaching');
+  const [activeTab, setActiveTab] = useState<'coaching' | 'chat' | 'quality'>('coaching');
   const [coaching, setCoaching] = useState<AICoachingReport | null>(null);
   const [isLoadingCoaching, setIsLoadingCoaching] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
@@ -44,10 +40,6 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'ai'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-
-  // AI Research
-  const [isResearching, setIsResearching] = useState(false);
-  const [researchResult, setResearchResult] = useState<{ bpm: number; key: string; timeSignature: string; notes: string } | null>(null);
 
   useEffect(() => {
     if (currentSong) {
@@ -74,30 +66,19 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
       const msg = err instanceof Error ? err.message : String(err);
       setChatMessages((prev) => [
         ...prev,
-        { sender: 'ai', text: `Gagal menghubungi AI: ${msg}` },
+        { sender: 'ai', text: `Koneksi Tilikan bermasalah: ${msg}` },
       ]);
     } finally {
       setIsChatLoading(false);
     }
   };
 
-  const handleRunAIResearch = async () => {
-    if (!currentSong) return;
-    setIsResearching(true);
-    const res = await researchSongBpmAndKeyWithAI(currentSong.title, currentSong.artist);
-    if (res) {
-      setResearchResult(res);
-      onUpdateSongInfo?.(res.bpm, res.key);
-    }
-    setIsResearching(false);
-  };
-
   const roleIcons = {
-    Vocal: <Mic className="w-4 h-4 text-rose-400" />,
-    Lead: <Guitar className="w-4 h-4 text-amber-400" />,
-    Rhythm: <Music className="w-4 h-4 text-emerald-400" />,
-    Bass: <Disc className="w-4 h-4 text-cyan-400" />,
-    Drums: <Sliders className="w-4 h-4 text-violet-400" />,
+    Vocal: <Mic className="w-4 h-4 text-rose-500" />,
+    Lead: <Guitar className="w-4 h-4 text-amber-500" />,
+    Rhythm: <Music className="w-4 h-4 text-emerald-500" />,
+    Bass: <Disc className="w-4 h-4 text-sky-500" />,
+    Drums: <Sliders className="w-4 h-4 text-indigo-500" />,
   };
 
   const quality = currentSong?.qualityAnalysis;
@@ -105,42 +86,42 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
 
   if (!currentSong) {
     return (
-      <div className="p-12 text-center text-slate-500 max-w-xl mx-auto">
-        <Brain className="w-12 h-12 text-cyan-500/50 mx-auto mb-3" />
-        <h3 className="text-base font-bold text-white">Belum Ada Lagu yang Dipilih</h3>
-        <p className="text-xs text-slate-400 mt-1">
-          Pilih atau unggah lagu di Library untuk membuka analisis aransemen musik dan inspeksi kualitas audio.
+      <div className="p-12 text-center text-slate-500 max-w-xl mx-auto aero-glass rounded-3xl">
+        <Brain className="w-12 h-12 text-sky-500/60 mx-auto mb-3" />
+        <h3 className="text-base font-bold text-[#0f2942]">Belum Ada Lagu yang Dipilih</h3>
+        <p className="text-xs text-sky-800/80 mt-1">
+          Pilih lagu di menu Library untuk membuka tilikan aransemen dan inspeksi kualitas audio.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full max-w-6xl mx-auto w-full bg-[#080f1e]/80 rounded-3xl border border-cyan-500/25 p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
-      {/* Top Tab Navigation */}
-      <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-            <Brain className="w-5 h-5 text-white" />
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-3xl p-4 sm:p-6 shadow-xl">
+      {/* Top Header Tilikan (Point 8) */}
+      <div className="flex items-center justify-between border-b border-sky-200/60 pb-3 mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/30 text-white">
+            <Brain className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
-              AI Music Brain & Audio Analyzer
+            <h2 className="text-base sm:text-lg font-black text-[#0f2942] tracking-tight">
+              Tilikan
             </h2>
-            <p className="text-[11px] text-cyan-300/80">
-              Produser Musik 9router • SpotiFLAC Lossless & ReplayGain
+            <p className="text-xs text-sky-700 font-medium">
+              Analisis Aransemen Band • Kualitas Audio SpotiFLAC
             </p>
           </div>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex bg-[#050b16] p-1 rounded-xl border border-cyan-500/20 text-xs font-semibold">
+        <div className="flex bg-white/80 p-1 rounded-full border border-sky-200/80 text-xs font-bold shadow-xs">
           <button
             onClick={() => setActiveTab('coaching')}
-            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
               activeTab === 'coaching'
-                ? 'bg-cyan-500 text-black font-extrabold shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                : 'text-sky-900 hover:text-sky-600'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -148,36 +129,25 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
               activeTab === 'chat'
-                ? 'bg-cyan-500 text-black font-extrabold shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                : 'text-sky-900 hover:text-sky-600'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span>Tanya AI</span>
+            <span>Tanya Produser</span>
           </button>
           <button
             onClick={() => setActiveTab('quality')}
-            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
               activeTab === 'quality'
-                ? 'bg-cyan-500 text-black font-extrabold shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                : 'text-sky-900 hover:text-sky-600'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Kualitas Audio</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('research')}
-            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
-              activeTab === 'research'
-                ? 'bg-cyan-500 text-black font-extrabold shadow'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span>Riset BPM & Key</span>
           </button>
         </div>
       </div>
@@ -190,53 +160,53 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           <div className="space-y-4">
             {isLoadingCoaching ? (
               <div className="text-center py-16 space-y-3">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
-                <p className="text-xs text-slate-300">{progressMsg || 'Membedah aransemen lagu...'}</p>
+                <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto" />
+                <p className="text-xs text-sky-900 font-semibold">{progressMsg || 'Membedah aransemen lagu...'}</p>
               </div>
             ) : coaching ? (
               <>
                 {/* Summary Banner */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-cyan-950/30 to-[#071324] border border-cyan-500/30 text-xs text-slate-200 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-cyan-300 text-sm">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    <span>{coaching.songTitle} - Karakter & Harmoni</span>
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-100/90 to-blue-100/70 border border-sky-300/60 text-xs space-y-2 shadow-xs">
+                  <div className="flex items-center gap-2 font-bold text-sky-900 text-sm">
+                    <Sparkles className="w-4 h-4 text-sky-600" />
+                    <span>{coaching.songTitle} - Karakter Musik & Harmoni</span>
                   </div>
-                  <p className="text-slate-300 leading-relaxed">{coaching.musicalSummary}</p>
-                  <div className="p-2.5 rounded-xl bg-[#040814] border border-cyan-500/20 text-[11px] text-amber-300">
+                  <p className="text-[#0f2942] leading-relaxed font-medium">{coaching.musicalSummary}</p>
+                  <div className="p-2.5 rounded-xl bg-white/80 border border-sky-200/80 text-[11px] text-amber-900 font-medium">
                     💡 <strong>Panduan Nada Dasar:</strong> {coaching.keyAdvice}
                   </div>
                 </div>
 
                 {/* Personil Breakdown Grid */}
                 <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-bold text-sky-900 uppercase tracking-wider block">
                     Panduan Kulik Khusus Personil The Flannels
                   </span>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {coaching.personilGuides.map((guide, idx) => (
                       <div
                         key={idx}
-                        className="p-3.5 rounded-2xl bg-[#060c18] border border-cyan-500/20 flex flex-col justify-between gap-2 shadow-sm"
+                        className="p-3.5 rounded-2xl bg-white/80 border border-sky-200/70 flex flex-col justify-between gap-2 shadow-sm"
                       >
                         <div>
-                          <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                          <div className="flex items-center justify-between border-b border-sky-100 pb-2 mb-2">
                             <div className="flex items-center gap-2">
                               {roleIcons[guide.personil] || <Music className="w-4 h-4" />}
-                              <span className="text-sm font-bold text-white">
+                              <span className="text-sm font-extrabold text-[#0f2942]">
                                 {guide.personil}
                               </span>
                             </div>
-                            <span className="text-[10px] font-semibold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-400/30">
+                            <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full border border-sky-300/60">
                               {guide.focus}
                             </span>
                           </div>
-                          <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                          <ul className="text-xs text-[#1e3a5f] space-y-1.5 list-disc list-inside font-medium">
                             {guide.tips.map((tip, tIdx) => (
                               <li key={tIdx} className="leading-snug">{tip}</li>
                             ))}
                           </ul>
                         </div>
-                        <div className="pt-2 border-t border-slate-800/60 text-[11px] font-mono text-amber-300/90">
+                        <div className="pt-2 border-t border-sky-100 text-[11px] font-mono text-amber-800 font-bold">
                           🎵 {guide.keyChordsOrPattern}
                         </div>
                       </div>
@@ -246,18 +216,18 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
 
                 {/* Rehearsal Plan & Mix Doctor */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3.5 rounded-2xl bg-[#060c18] border border-cyan-500/20 text-xs space-y-2">
-                    <span className="font-bold text-white block">📋 Tahapan Latihan Studio</span>
-                    <ol className="space-y-1 list-decimal list-inside text-slate-300">
+                  <div className="p-3.5 rounded-2xl bg-white/80 border border-sky-200/70 text-xs space-y-2 shadow-sm">
+                    <span className="font-extrabold text-[#0f2942] block">📋 Tahapan Latihan Studio</span>
+                    <ol className="space-y-1 list-decimal list-inside text-[#1e3a5f] font-medium">
                       {coaching.rehearsalPlan.map((step, sIdx) => (
                         <li key={sIdx} className="leading-snug">{step}</li>
                       ))}
                     </ol>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-[#060c18] border border-cyan-500/20 text-xs space-y-2">
-                    <span className="font-bold text-cyan-300 block">🩺 Mix Doctor</span>
-                    <p className="text-slate-300 leading-relaxed">{coaching.mixDoctorNotes}</p>
+                  <div className="p-3.5 rounded-2xl bg-white/80 border border-sky-200/70 text-xs space-y-2 shadow-sm">
+                    <span className="font-extrabold text-sky-800 block">🩺 Mix Doctor</span>
+                    <p className="text-[#1e3a5f] leading-relaxed font-medium">{coaching.mixDoctorNotes}</p>
                   </div>
                 </div>
               </>
@@ -265,40 +235,39 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </div>
         )}
 
-        {/* TAB 2: TANYA AI PRODUCER */}
+        {/* TAB 2: TANYA PRODUSER */}
         {activeTab === 'chat' && (
           <div className="flex flex-col h-[460px]">
             {/* Quick Suggestion Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 whitespace-nowrap">Tanya Cepat:</span>
+              <span className="text-[10px] font-bold uppercase text-sky-800 whitespace-nowrap">Tanya Cepat:</span>
               <button
-                onClick={() => handleSendChat("Bagaimana cara membagi riff lead guitar dan rhythm di part reff lagu ini?")}
-                className="px-2.5 py-1 rounded-lg bg-[#060c18] border border-cyan-500/20 text-slate-300 hover:text-white whitespace-nowrap"
+                onClick={() => handleSendChat("Bagaimana pembagian riff gitar lead dan rhythm di lagu ini?")}
+                className="px-3 py-1 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-xs"
               >
                 🎸 Pembagian Riff Gitar
               </button>
               <button
-                onClick={() => handleSendChat("Apa pola drum dan ketukan kick/snare yang paling cocok di lagu ini?")}
-                className="px-2.5 py-1 rounded-lg bg-[#060c18] border border-cyan-500/20 text-slate-300 hover:text-white whitespace-nowrap"
+                onClick={() => handleSendChat("Pola ketukan kick drum dan snare yang paling pas untuk part chorus?")}
+                className="px-3 py-1 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-xs"
               >
                 🥁 Pola Ketukan Drum
               </button>
               <button
-                onClick={() => handleSendChat("Jika vokalis pria membawakan lagu ini, nada dasar apa yang paling pas?")}
-                className="px-2.5 py-1 rounded-lg bg-[#060c18] border border-cyan-500/20 text-slate-300 hover:text-white whitespace-nowrap"
+                onClick={() => handleSendChat("Bagaimana saran improvisasi solo untuk lagu ini?")}
+                className="px-3 py-1 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-xs"
               >
-                🎤 Rekomendasi Pitch Vokal
+                🎼 Improvisasi Solo
               </button>
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto space-y-3 p-3 rounded-2xl bg-[#050b16] border border-cyan-500/20 mb-3">
+            <div className="flex-1 overflow-y-auto space-y-3 p-3 rounded-2xl bg-white/60 border border-sky-200/80 mb-3 shadow-inner">
               {chatMessages.length === 0 ? (
-                <div className="text-center py-20 text-slate-400 space-y-2">
-                  <MessageSquare className="w-8 h-8 text-cyan-500/60 mx-auto" />
-                  <p className="text-xs max-w-sm mx-auto">
-                    AI Music Producer terhubung ke <code>localhost:20128</code>. Tanyakan apa pun seputar
-                    kunci gitar, solo, tempo, aransemen, dan dinamika panggung!
+                <div className="text-center py-20 text-sky-800 space-y-2">
+                  <MessageSquare className="w-8 h-8 text-sky-500 mx-auto" />
+                  <p className="text-xs max-w-sm mx-auto font-medium">
+                    AI Music Producer siap membantu membedah lagu "{currentSong.title}". Tanyakan chord, melodi solo, atau dinamika panggung!
                   </p>
                 </div>
               ) : (
@@ -308,10 +277,10 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed ${
+                      className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed font-medium shadow-sm ${
                         msg.sender === 'user'
-                          ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-none'
-                          : 'bg-[#0d1729] text-slate-200 border border-cyan-500/20 rounded-tl-none'
+                          ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-tr-none'
+                          : 'bg-white text-[#0f2942] border border-sky-200 rounded-tl-none'
                       }`}
                     >
                       {msg.text}
@@ -321,9 +290,9 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
               )}
               {isChatLoading && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl p-3 bg-[#0d1729] border border-cyan-500/20 text-xs text-cyan-300 flex items-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>AI Producer sedang membedah jawaban...</span>
+                  <div className="rounded-2xl p-3 bg-white border border-sky-200 text-xs text-sky-700 flex items-center gap-2 font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+                    <span>AI Producer sedang merumuskan jawaban teliti...</span>
                   </div>
                 </div>
               )}
@@ -337,12 +306,12 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                 placeholder="Tanyakan chord, fill drum, atau solo guitar..."
-                className="flex-1 bg-[#050b16] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="flex-1 bg-white/80 border border-sky-300 rounded-full px-4 py-2 text-xs text-[#0f2942] focus:outline-none focus:border-sky-500 shadow-xs"
               />
               <button
                 onClick={() => handleSendChat()}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50"
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-500/20 disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Kirim</span>
@@ -356,27 +325,27 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           <div className="space-y-4">
             {/* Lossless Classification Banner */}
             <div
-              className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
+              className={`p-4 rounded-2xl border flex items-start gap-3.5 shadow-sm ${
                 quality?.isLossless
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                  : 'bg-amber-50 border-amber-300 text-amber-950'
               }`}
             >
               {quality?.isLossless ? (
-                <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
               ) : (
-                <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
               )}
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-white">
+                  <span className="font-extrabold text-sm text-[#0f2942]">
                     {quality?.classification || 'Lossless FLAC Master'}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-white/10 uppercase font-bold text-cyan-300">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white border border-emerald-300 uppercase font-bold text-emerald-700">
                     {quality?.cutoffFrequency ? `Cutoff: ${quality.cutoffFrequency} Hz` : 'Full Bandwidth'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-1">
+                <p className="text-xs text-[#1e3a5f] mt-1 font-medium">
                   {quality?.notes ||
                     'Audio mempertahankan fidelitas frekuensi tinggi penuh (>20kHz) tanpa kompresi psikoakustik lossy.'}
                 </p>
@@ -385,57 +354,57 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
 
             {/* Technical Specs Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-[#050b16] p-3 rounded-xl border border-cyan-500/20">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
+                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
                   Sample Rate
                 </span>
-                <span className="text-base font-mono font-bold text-white">
+                <span className="text-base font-mono font-black text-[#0f2942]">
                   {quality ? `${(quality.sampleRate / 1000).toFixed(1)} kHz` : '44.1 kHz'}
                 </span>
               </div>
-              <div className="bg-[#050b16] p-3 rounded-xl border border-cyan-500/20">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
+                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
                   Bit Depth
                 </span>
-                <span className="text-base font-mono font-bold text-white">
+                <span className="text-base font-mono font-black text-[#0f2942]">
                   {quality ? `${quality.bitDepthEstimate}-bit Float` : '16-bit / 24-bit'}
                 </span>
               </div>
-              <div className="bg-[#050b16] p-3 rounded-xl border border-cyan-500/20">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
+                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
                   Dynamic Range
                 </span>
-                <span className="text-base font-mono font-bold text-cyan-300">
+                <span className="text-base font-mono font-black text-sky-700">
                   {quality ? `DR ${quality.dynamicRangeScore}` : 'DR 12'}
                 </span>
               </div>
-              <div className="bg-[#050b16] p-3 rounded-xl border border-cyan-500/20">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
+                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
                   Channels
                 </span>
-                <span className="text-base font-mono font-bold text-white">
+                <span className="text-base font-mono font-black text-[#0f2942]">
                   {quality?.channels === 1 ? 'Mono' : 'Stereo 2.0'}
                 </span>
               </div>
             </div>
 
             {/* ReplayGain Section */}
-            <div className="bg-[#050b16] p-4 rounded-2xl border border-cyan-500/20 space-y-3">
+            <div className="bg-white/80 p-4 rounded-2xl border border-sky-200/70 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-white">
+                  <h4 className="text-sm font-extrabold text-[#0f2942]">
                     Normalisasi Kelantangan ReplayGain (ITU-R BS.1770)
                   </h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-sky-700">
                     Menyamakan kenyaringan audio ke standar studio -14 LUFS
                   </p>
                 </div>
                 <button
                   onClick={onToggleReplayGain}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition flex items-center gap-1.5 shadow-sm ${
                     replayGainEnabled
-                      ? 'bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/20'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      ? 'bg-emerald-500 text-white shadow-emerald-500/30'
+                      : 'bg-sky-100 text-sky-800 hover:bg-sky-200 border border-sky-300'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -444,98 +413,27 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
               </div>
 
               <div className="grid grid-cols-3 gap-3 pt-1">
-                <div className="bg-[#081122] p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase block">Integrated Loudness</span>
-                  <span className="text-base font-mono font-bold text-white">
+                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
+                  <span className="text-[10px] text-sky-800 uppercase block font-bold">Integrated Loudness</span>
+                  <span className="text-base font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.integratedLufs} LUFS` : '-14.2 LUFS'}
                   </span>
                 </div>
-                <div className="bg-[#081122] p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase block">True Peak</span>
-                  <span className="text-base font-mono font-bold text-white">
+                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
+                  <span className="text-[10px] text-sky-800 uppercase block font-bold">True Peak</span>
+                  <span className="text-base font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.truePeakDb} dBTP` : '-0.5 dBTP'}
                   </span>
                 </div>
-                <div className="bg-[#081122] p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase block">Gain Offset</span>
-                  <span className="text-base font-mono font-bold text-emerald-400">
+                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
+                  <span className="text-[10px] text-sky-800 uppercase block font-bold">Gain Offset</span>
+                  <span className="text-base font-mono font-bold text-emerald-700">
                     {replay
                       ? `${replay.recommendedGainDb > 0 ? '+' : ''}${replay.recommendedGainDb} dB`
                       : '+0.2 dB'}
                   </span>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: RISET BPM & KEY VIA AI */}
-        {activeTab === 'research' && (
-          <div className="space-y-4 max-w-xl mx-auto py-2">
-            <div className="p-4 rounded-2xl bg-[#050b16] border border-cyan-500/25 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-white">
-                    Riset Otomatis Tempo & Tangga Nada
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    Menghubungi AI untuk mencari data BPM, Key, dan birama resmi lagu "{currentSong.title}"
-                  </p>
-                </div>
-                <button
-                  onClick={handleRunAIResearch}
-                  disabled={isResearching}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50"
-                >
-                  {isResearching ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Mencari...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-3.5 h-3.5" />
-                      <span>Riset via AI</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {researchResult && (
-                <div className="p-4 rounded-xl bg-[#081224] border border-cyan-500/30 space-y-3 mt-3">
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                      <span className="text-[10px] text-slate-400 block uppercase">Tempo Resmi</span>
-                      <span className="text-2xl font-mono font-extrabold text-amber-400">
-                        {researchResult.bpm}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block">BPM</span>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                      <span className="text-[10px] text-slate-400 block uppercase">Tangga Nada</span>
-                      <span className="text-2xl font-mono font-extrabold text-cyan-400">
-                        {researchResult.key}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block">Original Key</span>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                      <span className="text-[10px] text-slate-400 block uppercase">Birama</span>
-                      <span className="text-2xl font-mono font-extrabold text-white">
-                        {researchResult.timeSignature}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block">Time Sig</span>
-                    </div>
-                  </div>
-
-                  {researchResult.notes && (
-                    <p className="text-xs text-slate-300 italic border-t border-slate-800 pt-2">
-                      💡 {researchResult.notes}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         )}

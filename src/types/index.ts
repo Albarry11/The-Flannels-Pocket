@@ -62,6 +62,7 @@ export interface Song {
   stems: StemTrack[];
   lyrics?: string;      // raw LRC or plain text
   createdAt: number;
+  artworkUrl?: string;  // Image URL / cover art
   qualityAnalysis?: AudioQualityReport;
   replayGain?: ReplayGainReport;
   bpmKeyAnalysis?: BpmKeyAnalysis;
