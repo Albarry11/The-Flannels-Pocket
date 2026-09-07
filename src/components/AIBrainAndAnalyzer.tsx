@@ -4,6 +4,7 @@ import {
   fetchAIBrainAnalysis,
   askAIBandProducer,
 } from '../services/aiBrain';
+import { saveSongToStorage } from '../services/storage';
 import {
   Brain,
   MessageSquare,
@@ -18,6 +19,7 @@ import {
   Mic,
   Guitar,
   Sliders,
+  RefreshCw,
 } from 'lucide-react';
 
 interface AIBrainAndAnalyzerProps {
@@ -41,15 +43,28 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  useEffect(() => {
-    if (currentSong) {
-      setIsLoadingCoaching(true);
-      fetchAIBrainAnalysis(currentSong, setProgressMsg)
-        .then((report) => setCoaching(report))
-        .catch((err) => console.warn('AI analysis error:', err))
-        .finally(() => setIsLoadingCoaching(false));
+  const runCoachingAnalysis = (force: boolean = false) => {
+    if (!currentSong) return;
+
+    if (!force && currentSong.coachingReport) {
+      setCoaching(currentSong.coachingReport);
+      return;
     }
-  }, [currentSong]);
+
+    setIsLoadingCoaching(true);
+    fetchAIBrainAnalysis(currentSong, setProgressMsg)
+      .then(async (report) => {
+        setCoaching(report);
+        currentSong.coachingReport = report;
+        await saveSongToStorage(currentSong);
+      })
+      .catch((err) => console.warn('AI analysis error:', err))
+      .finally(() => setIsLoadingCoaching(false));
+  };
+
+  useEffect(() => {
+    runCoachingAnalysis(false);
+  }, [currentSong?.id]);
 
   const handleSendChat = async (presetText?: string) => {
     const textToSend = presetText || chatInput.trim();
@@ -114,41 +129,55 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex bg-white/80 p-1 rounded-full border border-sky-200/80 text-xs font-bold shadow-xs">
-          <button
-            onClick={() => setActiveTab('coaching')}
-            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
-              activeTab === 'coaching'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                : 'text-sky-900 hover:text-sky-600'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Kulik Personil</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                : 'text-sky-900 hover:text-sky-600'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Tanya Produser</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('quality')}
-            className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
-              activeTab === 'quality'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                : 'text-sky-900 hover:text-sky-600'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Kualitas Audio</span>
-          </button>
+        {/* Tab Buttons & Refresh */}
+        <div className="flex items-center gap-2">
+          {activeTab === 'coaching' && coaching && (
+            <button
+              onClick={() => runCoachingAnalysis(true)}
+              disabled={isLoadingCoaching}
+              className="px-3 py-1 rounded-full bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-xs font-bold transition flex items-center gap-1 shadow-xs"
+              title="Analisis ulang aransemen via Gemini"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Analisis Ulang</span>
+            </button>
+          )}
+
+          <div className="flex bg-white/80 p-1 rounded-full border border-sky-200/80 text-xs font-bold shadow-xs">
+            <button
+              onClick={() => setActiveTab('coaching')}
+              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
+                activeTab === 'coaching'
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                  : 'text-sky-900 hover:text-sky-600'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Kulik Personil</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
+                activeTab === 'chat'
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                  : 'text-sky-900 hover:text-sky-600'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Tanya Produser</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('quality')}
+              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
+                activeTab === 'quality'
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
+                  : 'text-sky-900 hover:text-sky-600'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Kualitas Audio</span>
+            </button>
+          </div>
         </div>
       </div>
 

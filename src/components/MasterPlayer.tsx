@@ -17,6 +17,7 @@ import {
   Music,
   Info,
   CheckCircle2,
+  Disc,
 } from 'lucide-react';
 import { formatSecondsToTime, transposeChord } from '../services/lyricsManager';
 import { globalMetronome } from '../services/metronomeEngine';
@@ -117,19 +118,16 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   };
 
   return (
-    <div className="fixed bottom-3 inset-x-2 sm:inset-x-6 md:inset-x-8 max-w-7xl mx-auto rounded-3xl sm:rounded-full bg-white/65 backdrop-blur-3xl border border-white/90 shadow-[0_16px_45px_rgba(2,132,199,0.18)] p-2.5 sm:p-3.5 z-40 relative overflow-visible">
-      {/* Ripple Water Drops at Corners (Point 6) */}
-      <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-cyan-400/20 blur-xs pointer-events-none" />
-      <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-sky-400/20 blur-xs pointer-events-none" />
-      <div className="absolute -bottom-1.5 -left-1.5 w-6 h-6 rounded-full bg-blue-400/20 blur-xs pointer-events-none" />
-      <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-teal-400/20 blur-xs pointer-events-none" />
-
-      {/* Top Specular Glass Reflection */}
-      <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none rounded-t-full" />
+    <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/75 backdrop-blur-3xl border-t border-white/90 shadow-[0_-8px_32px_rgba(2,132,199,0.14)] px-3 sm:px-6 py-2.5 transition-all">
+      {/* Top Ripple Water Droplet Refractions (Point 6) */}
+      <div className="absolute top-0 left-8 w-24 h-1 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-xs pointer-events-none" />
+      <div className="absolute top-0 right-8 w-24 h-1 bg-gradient-to-r from-transparent via-sky-400/40 to-transparent blur-xs pointer-events-none" />
+      <div className="absolute -top-1 left-2 w-3 h-3 rounded-full bg-cyan-400/30 blur-xs pointer-events-none" />
+      <div className="absolute -top-1 right-2 w-3 h-3 rounded-full bg-sky-400/30 blur-xs pointer-events-none" />
 
       {/* Advanced Metronome Popover Panel (Point 4) */}
       {showAdvancedMetronome && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-80 sm:w-96 rounded-3xl bg-white/90 backdrop-blur-3xl border border-sky-300 p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-xs text-[#0f2942]">
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-80 sm:w-96 rounded-3xl bg-white/95 backdrop-blur-3xl border border-sky-300 p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-xs text-[#0f2942]">
           <div className="flex items-center justify-between border-b border-sky-100 pb-2 mb-3">
             <span className="font-extrabold text-sky-900 flex items-center gap-1.5">
               <Settings2 className="w-4 h-4 text-sky-600" />
@@ -144,7 +142,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           <div className="space-y-3">
-            {/* Time Signature */}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-slate-600">Birama:</span>
               <div className="flex gap-1">
@@ -164,7 +161,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               </div>
             </div>
 
-            {/* Sound Preset */}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-slate-600">Pilihan Suara:</span>
               <div className="flex gap-1">
@@ -184,7 +180,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               </div>
             </div>
 
-            {/* Tap Tempo */}
             <div className="pt-1 flex items-center justify-between">
               <span className="font-semibold text-slate-600">Manual Tap:</span>
               <button
@@ -201,10 +196,10 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
       {/* Verified BPM & Key Source Info Tooltip (Point 4) */}
       {showSourceInfo && (
-        <div className="absolute bottom-20 right-16 sm:right-28 max-w-xs rounded-2xl bg-white/95 backdrop-blur-2xl border border-sky-300 p-3 shadow-2xl z-50 text-[11px] text-[#0f2942] animate-in fade-in duration-100">
+        <div className="absolute bottom-24 left-72 max-w-xs rounded-2xl bg-white/95 backdrop-blur-2xl border border-sky-300 p-3 shadow-2xl z-50 text-[11px] text-[#0f2942] animate-in fade-in duration-100">
           <div className="flex items-center gap-1.5 text-emerald-700 font-bold mb-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Sumber Terverifikasi</span>
+            <span>Sumber Riset AI Terverifikasi</span>
           </div>
           <p className="font-medium text-slate-700">
             <strong>Sumber:</strong> {currentSong?.verifiedSource || 'SongBPM / Tunebat / Master Audio'}
@@ -217,76 +212,104 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        {/* Seekbar and Timeline */}
-        <div className="flex flex-col gap-0.5 px-2">
-          <div className="relative w-full flex items-center group">
-            {/* Glass Track Background */}
-            <div className="w-full h-2 bg-sky-100/90 rounded-full overflow-hidden relative cursor-pointer border border-sky-200 shadow-inner">
-              {/* Loop Region Highlight */}
-              {loopRegion.enabled && (
-                <div
-                  className="absolute top-0 bottom-0 bg-amber-400/45 border-x-2 border-amber-500 z-10"
-                  style={{
-                    left: `${loopStartPercent}%`,
-                    width: `${Math.max(0, loopEndPercent - loopStartPercent)}%`,
-                  }}
-                />
-              )}
-              {/* Progress Fill with Cyan to Blue Gradient */}
-              <div
-                className="h-full bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 rounded-full transition-all duration-75 relative"
-                style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute right-0 top-0 bottom-0 w-2.5 bg-white rounded-full shadow-[0_0_8px_#0284c7]" />
-              </div>
-            </div>
-
-            {/* Scrub Input */}
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              step="0.05"
-              value={currentTime}
-              onChange={(e) => onSeek(parseFloat(e.target.value))}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              title="Scrub timeline"
+      {/* Edge-to-Edge Thin Progress Scrubber Bar on Top Edge */}
+      <div className="relative w-full flex items-center group -mt-2 mb-1.5">
+        <div className="w-full h-1.5 bg-sky-200/60 rounded-full overflow-hidden relative cursor-pointer border border-white/80">
+          {loopRegion.enabled && (
+            <div
+              className="absolute top-0 bottom-0 bg-amber-400/50 border-x-2 border-amber-500 z-10"
+              style={{
+                left: `${loopStartPercent}%`,
+                width: `${Math.max(0, loopEndPercent - loopStartPercent)}%`,
+              }}
             />
-          </div>
-
-          <div className="flex justify-between items-center text-[11px] font-mono text-sky-900 font-bold px-1 pt-0.5">
-            <span>{formatSecondsToTime(currentTime)}</span>
-            <div className="flex items-center gap-3">
-              {loopRegion.enabled && (
-                <span className="text-amber-800 text-[10px] font-sans font-bold">
-                  A-B Loop: [{formatSecondsToTime(loopRegion.start)} - {formatSecondsToTime(loopRegion.end)}]
-                </span>
-              )}
-              <span className="text-slate-500 font-normal">{formatSecondsToTime(duration)}</span>
-            </div>
+          )}
+          <div
+            className="h-full bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 rounded-full transition-all duration-75 relative"
+            style={{ width: `${progressPercent}%` }}
+          >
+            <div className="absolute right-0 top-0 bottom-0 w-2.5 bg-white rounded-full shadow-[0_0_8px_#0284c7]" />
           </div>
         </div>
+        <input
+          type="range"
+          min="0"
+          max={duration || 100}
+          step="0.05"
+          value={currentTime}
+          onChange={(e) => onSeek(parseFloat(e.target.value))}
+          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          title="Scrub timeline"
+        />
+      </div>
 
-        {/* Controls Row: Bunder-Bunder Glassy Pills (Point 6) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          
-          {/* Left: Transport Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Stop Button */}
+      {/* Main Modern Streaming 3-Column Dock (Spotify / Apple Music Style) */}
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        
+        {/* LEFT COLUMN: Song Artwork + Title + Artist + Badges (Point 4) */}
+        <div className="flex items-center gap-3 min-w-[220px] max-w-[320px] flex-shrink-0">
+          {currentSong ? (
+            <>
+              {/* Song Thumbnail Image (Point 4) */}
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md border border-white flex-shrink-0 bg-sky-100">
+                {currentSong.artworkUrl ? (
+                  <img
+                    src={currentSong.artworkUrl}
+                    alt={currentSong.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white">
+                    <Disc className="w-6 h-6 animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Title, Artist, & Badges (BPM, Key, Stems) */}
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-extrabold text-[#0f2942] truncate tracking-tight leading-tight">
+                  {currentSong.title}
+                </h4>
+                <p className="text-xs text-sky-700 font-semibold truncate">
+                  by {currentSong.artist}
+                </p>
+
+                {/* Metadata Badges right under/next to song title (Point 4) */}
+                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-mono">
+                  <span className="px-1.5 py-0.2 rounded-full bg-sky-100 border border-sky-300 text-sky-900 font-bold">
+                    {currentSong.bpm} BPM
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold">
+                    {currentSong.originalKey}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
+                    {currentSong.stems.length} Stems
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-xs text-slate-400 italic">Belum ada lagu yang dimuat</div>
+          )}
+        </div>
+
+        {/* CENTER COLUMN: Transport, Count-In, Loop, Metronome + Key (Point 4 & 6) */}
+        <div className="flex flex-col items-center justify-center flex-1 max-w-xl">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Stop */}
             <button
               onClick={onStop}
-              className="w-10 h-10 rounded-full bg-white/90 text-slate-700 hover:text-black hover:bg-white border border-sky-200 transition shadow-xs flex items-center justify-center active:scale-90"
+              className="w-9 h-9 rounded-full bg-white/90 text-slate-700 hover:text-black hover:bg-white border border-sky-200 transition shadow-xs flex items-center justify-center active:scale-90"
               title="Stop"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
             </button>
 
-            {/* Glass Orb Play Button */}
+            {/* Play/Pause Orb */}
             <button
               onClick={isPlaying ? onPause : onPlay}
               disabled={countInActive}
-              className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white flex items-center justify-center hover:scale-105 active:scale-90 transition shadow-[0_0_20px_rgba(2,132,199,0.5)] border-2 border-white relative overflow-hidden flex-shrink-0"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white flex items-center justify-center hover:scale-105 active:scale-90 transition shadow-[0_0_18px_rgba(2,132,199,0.5)] border-2 border-white relative overflow-hidden flex-shrink-0"
               title={isPlaying ? 'Pause' : 'Play'}
             >
               <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full pointer-events-none" />
@@ -297,11 +320,11 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               )}
             </button>
 
-            {/* Count-In Capsule */}
+            {/* Count-In */}
             <button
               onClick={onPlayWithCountIn}
               disabled={isPlaying || countInActive}
-              className={`px-3 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 border shadow-xs active:scale-95 ${
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1 border shadow-xs active:scale-95 ${
                 countInActive
                   ? 'bg-amber-400 text-black border-amber-500 animate-bounce'
                   : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
@@ -312,8 +335,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <span>{countInActive ? `Count: ${countInBeat}` : 'Count-In (4)'}</span>
             </button>
 
-            {/* A-B Loop Capsule */}
-            <div className="flex items-center gap-1 bg-white/80 p-1 rounded-full border border-sky-200 text-xs shadow-xs">
+            {/* A-B Looper */}
+            <div className="flex items-center gap-0.5 bg-white/80 p-0.5 rounded-full border border-sky-200 text-xs shadow-xs">
               <button
                 onClick={onSetLoopStart}
                 className="px-2 py-0.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-mono font-bold"
@@ -349,71 +372,67 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 </button>
               )}
             </div>
-          </div>
 
-          {/* Center-Right: UNIFIED METRONOME & KEY HARMONIC CAPSULE (Point 4: tempelkan kontrol key dengan metronome) */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-white/85 px-3 py-1.5 rounded-full border border-sky-200 shadow-xs text-xs">
-              {/* Metronome On/Off Click Button */}
+            {/* UNIFIED METRONOME & ATTACHED KEY CONTROL (Point 4) */}
+            <div className="flex items-center gap-1.5 bg-white/90 px-3 py-1 rounded-full border border-sky-200 shadow-xs text-xs">
+              {/* Metronome Click Toggle */}
               <button
                 onClick={onToggleMetronomeClick}
-                className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold transition ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold transition ${
                   metronomeClickActive
-                    ? 'bg-amber-400 text-black shadow-sm'
+                    ? 'bg-amber-400 text-black shadow-xs'
                     : 'text-sky-950 hover:text-sky-600'
                 }`}
-                title="Nyalakan/Matikan Metronome Click"
+                title="Metronome Click ON/OFF"
               >
                 <Radio className="w-3.5 h-3.5 text-amber-600" />
-                <span>Metronome</span>
+                <span className="hidden sm:inline">Metronome</span>
               </button>
 
               {/* BPM Steppers */}
-              <div className="flex items-center gap-1 font-mono text-sky-950 font-bold border-l border-sky-200 pl-2">
+              <div className="flex items-center gap-1 font-mono text-sky-950 font-bold border-l border-sky-200 pl-1.5">
                 <button
                   onClick={() => onMetronomeBpmChange(metronomeBpm - 1)}
-                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[11px]"
-                  title="Kurangi 1 BPM"
+                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[10px]"
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="min-w-[2.5rem] text-center text-[#0f2942]">{metronomeBpm}</span>
+                <span className="min-w-[2.2rem] text-center text-[#0f2942] font-black">{metronomeBpm}</span>
                 <button
                   onClick={() => onMetronomeBpmChange(metronomeBpm + 1)}
-                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[11px]"
-                  title="Tambah 1 BPM"
+                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[10px]"
                 >
                   <Plus className="w-2.5 h-2.5" />
                 </button>
               </div>
 
-              {/* Advanced Metronome Settings Gear Button (Point 4) */}
+              {/* Advance Gear */}
               <button
                 onClick={() => setShowAdvancedMetronome(!showAdvancedMetronome)}
                 className={`p-1 rounded-full transition ${
                   showAdvancedMetronome ? 'bg-sky-200 text-sky-800' : 'text-slate-400 hover:text-sky-600'
                 }`}
-                title="Pengaturan Advance Metronome (Birama, Suara, Tap Tempo)"
+                title="Advance Metronome (Birama, Suara, Tap Tempo)"
               >
                 <Settings2 className="w-3.5 h-3.5" />
               </button>
 
-              {/* ATTACHED KEY CONTROL (Point 4: Menempel Langsung dengan Metronome) */}
-              <div className="flex items-center gap-1 border-l-2 border-sky-300 pl-2.5 ml-1">
+              {/* ATTACHED KEY (Point 4: Menempel Langsung) */}
+              <div className="flex items-center gap-1 border-l-2 border-sky-300 pl-2 ml-1">
                 <Music2 className="w-3.5 h-3.5 text-pink-600" />
                 <button
                   onClick={() => onPitchChange(pitchSemitones - 1)}
-                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[11px]"
+                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[10px]"
                   title="Turun 1 semitone"
                 >
                   -
                 </button>
-                <span className="font-mono font-extrabold text-[#0f2942] min-w-[1.6rem] text-center">
+                <span className="font-mono font-extrabold text-[#0f2942] min-w-[1.4rem] text-center">
                   {pitchSemitones > 0 ? `+${pitchSemitones}` : pitchSemitones}
                 </span>
                 <button
                   onClick={() => onPitchChange(pitchSemitones + 1)}
-                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[11px]"
+                  className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[10px]"
                   title="Naik 1 semitone"
                 >
                   +
@@ -423,7 +442,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     {currentKeyTransposed}
                   </span>
                 )}
-                {/* Verified Source Icon (Point 4) */}
+                {/* Info Tooltip */}
                 <button
                   onClick={() => setShowSourceInfo(!showSourceInfo)}
                   className="text-slate-400 hover:text-emerald-600 ml-0.5"
@@ -433,69 +452,77 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 </button>
               </div>
             </div>
-
-            {/* Speed Capsule */}
-            <div className="flex items-center gap-1.5 bg-white/80 px-3 py-1.5 rounded-full border border-sky-200 shadow-xs text-xs">
-              <Gauge className="w-3.5 h-3.5 text-sky-600" />
-              <select
-                value={speed}
-                onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
-                className="bg-transparent text-sky-900 text-xs font-mono font-bold focus:outline-none cursor-pointer"
-              >
-                <option value={0.5}>0.50x</option>
-                <option value={0.75}>0.75x</option>
-                <option value={0.9}>0.90x</option>
-                <option value={1.0}>1.00x</option>
-                <option value={1.1}>1.10x</option>
-                <option value={1.25}>1.25x</option>
-                <option value={1.5}>1.50x</option>
-              </select>
-            </div>
-
-            {/* ReplayGain Capsule */}
-            <button
-              onClick={onToggleReplayGain}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-bold transition active:scale-95 shadow-xs ${
-                replayGainEnabled
-                  ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm'
-                  : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
-              }`}
-              title="Normalisasi kenyaringan ReplayGain (-14 LUFS)"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>RG</span>
-              {replayGainEnabled && replayGainDb !== 0 && (
-                <span className="text-[10px] font-mono">
-                  ({replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB)
-                </span>
-              )}
-            </button>
-
-            {/* Volume Capsule */}
-            <div className="flex items-center gap-2 bg-white/80 px-3 py-1.5 rounded-full border border-sky-200 shadow-xs">
-              <button
-                onClick={() => onMasterVolumeChange(masterVolume === 0 ? 1.0 : 0)}
-                className="text-sky-700 hover:text-sky-900 transition"
-              >
-                {masterVolume === 0 ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5" />}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={masterVolume}
-                onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
-                className="w-16 sm:w-20 h-2 cursor-pointer"
-                title="Master Volume"
-              />
-              <span className="text-[10px] font-mono text-sky-900 font-bold w-7 text-right">
-                {Math.round(masterVolume * 100)}%
-              </span>
-            </div>
           </div>
 
+          {/* Time text indicator under center buttons */}
+          <div className="text-[10px] font-mono text-sky-800 font-bold pt-0.5">
+            <span>{formatSecondsToTime(currentTime)}</span> / <span>{formatSecondsToTime(duration)}</span>
+          </div>
         </div>
+
+        {/* RIGHT COLUMN: Speed, ReplayGain, Volume */}
+        <div className="flex items-center gap-2 min-w-[200px] justify-end flex-shrink-0">
+          {/* Speed */}
+          <div className="flex items-center gap-1 bg-white/80 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs text-xs">
+            <Gauge className="w-3.5 h-3.5 text-sky-600" />
+            <select
+              value={speed}
+              onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
+              className="bg-transparent text-sky-900 text-xs font-mono font-bold focus:outline-none cursor-pointer"
+            >
+              <option value={0.5}>0.5x</option>
+              <option value={0.75}>0.75x</option>
+              <option value={0.9}>0.9x</option>
+              <option value={1.0}>1.0x</option>
+              <option value={1.1}>1.1x</option>
+              <option value={1.25}>1.25x</option>
+              <option value={1.5}>1.5x</option>
+            </select>
+          </div>
+
+          {/* ReplayGain */}
+          <button
+            onClick={onToggleReplayGain}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-bold transition active:scale-95 shadow-xs ${
+              replayGainEnabled
+                ? 'bg-emerald-500 text-white border-emerald-400 shadow-xs'
+                : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
+            }`}
+            title={`Normalisasi kenyaringan ReplayGain (-14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>RG</span>
+            {replayGainEnabled && replayGainDb !== 0 && (
+              <span className="text-[10px] font-mono font-bold">
+                ({replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB)
+              </span>
+            )}
+          </button>
+
+          {/* Volume */}
+          <div className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs">
+            <button
+              onClick={() => onMasterVolumeChange(masterVolume === 0 ? 1.0 : 0)}
+              className="text-sky-700 hover:text-sky-900 transition"
+            >
+              {masterVolume === 0 ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={masterVolume}
+              onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
+              className="w-14 sm:w-18 h-1.5 cursor-pointer"
+              title="Master Volume"
+            />
+            <span className="text-[10px] font-mono text-sky-900 font-bold w-6 text-right">
+              {Math.round(masterVolume * 100)}%
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

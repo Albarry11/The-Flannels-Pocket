@@ -53,6 +53,13 @@ const ROLE_CONFIG: Record<
     borderAccent: 'border-indigo-400',
     icon: <Sliders className="w-4 h-4 text-indigo-600" />,
   },
+  piano: {
+    label: 'Keys',
+    personil: 'Keyboard / Piano',
+    color: '#3b82f6',
+    borderAccent: 'border-blue-400',
+    icon: <Music className="w-4 h-4 text-blue-600" />,
+  },
   other: {
     label: 'Master',
     personil: 'Backing',

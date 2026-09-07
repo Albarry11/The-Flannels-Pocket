@@ -1,0 +1,144 @@
+import os
+import uuid
+import asyncio
+import shutil
+import tempfile
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from separator_worker import DemucsSeparatorWorker
+
+app = FastAPI(title="The Flannels Pocket - Demucs Audio Separation API", version="1.0.0")
+
+# Enable CORS for frontend client
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+JOBS_DIR = os.path.join(tempfile.gettempdir(), "flannels_demucs_jobs")
+os.makedirs(JOBS_DIR, exist_ok=True)
+
+# In-memory job state store
+jobs: dict[str, dict] = {}
+worker: DemucsSeparatorWorker | None = None
+
+def get_worker():
+    global worker
+    if worker is None:
+        worker = DemucsSeparatorWorker(model_name="htdemucs_6s")
+    return worker
+
+@app.get("/api/health")
+def health_check():
+    w = get_worker()
+    return {
+        "status": "online",
+        "engine": "Meta Demucs htdemucs_6s",
+        "device": w.device,
+        "cuda_available": w.device == "cuda",
+    }
+
+def run_separation_job(job_id: str, input_path: str, output_dir: str):
+    jobs[job_id]["status"] = "processing"
+    jobs[job_id]["progress"] = 0.1
+    jobs[job_id]["message"] = "Memulai neural stem separation..."
+
+    def on_progress(percent: float, message: str):
+        jobs[job_id]["progress"] = percent
+        jobs[job_id]["message"] = message
+
+    try:
+        w = get_worker()
+        stem_paths = w.separate_to_flac(input_path, output_dir, progress_callback=on_progress)
+
+        stem_urls = {}
+        for stem_name in stem_paths.keys():
+            stem_urls[stem_name] = f"/api/stems/{job_id}/{stem_name}"
+
+        jobs[job_id]["status"] = "completed"
+        jobs[job_id]["progress"] = 1.0
+        jobs[job_id]["message"] = "Pemisahan selesai!"
+        jobs[job_id]["stems"] = stem_urls
+    except Exception as e:
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = str(e)
+        jobs[job_id]["message"] = f"Gagal memisahkan stem: {e}"
+    finally:
+        # Clean up original input file to save disk space
+        if os.path.exists(input_path):
+            try:
+                os.remove(input_path)
+            except _:
+                pass
+
+@app.post("/api/separate")
+async def create_separation_job(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    job_id = str(uuid.uuid4())
+    job_dir = os.path.join(JOBS_DIR, job_id)
+    os.makedirs(job_dir, exist_ok=True)
+
+    # Save uploaded audio file
+    input_ext = os.path.splitext(file.filename or "audio.mp3")[1] or ".mp3"
+    input_path = os.path.join(job_dir, f"source{input_ext}")
+
+    with open(input_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    jobs[job_id] = {
+        "id": job_id,
+        "filename": file.filename,
+        "status": "queued",
+        "progress": 0.05,
+        "message": "File audio diunggah, menunggu worker...",
+        "stems": {},
+        "dir": job_dir,
+    }
+
+    # Dispatch to background task queue
+    background_tasks.add_task(run_separation_job, job_id, input_path, job_dir)
+
+    return {
+        "job_id": job_id,
+        "status": "queued",
+        "check_status_url": f"/api/status/{job_id}",
+    }
+
+@app.get("/api/status/{job_id}")
+def get_job_status(job_id: str):
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan")
+    job = jobs[job_id]
+    return {
+        "job_id": job_id,
+        "status": job.get("status"),
+        "progress": job.get("progress", 0),
+        "message": job.get("message", ""),
+        "stems": job.get("stems", {}),
+        "error": job.get("error"),
+    }
+
+@app.get("/api/stems/{job_id}/{stem_name}")
+def download_stem(job_id: str, stem_name: str):
+    job_dir = os.path.join(JOBS_DIR, job_id)
+    flac_path = os.path.join(job_dir, f"{stem_name}.flac")
+
+    if not os.path.exists(flac_path):
+        raise HTTPException(status_code=404, detail=f"Stem '{stem_name}.flac' tidak ditemukan")
+
+    return FileResponse(
+        flac_path,
+        media_type="audio/flac",
+        filename=f"{stem_name}.flac",
+    )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

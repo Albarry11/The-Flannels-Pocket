@@ -2,7 +2,7 @@ import { get, set, del, keys } from 'idb-keyval';
 import type { Song, StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
-import { separateAudioIntoStems } from './stemSeparator';
+import { processSeparationWithFallback } from './stemApi';
 import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
 import { extractEmbeddedArtwork } from './embeddedArtwork';
 
@@ -125,8 +125,8 @@ export async function createSongFromFiles(
     masterBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
     maxDuration = masterBuffer.duration;
 
-    options?.onProgress?.('AI Stem Splitter: Memisahkan vokal dan instrumen...');
-    stems = await separateAudioIntoStems(masterBuffer, options?.onProgress);
+    options?.onProgress?.('AI Stem Separator: Memisahkan vokal dan instrumen...');
+    stems = await processSeparationWithFallback(file, masterBuffer, options?.onProgress);
   } else {
     // MULTI-STEM UPLOAD -> Map each stem file
     for (const sf of stemFiles) {

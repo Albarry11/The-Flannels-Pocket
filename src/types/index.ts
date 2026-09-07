@@ -1,4 +1,4 @@
-export type StemRole = 'vocal' | 'lead' | 'rhythm' | 'bass' | 'drums' | 'other';
+export type StemRole = 'vocal' | 'lead' | 'rhythm' | 'bass' | 'drums' | 'piano' | 'other';
 
 export interface StemTrack {
   id: string;
@@ -65,6 +65,7 @@ export interface Song {
   artworkUrl?: string;  // Image URL / cover art
   verifiedSource?: string; // e.g. "SongBPM / Tunebat / Master Audio Recording"
   researchNotes?: string;  // e.g. "Progresi verse C - Em - F - G, tuning A440"
+  coachingReport?: AICoachingReport; // Cached Tilikan AI analysis
   qualityAnalysis?: AudioQualityReport;
   replayGain?: ReplayGainReport;
   bpmKeyAnalysis?: BpmKeyAnalysis;
