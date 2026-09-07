@@ -1,4 +1,4 @@
-export type StemRole = 'vocal' | 'lead' | 'rhythm' | 'bass' | 'drums' | 'piano' | 'other';
+export type StemRole = 'vocal' | 'guitar' | 'lead' | 'rhythm' | 'bass' | 'drums' | 'piano' | 'other';
 
 export interface StemTrack {
   id: string;

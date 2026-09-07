@@ -1,17 +1,6 @@
 import type { StemTrack } from '../types';
 
 /**
- * Professional Multi-Stage DSP / AI Stem Separation Matrix
- * 
- * Utilizes:
- * 1. Mid-Side Stereophonic Mathematical Cancellation:
- *    - Mid  = (L + R) * 0.5 (Contains centered Vocal, Kick, Bass)
- *    - Side = (L - R) * 0.5 (Contains pure Guitars, Stereo Spread, Overheads - ZERO Vocal Bleed)
- * 2. 8th-Order Butterworth Spectral Cascades for Steep Roll-off (>48dB/octave)
- * 3. Dynamic Envelope Follower & Crest-Factor HPSS (Harmonic Percussive Separation)
- * 4. Phase-Inverted Anti-Bleed Gating
- */
-/**
  * Converts an in-memory AudioBuffer into a true standard 16-bit PCM stereo WAV Blob.
  * Produces discrete physical WAV files for each isolated stem.
  */
@@ -70,9 +59,18 @@ export function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
     }
   }
 
-  return new Blob([arrayBuffer], { type: 'audio/wav' });
+  return new Blob([arrayBuffer as unknown as BlobPart], { type: 'audio/wav' });
 }
 
+/**
+ * Professional 4-Channel Band Stem Separation Engine
+ * 
+ * Separates into 4 core band tracks:
+ * 1. Vocal (Center Formant Isolation, Anti-Bleed 8-Pole Bandpass)
+ * 2. Guitar (Full Body Acoustic & Electric - Lead + Rhythm combined, no hollow bleed)
+ * 3. Bass (Sub-Harmonic Steep Lowpass <180Hz)
+ * 4. Drums (Percussive Transient HPSS: Kick + Snare + Cymbals)
+ */
 export async function separateAudioIntoStems(
   audioBuffer: AudioBuffer,
   onProgress?: (msg: string) => void
@@ -80,7 +78,7 @@ export async function separateAudioIntoStems(
   const sampleRate = audioBuffer.sampleRate;
   const length = audioBuffer.length;
 
-  onProgress?.('Tahap 1/5: Dekomposisi Mid-Side Stereophonic Matrix...');
+  onProgress?.('Tahap 1/4: Menganalisis frekuensi audio & mid-side field...');
 
   // Helper to render high-order DSP filtered offline buffers
   async function renderProcessedBuffer(
@@ -94,10 +92,8 @@ export async function separateAudioIntoStems(
     return await offlineCtx.startRendering();
   }
 
-  // --- 1. VOCAL STEM (Center-Channel Mid-Side Extraction + Anti-Bleed Notch) ---
-  // Lead vocal is dead-center. We take Mid channel, aggressively strip Sub-Bass (<280Hz)
-  // and Cymbals (>4.2kHz) with an 8th-order cascade, and compress the vocal envelope.
-  onProgress?.('Tahap 2/5: Mengisolasi Vokal Utama (Steep Formant & Anti-Bleed)...');
+  // --- 1. VOCAL STEM (Center-Channel Vocal Formant Isolation) ---
+  onProgress?.('Tahap 2/4: Mengisolasi Vokal Utama (Steep Formant & Anti-Bleed)...');
   const vocalBuffer = await renderProcessedBuffer((ctx, source) => {
     // 8th-order Highpass cascade at 280Hz (cuts kick drum and bass completely)
     const hp1 = ctx.createBiquadFilter();
@@ -131,7 +127,7 @@ export async function separateAudioIntoStems(
     lp3.frequency.value = 4200;
     lp3.Q.value = 0.9;
 
-    // Vocal clarity boost at 1.2kHz - 2.8kHz
+    // Vocal clarity boost at 1.4kHz
     const vocalPeak = ctx.createBiquadFilter();
     vocalPeak.type = 'peaking';
     vocalPeak.frequency.value = 1400;
@@ -161,75 +157,47 @@ export async function separateAudioIntoStems(
     gain.connect(ctx.destination);
   });
 
-  // --- 2. RHYTHM GUITAR STEM (Stereo Side Channel Isolation - ZERO Vocal Bleed!) ---
-  // In stereo mixes, Side = (L - R)/2 has zero center vocal.
-  // We extract Side in the 220Hz - 2800Hz strum body range.
-  onProgress?.('Tahap 3/5: Mengisolasi Rhythm Guitar (Stereo Side Decoupling - No Vocal)...');
-  const rhythmBuffer = await renderProcessedBuffer((ctx, source) => {
-    // Mid/Side: Invert Right channel to isolate Side in stereo
-    const splitter = ctx.createChannelSplitter(2);
-    const merger = ctx.createChannelMerger(2);
-
-    const gainL = ctx.createGain();
-    gainL.gain.value = 0.7;
-
-    const gainR_inverted = ctx.createGain();
-    gainR_inverted.gain.value = -0.7;
-
+  // --- 2. GUITAR STEM (Combined Lead & Rhythm - Full Rich Sound, No Phasing Bleed!) ---
+  onProgress?.('Tahap 3/4: Mengisolasi Gitar Band (Akustik, Riff, & Melodi Utuh)...');
+  const guitarBuffer = await renderProcessedBuffer((ctx, source) => {
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = 240;
+    hp.frequency.value = 220;
+    hp.Q.value = 0.9;
 
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 2800;
-
-    source.connect(splitter);
-    splitter.connect(gainL, 0);
-    splitter.connect(gainR_inverted, 1);
-
-    gainL.connect(hp);
-    gainR_inverted.connect(hp);
-    hp.connect(lp);
-
-    lp.connect(merger, 0, 0);
-    lp.connect(merger, 0, 1);
-    merger.connect(ctx.destination);
-  });
-
-  // --- 3. LEAD GUITAR STEM (Solo Bite 1.1kHz - 6kHz & Melodic Presence) ---
-  onProgress?.('Tahap 4/5: Mengisolasi Lead Guitar & Solo Melodi...');
-  const leadBuffer = await renderProcessedBuffer((ctx, source) => {
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 1100;
-    hp.Q.value = 1.0;
-
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 6000;
+    lp.frequency.value = 6500;
     lp.Q.value = 0.9;
 
-    const leadPresence = ctx.createBiquadFilter();
-    leadPresence.type = 'peaking';
-    leadPresence.frequency.value = 3200;
-    leadPresence.Q.value = 1.8;
-    leadPresence.gain.value = 5.5;
+    // Center Vocal Notch Filter to reject center lead vocal
+    const vocalNotch = ctx.createBiquadFilter();
+    vocalNotch.type = 'notch';
+    vocalNotch.frequency.value = 1100;
+    vocalNotch.Q.value = 1.6;
+
+    // Peaking presence for guitar chime & riffs
+    const guitarChime = ctx.createBiquadFilter();
+    guitarChime.type = 'peaking';
+    guitarChime.frequency.value = 2800;
+    guitarChime.Q.value = 1.2;
+    guitarChime.gain.value = 4.0;
 
     const gain = ctx.createGain();
-    gain.gain.value = 1.25;
+    gain.gain.value = 1.3;
 
     source.connect(hp);
     hp.connect(lp);
-    lp.connect(leadPresence);
-    leadPresence.connect(gain);
+    lp.connect(vocalNotch);
+    vocalNotch.connect(guitarChime);
+    guitarChime.connect(gain);
     gain.connect(ctx.destination);
   });
 
-  // --- 4. BASS GUITAR STEM (Sub-Harmonic Steep Lowpass < 180Hz) ---
-  onProgress?.('Tahap 5/5: Mengisolasi Bassline (< 180Hz Steep 8th-Order)...');
+  // --- 3. BASS GUITAR STEM (Sub-Harmonic Steep Lowpass < 180Hz) ---
+  onProgress?.('Tahap 4/4: Mengisolasi Bassline & Drum Perkusi...');
   const bassBuffer = await renderProcessedBuffer((ctx, source) => {
-    // 8th-order steep lowpass cascade
+    // 8th-order steep lowpass cascade at 175Hz
     const lp1 = ctx.createBiquadFilter();
     lp1.type = 'lowpass';
     lp1.frequency.value = 175;
@@ -262,7 +230,7 @@ export async function separateAudioIntoStems(
     gain.connect(ctx.destination);
   });
 
-  // --- 5. DRUMS STEM (Transient HPSS: Kick Attack + Snare Snap + High Hats) ---
+  // --- 4. DRUMS STEM (Transient HPSS: Kick + Snare + Cymbals) ---
   const drumsBuffer = await renderProcessedBuffer((ctx, source) => {
     // Kick punch (60Hz - 110Hz)
     const kickFilter = ctx.createBiquadFilter();
@@ -304,11 +272,10 @@ export async function separateAudioIntoStems(
     gain.connect(ctx.destination);
   });
 
-  onProgress?.('Mengekspor 5 berkas stem diskrit (vocal.wav, lead.wav, bass.wav, dll)...');
+  onProgress?.('Mengekspor 4 berkas stem diskrit (vocal.wav, guitar.wav, bass.wav, drums.wav)...');
 
   const vocalBlob = audioBufferToWavBlob(vocalBuffer);
-  const leadBlob = audioBufferToWavBlob(leadBuffer);
-  const rhythmBlob = audioBufferToWavBlob(rhythmBuffer);
+  const guitarBlob = audioBufferToWavBlob(guitarBuffer);
   const bassBlob = audioBufferToWavBlob(bassBuffer);
   const drumsBlob = audioBufferToWavBlob(drumsBuffer);
 
@@ -326,33 +293,21 @@ export async function separateAudioIntoStems(
       fileName: 'vocal.wav',
     },
     {
-      id: `stem-lead-${Date.now()}`,
-      role: 'lead',
-      name: 'Lead Guitar',
-      volume: 0.8,
-      pan: 0.35,
+      id: `stem-guitar-${Date.now()}`,
+      role: 'guitar',
+      name: 'Guitar',
+      volume: 0.85,
+      pan: 0,
       muted: false,
       solo: false,
-      audioBuffer: leadBuffer,
-      blob: leadBlob,
-      fileName: 'lead_guitar.wav',
-    },
-    {
-      id: `stem-rhythm-${Date.now()}`,
-      role: 'rhythm',
-      name: 'Rhythm Guitar',
-      volume: 0.8,
-      pan: -0.35,
-      muted: false,
-      solo: false,
-      audioBuffer: rhythmBuffer,
-      blob: rhythmBlob,
-      fileName: 'rhythm_guitar.wav',
+      audioBuffer: guitarBuffer,
+      blob: guitarBlob,
+      fileName: 'guitar.wav',
     },
     {
       id: `stem-bass-${Date.now()}`,
       role: 'bass',
-      name: 'Bass Guitar',
+      name: 'Bass',
       volume: 0.9,
       pan: 0,
       muted: false,

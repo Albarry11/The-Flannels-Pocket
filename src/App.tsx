@@ -9,7 +9,7 @@ import { VerticalStemMixer } from './components/VerticalStemMixer';
 import { CoverSongLibrary } from './components/CoverSongLibrary';
 import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
-import { Sliders, Folder, FileText, Brain, Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Sliders, Folder, FileText, Brain, Loader2 } from 'lucide-react';
 
 export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
@@ -18,7 +18,7 @@ export function App() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('mixer');
-  const [isNavOpen, setIsNavOpen] = useState<boolean>(true); // Point 7: Nav Bar Hide & Show
+  const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -33,7 +33,7 @@ export function App() {
   const [countInActive, setCountInActive] = useState<boolean>(false);
   const [countInBeat, setCountInBeat] = useState<number>(1);
 
-  // Integrated Metronome State in Master Player (Point 2 & 4)
+  // Integrated Metronome State in Master Player
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
 
@@ -167,7 +167,7 @@ export function App() {
     globalAudioEngine.setReplayGain(gainDb, next);
   };
 
-  // Metronome in player control bar (Point 2 & 4)
+  // Metronome in player control bar
   const handleToggleMetronomeClick = () => {
     const next = !metronomeClickActive;
     setMetronomeClickActive(next);
@@ -180,6 +180,7 @@ export function App() {
     globalMetronome.setBpm(clamped);
     if (currentSong) {
       currentSong.bpm = clamped;
+      saveSongToStorage(currentSong);
     }
   };
 
@@ -228,6 +229,17 @@ export function App() {
     const updated = currentSong.stems.map((s) => ({
       ...s,
       solo: s.role === 'vocal',
+      muted: false,
+    }));
+    setCurrentSong({ ...currentSong, stems: updated });
+    globalAudioEngine.updateStemMuteSoloBatch(updated);
+  };
+
+  const handleSoloGuitarOnly = () => {
+    if (!currentSong) return;
+    const updated = currentSong.stems.map((s) => ({
+      ...s,
+      solo: s.role === 'guitar' || s.role === 'lead' || s.role === 'rhythm',
       muted: false,
     }));
     setCurrentSong({ ...currentSong, stems: updated });
@@ -318,114 +330,99 @@ export function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-sky-800 gap-3">
-        <Loader2 className="w-10 h-10 text-sky-500 animate-spin" />
-        <h2 className="text-base font-bold text-[#0f2942] tracking-tight">The Flannels pocket</h2>
-        <p className="text-xs text-sky-700">Menyiapkan workstation musik...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center text-sky-900 gap-3 bg-sky-100/60">
+        <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
+        <h2 className="text-base font-black text-[#0f2942] tracking-tight">The Flannels pocket</h2>
+        <p className="text-xs text-sky-800 font-medium">Menyiapkan workstation musik...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-hidden">
-      {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass (Image 3) */}
-      <div className="water-drop top-6 right-36" style={{ width: '22px', height: '22px' }} />
-      <div className="water-drop top-24 right-14" style={{ width: '15px', height: '15px' }} />
-      <div className="water-drop top-12 left-72" style={{ width: '18px', height: '18px' }} />
+    <div className="min-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-x-hidden">
+      {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass */}
+      <div className="water-drop top-14 right-36" style={{ width: '22px', height: '22px' }} />
+      <div className="water-drop top-32 right-14" style={{ width: '15px', height: '15px' }} />
+      <div className="water-drop top-16 left-72" style={{ width: '18px', height: '18px' }} />
       <div className="water-drop top-56 left-28" style={{ width: '12px', height: '12px' }} />
       <div className="water-drop bottom-40 right-64" style={{ width: '24px', height: '24px' }} />
       <div className="water-drop bottom-28 left-80" style={{ width: '16px', height: '16px' }} />
-      <div className="water-drop top-36 right-96" style={{ width: '13px', height: '13px' }} />
 
-      {/* Sidebar Toggle Floating Button (Point 7: Nav Bar Hide & Show) */}
-      <button
-        onClick={() => setIsNavOpen(!isNavOpen)}
-        className="fixed left-3 top-3 z-50 p-2 rounded-full bg-white/80 border border-white shadow-md text-sky-900 hover:text-sky-600 hover:bg-white transition active:scale-90"
-        title={isNavOpen ? 'Sembunyikan Menu Samping' : 'Tampilkan Menu Samping'}
-      >
-        {isNavOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-      </button>
+      {/* 1. Full-Width Continuous Windows Vista / Aero Header (Point 4: Full length left to right) */}
+      <Header
+        currentSong={currentSong}
+        activeSoloNames={activeSoloNames}
+        onClearAllSolos={handleClearAllSolos}
+        isNavOpen={isNavOpen}
+        onToggleNav={() => setIsNavOpen(!isNavOpen)}
+      />
 
-      {/* 1. Navbar Flush to the Absolute Left Frame (Aero Spotify Look like image_9abf00.png) */}
-      <aside
-        className={`fixed left-2 top-2.5 bottom-24 z-40 w-16 md:w-20 rounded-3xl aero-panel flex flex-col items-center py-16 justify-center shadow-[0_16px_40px_rgba(2,132,199,0.18)] transition-transform duration-300 ${
-          isNavOpen ? 'translate-x-0' : '-translate-x-28'
-        }`}
-      >
-        {/* Navigation Buttons (Mixer, Library, Lirik, Tilikan) */}
-        <div className="flex flex-col gap-4 w-full px-2">
-          <button
-            onClick={() => setActiveTab('mixer')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
-              activeTab === 'mixer'
-                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                : 'text-sky-950 hover:text-black hover:bg-white/50'
-            }`}
-            title="Mixer Console"
-          >
-            <Sliders className="w-5 h-5 text-emerald-600" />
-            <span className="text-[9px] font-extrabold tracking-tight">Mixer</span>
-          </button>
+      {/* 2. Below Header: Workspace Layout with Collapsible Aero Sidebar */}
+      <div className="flex-1 flex relative w-full overflow-hidden">
+        {/* Collapsible Left Sidebar (like image_f35097.png) */}
+        <aside
+          className={`flex-shrink-0 transition-all duration-300 py-3 pl-3 ${
+            isNavOpen ? 'w-20 sm:w-24 opacity-100' : 'w-0 pl-0 opacity-0 overflow-hidden pointer-events-none'
+          }`}
+        >
+          <div className="w-full h-full rounded-3xl aero-panel flex flex-col items-center py-6 justify-center gap-4 shadow-[0_16px_40px_rgba(2,132,199,0.18)]">
+            <button
+              onClick={() => setActiveTab('mixer')}
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+                activeTab === 'mixer'
+                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+              }`}
+              title="Mixer Console"
+            >
+              <Sliders className="w-5 h-5 text-emerald-600" />
+              <span className="text-[9px] font-extrabold tracking-tight">Mixer</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('library')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
-              activeTab === 'library'
-                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                : 'text-sky-950 hover:text-black hover:bg-white/50'
-            }`}
-            title="Library Lagu Cover"
-          >
-            <Folder className="w-5 h-5 text-sky-600" />
-            <span className="text-[9px] font-extrabold tracking-tight">Library</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+                activeTab === 'library'
+                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+              }`}
+              title="Library Lagu Cover"
+            >
+              <Folder className="w-5 h-5 text-sky-600" />
+              <span className="text-[9px] font-extrabold tracking-tight">Library</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('lyrics')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
-              activeTab === 'lyrics'
-                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                : 'text-sky-950 hover:text-black hover:bg-white/50'
-            }`}
-            title="Lirik & Chord"
-          >
-            <FileText className="w-5 h-5 text-indigo-600" />
-            <span className="text-[9px] font-extrabold tracking-tight">Lirik</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('lyrics')}
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+                activeTab === 'lyrics'
+                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+              }`}
+              title="Lirik & Chord"
+            >
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <span className="text-[9px] font-extrabold tracking-tight">Lirik</span>
+            </button>
 
-          {/* Point 8: Menu AI Brain rename jadi Tilikan */}
-          <button
-            onClick={() => setActiveTab('brain')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
-              activeTab === 'brain'
-                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                : 'text-sky-950 hover:text-black hover:bg-white/50'
-            }`}
-            title="Tilikan"
-          >
-            <Brain className="w-5 h-5 text-purple-600" />
-            <span className="text-[9px] font-extrabold tracking-tight">Tilikan</span>
-          </button>
-        </div>
-      </aside>
+            {/* Point 8: Menu AI Brain rename jadi Tilikan */}
+            <button
+              onClick={() => setActiveTab('brain')}
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+                activeTab === 'brain'
+                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+              }`}
+              title="Tilikan"
+            >
+              <Brain className="w-5 h-5 text-purple-600" />
+              <span className="text-[9px] font-extrabold tracking-tight">Tilikan</span>
+            </button>
+          </div>
+        </aside>
 
-      {/* 2. Main Content Area (Smooth padding adjustment when sidebar toggled) */}
-      <div
-        className={`flex-1 flex flex-col min-w-0 min-h-screen transition-all duration-300 ${
-          isNavOpen ? 'pl-16 md:pl-20' : 'pl-0'
-        }`}
-      >
-        {/* Seamless Header (Point 1 & 4) */}
-        <div className={isNavOpen ? 'pl-0' : 'pl-12'}>
-          <Header
-            currentSong={currentSong}
-            activeSoloNames={activeSoloNames}
-            onClearAllSolos={handleClearAllSolos}
-          />
-        </div>
-
-        {/* Main Spacious View with generous bottom clearance (Point 5: scale robust & no overlap) */}
-        <main className="flex-1 p-3 sm:p-5 pb-56 sm:pb-64 overflow-y-auto">
+        {/* Main View: Padded at bottom so player dock never obstructs it */}
+        <main className="flex-1 p-3 sm:p-5 pb-28 sm:pb-32 overflow-y-auto">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
@@ -436,6 +433,7 @@ export function App() {
                 onToggleMute={handleToggleMute}
                 onToggleSolo={handleToggleSolo}
                 onSoloVocalOnly={handleSoloVocalOnly}
+                onSoloGuitarOnly={handleSoloGuitarOnly}
                 onSoloRhythmSection={handleSoloRhythmSection}
                 onResetAllStems={handleResetAllStems}
               />
@@ -476,39 +474,39 @@ export function App() {
             />
           )}
         </main>
-
-        {/* 3. Master Player (Glassy iOS Floating Capsule with Attached Metronome & Key) (Point 2, 4, 6) */}
-        <MasterPlayer
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={currentSong?.duration || 0}
-          speed={speed}
-          pitchSemitones={pitchSemitones}
-          masterVolume={masterVolume}
-          loopRegion={loopRegion}
-          replayGainEnabled={replayGainEnabled}
-          currentSong={currentSong}
-          countInActive={countInActive}
-          countInBeat={countInBeat}
-          metronomeClickActive={metronomeClickActive}
-          metronomeBpm={metronomeBpm}
-          onPlay={handlePlay}
-          onPlayWithCountIn={handlePlayWithCountIn}
-          onPause={handlePause}
-          onStop={handleStop}
-          onSeek={handleSeek}
-          onSpeedChange={handleSpeedChange}
-          onPitchChange={handlePitchChange}
-          onMasterVolumeChange={handleMasterVolumeChange}
-          onToggleLoop={handleToggleLoop}
-          onSetLoopStart={handleSetLoopStart}
-          onSetLoopEnd={handleSetLoopEnd}
-          onClearLoop={handleClearLoop}
-          onToggleReplayGain={handleToggleReplayGain}
-          onToggleMetronomeClick={handleToggleMetronomeClick}
-          onMetronomeBpmChange={handleMetronomeBpmChange}
-        />
       </div>
+
+      {/* 3. Modern Edge-to-Edge Player Dock */}
+      <MasterPlayer
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={currentSong?.duration || 0}
+        speed={speed}
+        pitchSemitones={pitchSemitones}
+        masterVolume={masterVolume}
+        loopRegion={loopRegion}
+        replayGainEnabled={replayGainEnabled}
+        currentSong={currentSong}
+        countInActive={countInActive}
+        countInBeat={countInBeat}
+        metronomeClickActive={metronomeClickActive}
+        metronomeBpm={metronomeBpm}
+        onPlay={handlePlay}
+        onPlayWithCountIn={handlePlayWithCountIn}
+        onPause={handlePause}
+        onStop={handleStop}
+        onSeek={handleSeek}
+        onSpeedChange={handleSpeedChange}
+        onPitchChange={handlePitchChange}
+        onMasterVolumeChange={handleMasterVolumeChange}
+        onToggleLoop={handleToggleLoop}
+        onSetLoopStart={handleSetLoopStart}
+        onSetLoopEnd={handleSetLoopEnd}
+        onClearLoop={handleClearLoop}
+        onToggleReplayGain={handleToggleReplayGain}
+        onToggleMetronomeClick={handleToggleMetronomeClick}
+        onMetronomeBpmChange={handleMetronomeBpmChange}
+      />
     </div>
   );
 }
