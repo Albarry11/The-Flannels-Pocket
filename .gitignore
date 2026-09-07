@@ -2,6 +2,12 @@
 __pycache__/
 *.py[cod]
 *$py.class
+backend/.venv/
+backend/cloudflared.exe
+backend/*.dmp
+backend/*.pt
+backend/*.pth
+backend/*-job/
 
 # Logs
 logs

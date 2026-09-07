@@ -3,6 +3,7 @@ import uuid
 import asyncio
 import shutil
 import tempfile
+import torch
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -34,12 +35,16 @@ def get_worker():
 
 @app.get("/api/health")
 def health_check():
-    w = get_worker()
+    # Keep health checks lightweight. Never load the 2+ GB Demucs model here.
+    # This allows server + Cloudflare Tunnel to idle with negligible GPU load.
+    cuda_available = torch.cuda.is_available()
     return {
         "status": "online",
         "engine": "Meta Demucs htdemucs_6s",
-        "device": w.device,
-        "cuda_available": w.device == "cuda",
+        "device": "cuda" if cuda_available else "cpu",
+        "cuda_available": cuda_available,
+        "model_loaded": worker is not None,
+        "idle_mode": worker is None,
     }
 
 def run_separation_job(job_id: str, input_path: str, output_dir: str):
@@ -68,6 +73,11 @@ def run_separation_job(job_id: str, input_path: str, output_dir: str):
         jobs[job_id]["error"] = str(e)
         jobs[job_id]["message"] = f"Gagal memisahkan stem: {e}"
     finally:
+        # Release model and GPU VRAM after every job.
+        # Server stays online/lightweight for future friend uploads.
+        if worker is not None:
+            worker.unload_model()
+
         # Clean up original input file to save disk space
         if os.path.exists(input_path):
             try:

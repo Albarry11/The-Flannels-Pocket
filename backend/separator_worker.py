@@ -27,6 +27,13 @@ class DemucsSeparatorWorker:
             print("[Demucs Worker] Model loaded successfully.")
         return self._separator
 
+    def unload_model(self):
+        """Release model weights and CUDA cache after a completed job."""
+        self._separator = None
+        if self.device == "cuda":
+            torch.cuda.empty_cache()
+        print("[Demucs Worker] Idle mode: model unloaded and GPU VRAM released.")
+
     def separate_to_flac(
         self,
         input_audio_path: str,
