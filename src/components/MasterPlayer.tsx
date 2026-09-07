@@ -119,7 +119,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/75 backdrop-blur-3xl border-t border-white/90 shadow-[0_-8px_32px_rgba(2,132,199,0.14)] px-3 sm:px-6 py-2.5 transition-all">
+    <div className="fixed bottom-14 md:bottom-0 left-0 right-0 w-full z-40 bg-white/80 backdrop-blur-3xl border-t border-white/90 shadow-[0_-8px_32px_rgba(2,132,199,0.14)] px-3 sm:px-6 py-2 transition-all">
       {/* Top Ripple Water Droplet Refractions (Point 6) */}
       <div className="absolute top-0 left-8 w-24 h-1 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-xs pointer-events-none" />
       <div className="absolute top-0 right-8 w-24 h-1 bg-gradient-to-r from-transparent via-sky-400/40 to-transparent blur-xs pointer-events-none" />
@@ -319,15 +319,15 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <Square className="w-3.5 h-3.5 fill-current" />
             </button>
 
-            {/* Play/Pause Orb */}
+            {/* Play/Pause Spotify Green Glossy Aero Orb Button (Point 5) */}
             <button
               onClick={isPlaying ? onPause : onPlay}
               disabled={countInActive}
-              className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white flex items-center justify-center hover:scale-105 active:scale-90 transition shadow-[0_0_18px_rgba(2,132,199,0.5)] border-2 border-white relative overflow-hidden flex-shrink-0"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-full aero-play-orb text-white flex items-center justify-center hover:scale-105 active:scale-90 transition relative overflow-hidden flex-shrink-0"
               title={isPlaying ? 'Pause' : 'Play'}
               aria-label={isPlaying ? 'Jeda pemutaran musik' : 'Mulai putar musik'}
             >
-              <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full pointer-events-none" />
+              <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/55 to-transparent rounded-t-full pointer-events-none" />
               {isPlaying ? (
                 <Pause className="w-5 h-5 fill-current relative z-10" />
               ) : (

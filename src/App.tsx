@@ -371,9 +371,9 @@ export function App() {
 
       {/* 2. Below Header: Workspace Layout with Collapsible Aero Sidebar */}
       <div className="flex-1 flex relative w-full overflow-hidden">
-        {/* Collapsible Left Sidebar (like image_f35097.png) */}
+        {/* Collapsible Left Sidebar (like image_f35097.png - Desktop only, hidden on mobile) */}
         <aside
-          className={`flex-shrink-0 transition-all duration-300 py-3 pl-3 ${
+          className={`hidden md:flex flex-shrink-0 transition-all duration-300 py-3 pl-3 ${
             isNavOpen ? 'w-20 sm:w-24 opacity-100' : 'w-0 pl-0 opacity-0 overflow-hidden pointer-events-none'
           }`}
         >
@@ -538,6 +538,50 @@ export function App() {
         onToggleMetronomeClick={handleToggleMetronomeClick}
         onMetronomeBpmChange={handleMetronomeBpmChange}
       />
+
+      {/* 4. Mobile Bottom Navigation Bar (< md, Point 7) */}
+      <nav className="fixed bottom-0 left-0 right-0 h-14 bg-[#08182b]/95 backdrop-blur-3xl border-t border-sky-400/30 flex items-center justify-around z-50 md:hidden px-2 shadow-2xl">
+        <button
+          onClick={() => setActiveTab('mixer')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+            activeTab === 'mixer' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+          }`}
+          aria-label="Buka Mixer"
+        >
+          <Sliders className="w-4 h-4" />
+          <span className="text-[10px]">Mixer</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('library')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+            activeTab === 'library' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+          }`}
+          aria-label="Buka Library"
+        >
+          <Folder className="w-4 h-4" />
+          <span className="text-[10px]">Library</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('lyrics')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+            activeTab === 'lyrics' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+          }`}
+          aria-label="Buka Lirik"
+        >
+          <FileText className="w-4 h-4" />
+          <span className="text-[10px]">Lirik</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('brain')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+            activeTab === 'brain' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+          }`}
+          aria-label="Buka Tilikan"
+        >
+          <Brain className="w-4 h-4" />
+          <span className="text-[10px]">Tilikan</span>
+        </button>
+      </nav>
     </div>
   );
 }
