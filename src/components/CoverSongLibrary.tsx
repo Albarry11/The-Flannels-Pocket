@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import type { Song, StemRole } from '../types';
+import type { Song, StemRole, StemTrack } from '../types';
 import { createSongFromFiles, deleteSongFromStorage, saveSongToStorage } from '../services/storage';
 import { createProceduralDemoSong } from '../services/proceduralSongs';
 import { extractEmbeddedArtwork } from '../services/embeddedArtwork';
-import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon, ShieldCheck } from 'lucide-react';
+import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon, ShieldCheck, ExternalLink, Download, FileAudio, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 import { exportSongPackage } from '../services/cloudDatabase';
 
@@ -77,9 +77,20 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   const [customArtwork, setCustomArtwork] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
+  const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const artworkInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleDownloadStem = (stem: StemTrack, songTitle: string) => {
+    if (!stem.blob) return;
+    const url = URL.createObjectURL(stem.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${songTitle.replace(/[\\/:*?"<>|]/g, '_')}_${stem.fileName || `${stem.role}.wav`}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -356,25 +367,84 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                         </span>
                       </div>
 
-                      {/* Verified Source Attribution Badge (Point 4) */}
+                      {/* Verified Source Attribution Badge with Direct Web Check Link (Point 2) */}
                       {song.verifiedSource && (
-                        <div className="flex items-center gap-1 text-[10px] text-emerald-800 font-bold mt-1.5">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600 flex-shrink-0" />
-                          <span className="truncate">{song.verifiedSource}</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold mt-1.5 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                            <span>{song.verifiedSource}</span>
+                          </span>
+                          {song.sourceUrl && (
+                            <a
+                              href={song.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sky-700 hover:text-sky-900 underline flex items-center gap-0.5 ml-1"
+                              title="Buka web untuk verifikasi silang BPM & Tangga Nada"
+                            >
+                              <span>Cek Web</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-sky-100">
+                      {/* Discrete Folder Badge (Point 4) */}
+                      <div className="mt-2 pt-2 border-t border-sky-100">
+                        <button
+                          onClick={() => setExpandedFolderId(expandedFolderId === song.id ? null : song.id)}
+                          className="w-full flex items-center justify-between text-[11px] font-mono text-sky-900 bg-sky-50/90 hover:bg-sky-100/90 px-2.5 py-1 rounded-xl border border-sky-200 transition"
+                          title="Lihat berkas fisik stem di dalam folder ini"
+                        >
+                          <span className="truncate flex items-center gap-1">
+                            <Folder className="w-3.5 h-3.5 text-sky-600" />
+                            <span>{song.folderName || `Songs/${song.title}/`}</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] text-sky-700 font-sans font-bold flex-shrink-0">
+                            <span>{song.stems.length} Stem WAV</span>
+                            {expandedFolderId === song.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          </span>
+                        </button>
+
+                        {/* Expandable list of discrete files */}
+                        {expandedFolderId === song.id && (
+                          <div className="mt-1.5 p-2 rounded-xl bg-white/90 border border-sky-200 space-y-1 text-[10px] font-mono animate-in fade-in duration-100">
+                            <div className="flex items-center justify-between text-slate-500 pb-1 border-b border-sky-100 text-[9px] uppercase font-bold">
+                              <span>Berkas Audio Diskrit:</span>
+                              <span>Format: WAV Lossless</span>
+                            </div>
+                            {song.stems.map((stem) => (
+                              <div key={stem.id} className="flex items-center justify-between py-0.5 hover:bg-sky-50 px-1.5 rounded">
+                                <span className="flex items-center gap-1.5 text-sky-950 font-bold truncate">
+                                  <FileAudio className="w-3 h-3 text-sky-500 flex-shrink-0" />
+                                  <span className="truncate">{stem.fileName || `${stem.role}.wav`}</span>
+                                </span>
+                                {stem.blob && (
+                                  <button
+                                    onClick={() => handleDownloadStem(stem, song.title)}
+                                    className="text-sky-600 hover:text-sky-900 p-0.5 rounded hover:bg-sky-100"
+                                    title={`Unduh ${stem.fileName || `${stem.role}.wav`}`}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-sky-100">
                         <button
                           onClick={() => onSelectSong(song)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 shadow-xs ${
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1 shadow-xs ${
                             isSelected
                               ? 'bg-sky-600 text-white font-extrabold'
                               : 'bg-sky-100 text-sky-900 hover:bg-sky-200'
                           }`}
                         >
                           <Play className="w-3 h-3 fill-current" />
-                          <span>{isSelected ? 'Dimuat' : 'Pilih Lagu'}</span>
+                          <span>{isSelected ? 'Dimuat di Mixer' : 'Pilih Lagu'}</span>
                         </button>
 
                         <button

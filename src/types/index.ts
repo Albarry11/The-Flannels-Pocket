@@ -64,7 +64,10 @@ export interface Song {
   createdAt: number;
   artworkUrl?: string;  // Image URL / cover art
   verifiedSource?: string; // e.g. "SongBPM / Tunebat / Master Audio Recording"
+  sourceUrl?: string;      // Direct clickable web search URL
   researchNotes?: string;  // e.g. "Progresi verse C - Em - F - G, tuning A440"
+  folderName?: string;     // e.g. "Songs/Tak Berdaya/"
+  discreteFiles?: { name: string; size: number; role: string }[]; // List of discrete WAV stem files
   coachingReport?: AICoachingReport; // Cached Tilikan AI analysis
   qualityAnalysis?: AudioQualityReport;
   replayGain?: ReplayGainReport;

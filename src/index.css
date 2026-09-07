@@ -8,54 +8,124 @@
   }
   
   body {
-    @apply antialiased selection:bg-sky-500 selection:text-white;
+    @apply antialiased selection:bg-emerald-400 selection:text-black;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     overflow-x: hidden;
-    color: #0f2942;
+    color: #0b2238;
     min-height: 100vh;
-    background-color: #d6eefa;
-    background-image: 
-      radial-gradient(at 15% 15%, rgba(56, 189, 248, 0.45) 0px, transparent 55%),
-      radial-gradient(at 85% 85%, rgba(52, 211, 153, 0.35) 0px, transparent 55%),
-      radial-gradient(at 50% 30%, rgba(255, 255, 255, 0.85) 0px, transparent 65%),
-      linear-gradient(145deg, #d3efff 0%, #e9f7fe 30%, #e2faf3 70%, #cbeefa 100%);
+    /* Authentic Frutiger Aero Wallpaper: Bright Blue Sky, Puffy White Clouds, Golden Sun Glare, Lush Green Meadow Bokeh */
+    background-color: #2ea7e0;
+    background-image:
+      /* Sun Glare / Starburst at top right */
+      radial-gradient(circle at 86% 12%, rgba(255, 255, 255, 1) 0%, rgba(254, 240, 138, 0.75) 8%, rgba(56, 189, 248, 0.45) 25%, transparent 60%),
+      /* High-sky azure to turquoise sky light */
+      radial-gradient(at 10% 20%, rgba(255, 255, 255, 0.8) 0px, transparent 50%),
+      radial-gradient(at 50% 15%, rgba(255, 255, 255, 0.7) 0px, transparent 65%),
+      /* Lush Green Meadow Bokeh at bottom */
+      radial-gradient(ellipse at 50% 100%, rgba(74, 222, 128, 0.85) 0%, rgba(34, 197, 94, 0.7) 35%, rgba(16, 185, 129, 0.4) 60%, transparent 80%),
+      /* Base vibrant sky gradient */
+      linear-gradient(180deg, #1898e2 0%, #3bb2f5 25%, #88dbfc 55%, #c5f0fe 75%, #dcfce7 90%, #86efac 100%);
     background-attachment: fixed;
+    background-size: cover;
   }
 }
 
-/* Authentic Frutiger Aero Glossy Glass Utility */
-.aero-glass {
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+/* Authentic Windows Vista / 7 Aero Glass Panel */
+.aero-panel {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 
-    0 16px 40px rgba(14, 116, 144, 0.12),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 16px 40px rgba(2, 132, 199, 0.16),
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.98),
     inset 0 -1px 0 rgba(14, 116, 144, 0.08);
+}
+
+.aero-window-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(225, 245, 255, 0.55) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.95);
 }
 
 .aero-glass-pill {
   background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   box-shadow: 
-    0 4px 16px rgba(2, 132, 199, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 4px 14px rgba(2, 132, 199, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
 }
 
-.aero-glass-dark {
-  background: rgba(10, 28, 54, 0.82);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.25),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.35);
+/* Windows Vista Close Button (Glossy Crimson with Specular Dome) */
+.vista-close-btn {
+  background: linear-gradient(180deg, #f87171 0%, #ef4444 48%, #dc2626 52%, #b91c1c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 6px rgba(185, 28, 28, 0.35);
+}
+.vista-close-btn:hover {
+  background: linear-gradient(180deg, #fca5a5 0%, #f87171 48%, #ef4444 52%, #dc2626 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 0 10px rgba(239, 68, 68, 0.6);
 }
 
-/* Custom Frutiger Aero Sliders */
+/* Windows Vista Minimize / Maximize Button */
+.vista-win-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(240, 248, 255, 0.6) 50%, rgba(210, 235, 255, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 6px rgba(2, 132, 199, 0.15);
+}
+.vista-win-btn:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(225, 245, 255, 0.85) 50%, rgba(185, 225, 255, 0.9) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+/* Realistic Water Dew Droplets */
+.water-drop {
+  position: absolute;
+  border-radius: 100%;
+  pointer-events: none;
+  box-shadow: 
+    inset -2px -2.5px 4px rgba(0, 0, 0, 0.22),
+    inset 2px 2.5px 4px rgba(255, 255, 255, 0.95),
+    2px 3.5px 6px rgba(2, 132, 199, 0.18),
+    1px 2px 3px rgba(0, 0, 0, 0.12);
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.25) 35%, rgba(255, 255, 255, 0) 70%);
+}
+.water-drop::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 20%;
+  width: 35%;
+  height: 25%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  transform: rotate(-30deg);
+}
+
+/* Spotify Frutiger Aero Green Glossy Orb Play Button */
+.aero-play-orb {
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 48%, #16a34a 52%, #15803d 100%);
+  box-shadow: 
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.7),
+    0 4px 18px rgba(22, 163, 74, 0.45),
+    0 0 12px rgba(74, 222, 128, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+.aero-play-orb:hover {
+  background: linear-gradient(180deg, #86efac 0%, #4ade80 48%, #22c55e 52%, #16a34a 100%);
+  box-shadow: 
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 6px 24px rgba(22, 163, 74, 0.6),
+    0 0 20px rgba(74, 222, 128, 0.6);
+}
+
+/* Slider styling */
 input[type=range] {
   @apply cursor-pointer bg-sky-200/80 rounded-full h-2 appearance-none;
 }
@@ -64,7 +134,7 @@ input[type=range]::-webkit-slider-thumb {
   @apply h-4 w-4 rounded-full bg-gradient-to-b from-sky-300 via-sky-500 to-blue-600 shadow-[0_2px_8px_rgba(2,132,199,0.5)] border-2 border-white appearance-none;
 }
 
-/* Custom Light Aero Scrollbar */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;

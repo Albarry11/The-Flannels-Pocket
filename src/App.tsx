@@ -327,75 +327,84 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex text-[#0f2942] font-sans selection:bg-sky-500 selection:text-white relative">
+    <div className="min-h-screen flex text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-hidden">
+      {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass (Image 3) */}
+      <div className="water-drop top-6 right-36" style={{ width: '22px', height: '22px' }} />
+      <div className="water-drop top-24 right-14" style={{ width: '15px', height: '15px' }} />
+      <div className="water-drop top-12 left-72" style={{ width: '18px', height: '18px' }} />
+      <div className="water-drop top-56 left-28" style={{ width: '12px', height: '12px' }} />
+      <div className="water-drop bottom-40 right-64" style={{ width: '24px', height: '24px' }} />
+      <div className="water-drop bottom-28 left-80" style={{ width: '16px', height: '16px' }} />
+      <div className="water-drop top-36 right-96" style={{ width: '13px', height: '13px' }} />
+
       {/* Sidebar Toggle Floating Button (Point 7: Nav Bar Hide & Show) */}
       <button
         onClick={() => setIsNavOpen(!isNavOpen)}
-        className="fixed left-2.5 top-3 z-50 p-2 rounded-full bg-white/80 border border-sky-300 shadow-md text-sky-800 hover:text-sky-600 hover:bg-white transition active:scale-90"
+        className="fixed left-3 top-3 z-50 p-2 rounded-full bg-white/80 border border-white shadow-md text-sky-900 hover:text-sky-600 hover:bg-white transition active:scale-90"
         title={isNavOpen ? 'Sembunyikan Menu Samping' : 'Tampilkan Menu Samping'}
       >
         {isNavOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
       </button>
 
-      {/* 1. Navbar Flush to the Absolute Left Frame (Point 3 & 7) */}
+      {/* 1. Navbar Flush to the Absolute Left Frame (Aero Spotify Look like image_9abf00.png) */}
       <aside
-        className={`fixed left-0 top-0 bottom-0 z-40 w-16 md:w-20 bg-white/75 backdrop-blur-2xl border-r border-white/80 flex flex-col items-center py-16 justify-center shadow-[4px_0_24px_rgba(2,132,199,0.1)] transition-transform duration-300 ${
-          isNavOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-2 top-2.5 bottom-24 z-40 w-16 md:w-20 rounded-3xl aero-panel flex flex-col items-center py-16 justify-center shadow-[0_16px_40px_rgba(2,132,199,0.18)] transition-transform duration-300 ${
+          isNavOpen ? 'translate-x-0' : '-translate-x-28'
         }`}
       >
         {/* Navigation Buttons (Mixer, Library, Lirik, Tilikan) */}
         <div className="flex flex-col gap-4 w-full px-2">
           <button
             onClick={() => setActiveTab('mixer')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
               activeTab === 'mixer'
-                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
-                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
+                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                : 'text-sky-950 hover:text-black hover:bg-white/50'
             }`}
             title="Mixer Console"
           >
-            <Sliders className="w-5 h-5" />
-            <span className="text-[9px] font-bold tracking-tight">Mixer</span>
+            <Sliders className="w-5 h-5 text-emerald-600" />
+            <span className="text-[9px] font-extrabold tracking-tight">Mixer</span>
           </button>
 
           <button
             onClick={() => setActiveTab('library')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
               activeTab === 'library'
-                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
-                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
+                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                : 'text-sky-950 hover:text-black hover:bg-white/50'
             }`}
             title="Library Lagu Cover"
           >
-            <Folder className="w-5 h-5" />
-            <span className="text-[9px] font-bold tracking-tight">Library</span>
+            <Folder className="w-5 h-5 text-sky-600" />
+            <span className="text-[9px] font-extrabold tracking-tight">Library</span>
           </button>
 
           <button
             onClick={() => setActiveTab('lyrics')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
               activeTab === 'lyrics'
-                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
-                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
+                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                : 'text-sky-950 hover:text-black hover:bg-white/50'
             }`}
             title="Lirik & Chord"
           >
-            <FileText className="w-5 h-5" />
-            <span className="text-[9px] font-bold tracking-tight">Lirik</span>
+            <FileText className="w-5 h-5 text-indigo-600" />
+            <span className="text-[9px] font-extrabold tracking-tight">Lirik</span>
           </button>
 
           {/* Point 8: Menu AI Brain rename jadi Tilikan */}
           <button
             onClick={() => setActiveTab('brain')}
-            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition shadow-xs ${
+            className={`w-full py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
               activeTab === 'brain'
-                ? 'bg-gradient-to-b from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30'
-                : 'text-sky-900 hover:text-sky-600 hover:bg-sky-100/60'
+                ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
+                : 'text-sky-950 hover:text-black hover:bg-white/50'
             }`}
             title="Tilikan"
           >
-            <Brain className="w-5 h-5" />
-            <span className="text-[9px] font-bold tracking-tight">Tilikan</span>
+            <Brain className="w-5 h-5 text-purple-600" />
+            <span className="text-[9px] font-extrabold tracking-tight">Tilikan</span>
           </button>
         </div>
       </aside>

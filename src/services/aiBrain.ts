@@ -105,7 +105,10 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
 export async function researchSongBpmAndKeyWithAI(
   songTitle: string,
   artistName?: string
-): Promise<{ bpm: number; key: string; timeSignature: string; verifiedSource: string; notes: string } | null> {
+): Promise<{ bpm: number; key: string; timeSignature: string; verifiedSource: string; sourceUrl: string; notes: string } | null> {
+  const queryStr = `${artistName || ''} ${songTitle}`.trim();
+  const fallbackUrl = `https://tunebat.com/Search?q=${encodeURIComponent(queryStr)}`;
+
   const prompt = `Anda adalah musicologist dan peneliti lagu yang sangat teliti, santai, dan mendalam.
 Tugas Anda: Lakukan riset dan verifikasi silang terhadap database musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax, Beatport, dan partitur chord resmi) untuk lagu:
 Judul Lagu: "${songTitle}"
@@ -115,7 +118,7 @@ PEDOMAN KETELITIAN & SUMBER VALID:
 1. Luangkan analisis secara cermat. Prioritaskan keakuratan 100% di atas kecepatan.
 2. Analisis progresi akord kunci lagu (verse & chorus) untuk menentukan Tangga Nada Asli (Key) secara pasti (contoh: "Dan - Sheila On 7" verse C-Em-F-G atau E-G#m-A-B sesuai rekaman master studio, Peterpan "Menghapus Jejakmu" = G Mayor, Dewa 19 "Kangen" = D Mayor).
 3. Tentukan tempo metronom studio resmi (BPM) yang stabil.
-4. Cantumkan nama sumber data musik yang Anda verifikasi pada field "verifiedSource".
+4. Cantumkan nama sumber data musik yang Anda verifikasi pada field "verifiedSource" dan URL verifikasi pada "sourceUrl" (misal: "https://tunebat.com/Search?q=..." atau "https://songbpm.com/...").
 5. Format output WAJIB HANYA JSON valid:
 {
   "title": "${songTitle}",
@@ -123,7 +126,8 @@ PEDOMAN KETELITIAN & SUMBER VALID:
   "bpm": 135,
   "key": "E",
   "timeSignature": "4/4",
-  "verifiedSource": "SongBPM / Tunebat / Master Studio Recording",
+  "verifiedSource": "Tunebat & SongBPM Database",
+  "sourceUrl": "${fallbackUrl}",
   "notes": "Detail progresi akord chord, tuning, dan versi rekaman master resmi"
 }`;
 
@@ -136,7 +140,8 @@ PEDOMAN KETELITIAN & SUMBER VALID:
         bpm: typeof parsed.bpm === 'number' ? parsed.bpm : 120,
         key: typeof parsed.key === 'string' ? parsed.key : 'C',
         timeSignature: typeof parsed.timeSignature === 'string' ? parsed.timeSignature : '4/4',
-        verifiedSource: typeof parsed.verifiedSource === 'string' ? parsed.verifiedSource : 'Database Musik Terverifikasi',
+        verifiedSource: typeof parsed.verifiedSource === 'string' ? parsed.verifiedSource : 'Database Musik Tunebat & SongBPM',
+        sourceUrl: typeof parsed.sourceUrl === 'string' && parsed.sourceUrl.startsWith('http') ? parsed.sourceUrl : fallbackUrl,
         notes: typeof parsed.notes === 'string' ? parsed.notes : '',
       };
     }

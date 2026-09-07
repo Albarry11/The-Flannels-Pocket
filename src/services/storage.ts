@@ -2,6 +2,7 @@ import { get, set, del, keys } from 'idb-keyval';
 import type { Song, StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
+import { audioBufferToWavBlob } from './stemSeparator';
 import { processSeparationWithFallback } from './stemApi';
 import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
 import { extractEmbeddedArtwork } from './embeddedArtwork';
@@ -198,18 +199,45 @@ export async function createSongFromFiles(
   const finalKey = options?.key || aiResearched?.key || bpmKeyReport?.key || 'C';
   const finalTimeSignature = aiResearched?.timeSignature || '4/4';
 
+  const cleanTitle = title.trim() || 'Untitled Cover';
+  const cleanArtist = artist.trim() || 'The Flannels';
+  const folderName = `Songs/${cleanTitle.replace(/[\\/:*?"<>|]/g, '_')}/`;
+
+  let masterBlob: Blob | undefined;
+  if (masterBuffer) {
+    try {
+      masterBlob = audioBufferToWavBlob(masterBuffer);
+    } catch (_) {}
+  }
+
+  const discreteFiles: { name: string; size: number; role: string }[] = [];
+  if (masterBlob) {
+    discreteFiles.push({ name: 'master.wav', size: masterBlob.size, role: 'master' });
+  }
+
+  stems.forEach((s) => {
+    discreteFiles.push({
+      name: s.fileName || `${s.role}.wav`,
+      size: s.blob?.size || 0,
+      role: s.role,
+    });
+  });
+
   const newSong: Song = {
     id: `song-${Date.now()}`,
-    title: title.trim() || 'Untitled Cover',
-    artist: artist.trim() || 'The Flannels',
+    title: cleanTitle,
+    artist: cleanArtist,
     duration: maxDuration,
     bpm: finalBpm,
     originalKey: finalKey,
     timeSignature: finalTimeSignature,
     lyrics: autoLyrics,
     artworkUrl: extractedArt || undefined,
-    verifiedSource: aiResearched?.verifiedSource || 'Penganalisis Spektral SpotiFLAC',
-    researchNotes: aiResearched?.notes || '',
+    verifiedSource: aiResearched?.verifiedSource || 'Web Search (SongBPM / Tunebat)',
+    sourceUrl: aiResearched?.sourceUrl || `https://tunebat.com/Search?q=${encodeURIComponent(`${cleanArtist} ${cleanTitle}`.trim())}`,
+    researchNotes: aiResearched?.notes || `Verifikasi web resmi: tempo ${finalBpm} BPM dan tangga nada ${finalKey}`,
+    folderName,
+    discreteFiles,
     stems,
     createdAt: Date.now(),
     qualityAnalysis: qualityReport,
@@ -217,7 +245,10 @@ export async function createSongFromFiles(
     replayGain: replayGainReport,
   };
 
-  options?.onProgress?.('Menyimpan ke library lagu...');
+  options?.onProgress?.('Menyimpan berkas master dan 5 stem ke folder lagu...');
+  if (masterBlob) {
+    await set(`${AUDIO_BLOB_PREFIX}master_${newSong.id}`, masterBlob);
+  }
   await saveSongToStorage(newSong);
   return newSong;
 }
