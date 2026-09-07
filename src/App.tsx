@@ -340,6 +340,22 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-x-hidden">
+      {/* Grand Background Video (Frutiger Aero Workspace) */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="./aero-bg-poster.jpg"
+          className="w-full h-full object-cover object-center"
+        >
+          <source src="./aero-bg.mp4" type="video/mp4" />
+        </video>
+        {/* Soft Aero sky tint overlay to keep perfect glass contrast */}
+        <div className="absolute inset-0 bg-sky-950/15 backdrop-blur-[0.5px]" />
+      </div>
+
       {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass */}
       <div className="water-drop top-14 right-36" style={{ width: '22px', height: '22px' }} />
       <div className="water-drop top-32 right-14" style={{ width: '15px', height: '15px' }} />
