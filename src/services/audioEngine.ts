@@ -335,15 +335,19 @@ export class AudioEngine {
     return this.isPlaying;
   }
 
+  // Reusable audio level buffer to avoid GC thrashing in 60fps loops
+  private stemLevelBuffer: Uint8Array = new Uint8Array(256);
+
   public getStemLevel(stemId: string): number {
     const nodes = this.stemNodes.get(stemId);
     if (!nodes || !this.isPlaying) return 0;
-    const data = new Uint8Array(nodes.analyserNode.frequencyBinCount);
-    nodes.analyserNode.getByteTimeDomainData(data);
+    const len = Math.min(this.stemLevelBuffer.length, nodes.analyserNode.frequencyBinCount);
+    const sub = this.stemLevelBuffer.subarray(0, len);
+    nodes.analyserNode.getByteTimeDomainData(sub as unknown as Uint8Array<ArrayBuffer>);
 
     let max = 0;
-    for (let i = 0; i < data.length; i++) {
-      const val = Math.abs(data[i] - 128);
+    for (let i = 0; i < len; i++) {
+      const val = Math.abs(sub[i] - 128);
       if (val > max) max = val;
     }
     return max / 128;

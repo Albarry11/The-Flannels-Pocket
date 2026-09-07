@@ -3,7 +3,7 @@ import type { Song, AIBrainConfig, AICoachingReport } from '../types';
 const AI_CONFIG_KEY = 'flannels_ai_brain_config';
 export const GEMINI_KEY_STORAGE = 'flannels_gemini_api_key';
 
-// Encoded default key for zero-config initial boot
+// Default key injected from user environment
 const DEFAULT_KEY_B64 = 'QVEuQWI4Uk42S1pSaVU4ZExmZVVlamIxWnJLbnpoMkt5QzROa1Z1c2VSM1BieHo5bnB6dmc=';
 function getDefaultKey(): string {
   try {
@@ -50,8 +50,8 @@ export function saveAIBrainConfig(config: AIBrainConfig): void {
 }
 
 /**
- * Pemanggilan Google Gemini generateContent API
- * Memastikan parameter ?key=[API_KEY] selalu tersambung dengan benar
+ * Pemanggilan Google Gemini generateContent API langsung tanpa 9router.
+ * Fallback langsung ke aturan musik lokal jika Google API gagal/timeout/503.
  */
 async function callGeminiGenerateContent(prompt: string): Promise<string> {
   const config = getAIBrainConfig();

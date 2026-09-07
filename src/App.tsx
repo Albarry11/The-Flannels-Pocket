@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Song, LoopRegion } from './types';
 import { globalAudioEngine } from './services/audioEngine';
 import { globalMetronome } from './services/metronomeEngine';
@@ -17,7 +17,7 @@ export function App() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<ActiveNavTab>('mixer');
+  const [activeTab, setActiveTab] = useState<ActiveNavTab>('library');
   const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
 
   // Playback state
@@ -37,9 +37,16 @@ export function App() {
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
 
-  // Real-time VU Levels for stems
-  const [stemLevels, setStemLevels] = useState<Record<string, number>>({});
-  const vuAnimationFrameRef = useRef<number | null>(null);
+  // Video Background GPU Saver Toggle (Point 12)
+  const [isVideoBgActive, setIsVideoBgActive] = useState<boolean>(() => {
+    return localStorage.getItem('flannels_video_bg') !== 'false';
+  });
+
+  const handleToggleVideo = () => {
+    const next = !isVideoBgActive;
+    setIsVideoBgActive(next);
+    localStorage.setItem('flannels_video_bg', String(next));
+  };
 
   // Load song library on mount
   const refreshSongs = useCallback(async () => {
@@ -65,7 +72,7 @@ export function App() {
     refreshSongs();
   }, [refreshSongs]);
 
-  // Audio Engine time & VU meter listeners
+  // Audio Engine time listeners (VU meter animation moved to direct DOM in mixer -> 0 React re-renders)
   useEffect(() => {
     globalAudioEngine.onTimeUpdate((time) => {
       setCurrentTime(time);
@@ -74,28 +81,7 @@ export function App() {
     globalAudioEngine.onEnded(() => {
       setIsPlaying(false);
     });
-
-    const pollVU = () => {
-      if (globalAudioEngine.getIsPlaying() && currentSong) {
-        const levels: Record<string, number> = {};
-        currentSong.stems.forEach((s) => {
-          levels[s.id] = globalAudioEngine.getStemLevel(s.id);
-        });
-        setStemLevels(levels);
-      } else {
-        setStemLevels({});
-      }
-      vuAnimationFrameRef.current = requestAnimationFrame(pollVU);
-    };
-
-    vuAnimationFrameRef.current = requestAnimationFrame(pollVU);
-
-    return () => {
-      if (vuAnimationFrameRef.current) {
-        cancelAnimationFrame(vuAnimationFrameRef.current);
-      }
-    };
-  }, [currentSong]);
+  }, []);
 
   const selectSong = (song: Song) => {
     globalAudioEngine.setSong(song);
@@ -340,20 +326,28 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-x-hidden">
-      {/* Grand Background Video (Frutiger Aero Workspace) */}
+      {/* Grand Background (Frutiger Aero Workspace) */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="./aero-bg-poster.jpg"
-          className="w-full h-full object-cover object-center"
-        >
-          <source src="./aero-bg.mp4" type="video/mp4" />
-        </video>
-        {/* Soft Aero sky tint overlay to keep perfect glass contrast */}
-        <div className="absolute inset-0 bg-sky-950/15 backdrop-blur-[0.5px]" />
+        {isVideoBgActive ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="./aero-bg-poster.jpg"
+            className="w-full h-full object-cover object-center"
+          >
+            <source src="./aero-bg.mp4" type="video/mp4" />
+          </video>
+        ) : (
+          <img
+            src="./aero-bg-poster.jpg"
+            alt="Aero Background"
+            className="w-full h-full object-cover object-center opacity-85"
+          />
+        )}
+        {/* Soft Aero sky tint overlay without heavy blur */}
+        <div className="absolute inset-0 bg-sky-950/15" />
       </div>
 
       {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass */}
@@ -364,13 +358,15 @@ export function App() {
       <div className="water-drop bottom-40 right-64" style={{ width: '24px', height: '24px' }} />
       <div className="water-drop bottom-28 left-80" style={{ width: '16px', height: '16px' }} />
 
-      {/* 1. Full-Width Continuous Windows Vista / Aero Header (Point 4: Full length left to right) */}
+      {/* 1. Full-Width Continuous Windows Vista / Aero Header */}
       <Header
         currentSong={currentSong}
         activeSoloNames={activeSoloNames}
         onClearAllSolos={handleClearAllSolos}
         isNavOpen={isNavOpen}
         onToggleNav={() => setIsNavOpen(!isNavOpen)}
+        isVideoActive={isVideoBgActive}
+        onToggleVideo={handleToggleVideo}
       />
 
       {/* 2. Below Header: Workspace Layout with Collapsible Aero Sidebar */}
@@ -381,58 +377,78 @@ export function App() {
             isNavOpen ? 'w-20 sm:w-24 opacity-100' : 'w-0 pl-0 opacity-0 overflow-hidden pointer-events-none'
           }`}
         >
-          <div className="w-full h-full rounded-3xl aero-panel flex flex-col items-center py-6 justify-center gap-4 shadow-[0_16px_40px_rgba(2,132,199,0.18)]">
+          {/* Dark Translucent Backing for High Contrast (SiteCritic & Roast Fix) */}
+          <div className="w-full h-full rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 flex flex-col items-center py-6 justify-center gap-5 shadow-2xl">
+            {/* Mixer Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('mixer')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'mixer'
-                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
               title="Mixer Console"
+              aria-label="Buka Mixer Console 4-Channel"
             >
-              <Sliders className="w-5 h-5 text-emerald-600" />
+              <Sliders className="w-5 h-5 text-emerald-400" />
               <span className="text-[9px] font-extrabold tracking-tight">Mixer</span>
+              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                Mixer Console
+              </div>
             </button>
 
+            {/* Library Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('library')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'library'
-                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
               title="Library Lagu Cover"
+              aria-label="Buka Library Koleksi Lagu Cover"
             >
-              <Folder className="w-5 h-5 text-sky-600" />
+              <Folder className="w-5 h-5 text-sky-400" />
               <span className="text-[9px] font-extrabold tracking-tight">Library</span>
+              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                Library Lagu
+              </div>
             </button>
 
+            {/* Lyrics Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('lyrics')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'lyrics'
-                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
               title="Lirik & Chord"
+              aria-label="Buka Sinkronisasi Lirik dan Chord"
             >
-              <FileText className="w-5 h-5 text-indigo-600" />
+              <FileText className="w-5 h-5 text-indigo-300" />
               <span className="text-[9px] font-extrabold tracking-tight">Lirik</span>
+              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                Lirik & Chord
+              </div>
             </button>
 
-            {/* Point 8: Menu AI Brain rename jadi Tilikan */}
+            {/* Tilikan Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('brain')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition ${
+              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'brain'
-                  ? 'bg-white text-[#0c233c] font-black shadow-md border border-white scale-105'
-                  : 'text-sky-950 hover:text-black hover:bg-white/50'
+                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
               title="Tilikan"
+              aria-label="Buka Analisis Aransemen Tilikan AI"
             >
-              <Brain className="w-5 h-5 text-purple-600" />
+              <Brain className="w-5 h-5 text-purple-300" />
               <span className="text-[9px] font-extrabold tracking-tight">Tilikan</span>
+              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                Tilikan AI
+              </div>
             </button>
           </div>
         </aside>
@@ -443,7 +459,6 @@ export function App() {
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
                 stems={currentSong.stems}
-                stemLevels={stemLevels}
                 onVolumeChange={handleVolumeChange}
                 onPanChange={handlePanChange}
                 onToggleMute={handleToggleMute}

@@ -252,6 +252,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           onChange={(e) => onSeek(parseFloat(e.target.value))}
           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           title="Scrub timeline"
+          aria-label="Posisi pemutaran lagu"
         />
       </div>
 
@@ -312,7 +313,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             <button
               onClick={onStop}
               className="w-9 h-9 rounded-full bg-white/90 text-slate-700 hover:text-black hover:bg-white border border-sky-200 transition shadow-xs flex items-center justify-center active:scale-90"
-              title="Stop"
+              title="Hentikan lagu"
+              aria-label="Hentikan pemutaran lagu"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
             </button>
@@ -323,6 +325,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               disabled={countInActive}
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white flex items-center justify-center hover:scale-105 active:scale-90 transition shadow-[0_0_18px_rgba(2,132,199,0.5)] border-2 border-white relative overflow-hidden flex-shrink-0"
               title={isPlaying ? 'Pause' : 'Play'}
+              aria-label={isPlaying ? 'Jeda pemutaran musik' : 'Mulai putar musik'}
             >
               <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent rounded-t-full pointer-events-none" />
               {isPlaying ? (
@@ -342,6 +345,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
               }`}
               title="Hitungan masuk 4 ketukan"
+              aria-label="Mulai pemutaran dengan hitungan masuk 4 ketukan"
             >
               <Timer className="w-3.5 h-3.5 text-amber-600" />
               <span>{countInActive ? `Count: ${countInBeat}` : 'Count-In (4)'}</span>
@@ -352,14 +356,16 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <button
                 onClick={onSetLoopStart}
                 className="px-2 py-0.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-mono font-bold"
-                title="Titik A"
+                title="Tandai Titik Awal (A)"
+                aria-label="Tandai titik awal loop A"
               >
                 A
               </button>
               <button
                 onClick={onSetLoopEnd}
                 className="px-2 py-0.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-mono font-bold"
-                title="Titik B"
+                title="Tandai Titik Akhir (B)"
+                aria-label="Tandai titik akhir loop B"
               >
                 B
               </button>
@@ -370,7 +376,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     ? 'bg-amber-400 text-black shadow-xs'
                     : 'text-slate-600 hover:text-black'
                 }`}
-                title="Looping A-B"
+                title="Aktifkan/nonaktifkan Loop A-B"
+                aria-label="Aktifkan atau matikan looping A-B"
               >
                 <Repeat className="w-3.5 h-3.5" />
               </button>
@@ -379,6 +386,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   onClick={onClearLoop}
                   className="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-rose-600 rounded-full"
                   title="Hapus loop"
+                  aria-label="Hapus rentang loop"
                 >
                   ✕
                 </button>
@@ -396,6 +404,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     : 'text-sky-950 hover:text-sky-600'
                 }`}
                 title="Metronome Click ON/OFF"
+                aria-label="Nyalakan atau matikan suara metronom click"
               >
                 <Radio className="w-3.5 h-3.5 text-amber-600" />
                 <span className="hidden sm:inline">Metronome</span>
@@ -406,6 +415,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 <button
                   onClick={() => onMetronomeBpmChange(metronomeBpm - 1)}
                   className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[10px]"
+                  aria-label="Kurangi tempo 1 BPM"
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
@@ -413,6 +423,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 <button
                   onClick={() => onMetronomeBpmChange(metronomeBpm + 1)}
                   className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[10px]"
+                  aria-label="Tambah tempo 1 BPM"
                 >
                   <Plus className="w-2.5 h-2.5" />
                 </button>
@@ -425,6 +436,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   showAdvancedMetronome ? 'bg-sky-200 text-sky-800' : 'text-slate-400 hover:text-sky-600'
                 }`}
                 title="Advance Metronome (Birama, Suara, Tap Tempo)"
+                aria-label="Buka pengaturan advance metronome"
               >
                 <Settings2 className="w-3.5 h-3.5" />
               </button>
@@ -435,7 +447,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 <button
                   onClick={() => onPitchChange(pitchSemitones - 1)}
                   className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[10px]"
-                  title="Turun 1 semitone"
+                  title="Turunkan 1 semitone"
+                  aria-label="Turunkan nada dasar 1 semitone"
                 >
                   -
                 </button>
@@ -445,7 +458,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 <button
                   onClick={() => onPitchChange(pitchSemitones + 1)}
                   className="w-5 h-5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[10px]"
-                  title="Naik 1 semitone"
+                  title="Naikkan 1 semitone"
+                  aria-label="Naikkan nada dasar 1 semitone"
                 >
                   +
                 </button>
@@ -459,6 +473,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   onClick={() => setShowSourceInfo(!showSourceInfo)}
                   className="text-slate-400 hover:text-emerald-600 ml-0.5"
                   title="Bukti Sumber BPM & Key Terverifikasi"
+                  aria-label="Lihat bukti sumber validasi BPM dan Key"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>
@@ -481,6 +496,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               value={speed}
               onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
               className="bg-transparent text-sky-900 text-xs font-mono font-bold focus:outline-none cursor-pointer"
+              aria-label="Pilih kecepatan playback"
             >
               <option value={0.5}>0.5x</option>
               <option value={0.75}>0.75x</option>
@@ -501,6 +517,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
             }`}
             title={`Normalisasi kenyaringan ReplayGain (-14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
+            aria-label="Aktifkan normalisasi kenyaringan suara ReplayGain"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>RG</span>
@@ -516,6 +533,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             <button
               onClick={() => onMasterVolumeChange(masterVolume === 0 ? 1.0 : 0)}
               className="text-sky-700 hover:text-sky-900 transition"
+              aria-label={masterVolume === 0 ? 'Nyalakan volume master' : 'Senyapkan volume master'}
             >
               {masterVolume === 0 ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
@@ -528,6 +546,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
               className="w-14 sm:w-18 h-1.5 cursor-pointer"
               title="Master Volume"
+              aria-label="Volume audio master"
             />
             <span className="text-[10px] font-mono text-sky-900 font-bold w-6 text-right">
               {Math.round(masterVolume * 100)}%

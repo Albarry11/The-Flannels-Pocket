@@ -284,30 +284,33 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
       <div className="flex-1 overflow-y-auto pr-1 pb-36">
         {view === 'list' ? (
           songs.length === 0 ? (
-            /* Empty State */
-            <div className="text-center py-20 px-4 rounded-3xl bg-white/80 border border-sky-200/80 space-y-4 max-w-lg mx-auto shadow-xs">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center border border-sky-300">
-                <Music2 className="w-7 h-7" />
+            /* Empty State: Dark Translucent Backing & Streamlined Single Primary Action (SiteCritic & Roast Fix) */
+            <div className="text-center py-12 px-6 sm:px-8 rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-4 max-w-lg mx-auto shadow-2xl text-white">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 border border-white/30">
+                <Music2 className="w-8 h-8" />
               </div>
-              <div>
-                <h3 className="text-base font-extrabold text-[#0f2942]">Library Masih Kosong</h3>
-                <p className="text-xs text-[#1e3a5f] mt-1 font-medium">
-                  Unggah file lagu cover (MP3/FLAC). AI akan otomatis memisahkan vokal dan instrumen serta mengekstrak gambar album dari file!
+              <div className="space-y-1.5">
+                <h2 className="text-lg font-black text-white tracking-tight">Library Masih Kosong</h2>
+                <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                  Unggah file lagu cover (MP3, FLAC, WAV). AI akan memisahkan vokal dan instrumen secara otomatis untuk sesi kulik band The Flannels.
                 </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2 pt-2">
+              <div className="flex flex-col items-center justify-center gap-3 pt-2">
                 <button
                   onClick={() => setView('upload')}
-                  className="px-4 py-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold shadow-md shadow-sky-500/20"
+                  className="w-full sm:w-auto px-7 py-3 rounded-full bg-gradient-to-r from-sky-400 via-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-extrabold shadow-lg shadow-sky-500/30 active:scale-95 transition flex items-center justify-center gap-2 border border-white/30"
+                  aria-label="Unggah file lagu cover sekarang"
                 >
-                  ➕ Unggah Lagu Cover
+                  <Plus className="w-4 h-4" />
+                  <span>Unggah Lagu Cover</span>
                 </button>
                 <button
                   onClick={handleLoadDemo}
                   disabled={isProcessing}
-                  className="px-4 py-2 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold"
+                  className="text-xs text-sky-300/90 hover:text-white underline font-semibold transition py-1"
+                  aria-label="Coba dengan demo track studio bawaan"
                 >
-                  ✨ Coba Demo Track
+                  {isProcessing ? '✨ Memproses Demo...' : '✨ Atau coba muat lagu demo studio (Midnight Groove)'}
                 </button>
               </div>
             </div>

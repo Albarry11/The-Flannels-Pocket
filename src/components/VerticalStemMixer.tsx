@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { StemTrack, StemRole } from '../types';
+import { globalAudioEngine } from '../services/audioEngine';
 import { Mic, Guitar, Disc, Sliders, Music, RotateCcw } from 'lucide-react';
 
 interface VerticalStemMixerProps {
   stems: StemTrack[];
-  stemLevels: Record<string, number>;
+  stemLevels?: Record<string, number>;
   onVolumeChange: (stemId: string, volume: number) => void;
   onPanChange: (stemId: string, pan: number) => void;
   onToggleMute: (stemId: string) => void;
@@ -79,7 +80,6 @@ const ROLE_CONFIG: Record<
 
 export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   stems,
-  stemLevels,
   onVolumeChange,
   onPanChange,
   onToggleMute,
@@ -90,8 +90,40 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   onResetAllStems,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
-  // Point 3: Filter out 'other' from mixer, keeping only discrete band instruments
+  // Filter out 'other' from mixer, keeping only discrete band instruments
   const visibleStems = stems.filter((s) => s.role !== 'other');
+  const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Direct DOM VU Meter Animation (Decoupled from React State -> 0 Main-Thread Lag & 0 Glitches)
+  useEffect(() => {
+    let animId: number;
+    const updateMeters = () => {
+      if (globalAudioEngine.getIsPlaying()) {
+        visibleStems.forEach((stem) => {
+          const el = meterRefs.current[stem.id];
+          if (el) {
+            const level = globalAudioEngine.getStemLevel(stem.id);
+            const heightPct = Math.min(100, Math.round(level * 100));
+            el.style.height = `${heightPct}%`;
+            el.style.backgroundColor = level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#10b981';
+            el.style.boxShadow = level > 0.1 ? `0 0 8px ${level > 0.85 ? '#ef4444' : '#10b981'}` : 'none';
+          }
+        });
+      } else {
+        visibleStems.forEach((stem) => {
+          const el = meterRefs.current[stem.id];
+          if (el) {
+            el.style.height = '0%';
+            el.style.boxShadow = 'none';
+          }
+        });
+      }
+      animId = requestAnimationFrame(updateMeters);
+    };
+
+    animId = requestAnimationFrame(updateMeters);
+    return () => cancelAnimationFrame(animId);
+  }, [visibleStems]);
 
   return (
     <div className="flex flex-col gap-2.5 h-[calc(100vh-230px)] min-h-[380px] max-h-[520px] max-w-5xl mx-auto w-full overflow-hidden select-none">
@@ -141,7 +173,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
       >
         {visibleStems.map((stem) => {
           const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
-          const level = stemLevels[stem.id] || 0;
           const isSilenced = stem.muted || (anySoloActive && !stem.solo);
 
           return (
@@ -243,14 +274,16 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   />
                 </div>
 
-                {/* Vertical LED VU Meter */}
+                {/* Vertical LED VU Meter (Direct DOM Ref Animate) */}
                 <div className="w-2 h-28 bg-sky-950/80 rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-sky-300 shadow-inner">
                   <div
+                    ref={(el) => {
+                      meterRefs.current[stem.id] = el;
+                    }}
                     className="w-full rounded-full transition-all duration-75"
                     style={{
-                      height: `${Math.min(100, Math.round(level * 100))}%`,
-                      backgroundColor: level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#10b981',
-                      boxShadow: level > 0.1 ? `0 0 8px ${level > 0.85 ? '#ef4444' : '#10b981'}` : 'none',
+                      height: '0%',
+                      backgroundColor: '#10b981',
                     }}
                   />
                 </div>
