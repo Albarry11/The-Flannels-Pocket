@@ -48,7 +48,7 @@ export async function processSeparationWithFallback(
       onProgress?.('Demucs backend mengalami kendala, melanjutkan via DSP multi-stage matrix...');
     }
   } else {
-    onProgress?.('AI DSP Matrix: Mengisolasi vokal & instrumen...');
+    onProgress?.('Server Demucs AI offline. Memproses audio via matriks Mid/Side internal browser...');
   }
 
   // Local fallback
