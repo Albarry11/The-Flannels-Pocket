@@ -13,6 +13,7 @@ export class AudioEngine {
   private stemNodes: Map<string, StemNodes> = new Map();
   private masterGainNode: GainNode | null = null;
   private replayGainNode: GainNode | null = null;
+  private masterLimiterNode: DynamicsCompressorNode | null = null;
   private masterAnalyserNode: AnalyserNode | null = null;
 
   private isPlaying: boolean = false;
@@ -77,12 +78,21 @@ export class AudioEngine {
     this.replayGainNode = ctx.createGain();
     this.replayGainNode.gain.value = 1.0;
 
+    // Studio-grade Brickwall Limiter to prevent clipping distortion
+    this.masterLimiterNode = ctx.createDynamicsCompressor();
+    this.masterLimiterNode.threshold.value = -0.5; // -0.5 dBFS ceiling
+    this.masterLimiterNode.knee.value = 0;         // hard limiter knee
+    this.masterLimiterNode.ratio.value = 20.0;     // 20:1 brickwall ratio
+    this.masterLimiterNode.attack.value = 0.001;   // 1ms fast peak protection
+    this.masterLimiterNode.release.value = 0.05;   // 50ms smooth release
+
     this.masterAnalyserNode = ctx.createAnalyser();
     this.masterAnalyserNode.fftSize = 2048;
     this.masterAnalyserNode.smoothingTimeConstant = 0.8;
 
     this.replayGainNode.connect(this.masterGainNode);
-    this.masterGainNode.connect(this.masterAnalyserNode);
+    this.masterGainNode.connect(this.masterLimiterNode);
+    this.masterLimiterNode.connect(this.masterAnalyserNode);
     this.masterAnalyserNode.connect(ctx.destination);
 
     // Create channel strips for each stem
@@ -304,11 +314,19 @@ export class AudioEngine {
     if (!this.currentSong || !this.ctx) return;
     const anySolo = this.currentSong.stems.some((s) => s.solo);
 
+    // Dynamic Headroom Staging:
+    // If a stem is soloed (or only 1-2 stems active), give full 100% loudness.
+    // If all stems are unmuted and playing together, compensate by 0.75 to prevent master digital clipping.
+    const activeCount = anySolo
+      ? this.currentSong.stems.filter((s) => s.solo && !s.muted).length
+      : this.currentSong.stems.filter((s) => !s.muted).length;
+    const headroomScale = activeCount <= 2 ? 1.0 : Math.max(0.7, 1 / Math.sqrt(activeCount * 0.5));
+
     this.currentSong.stems.forEach((stem) => {
       const nodes = this.stemNodes.get(stem.id);
       if (!nodes) return;
 
-      let effectiveVol = stem.volume;
+      let effectiveVol = stem.volume * headroomScale;
       if (stem.muted) {
         effectiveVol = 0;
       } else if (anySolo && !stem.solo) {
