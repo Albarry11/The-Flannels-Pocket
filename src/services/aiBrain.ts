@@ -197,24 +197,34 @@ export async function generateLyricsAndChordsWithAI(
   songTitle: string,
   artistName?: string
 ): Promise<string | null> {
-  const prompt = `Anda adalah transkripter lirik dan akord musik profesional.
-Tugas Anda: Telusuri lirik asli dan progresi akord lagu "${songTitle}" oleh "${artistName || ''}" dari situs akord terverifikasi (seperti Ultimate Guitar, Chordify, atau Songsterr).
+  const prompt = `Anda adalah transkripter tab dan chord musik profesional standar Ultimate Guitar / Chordify.
+Tugas Anda: Susun chord sheet dan progresi akord lagu untuk latihan band cover:
+Judul Lagu: "${songTitle}"
+${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-PETUNJUK FORMAT:
-1. Ekstrak lirik lengkap lagu dari bait awal, reff/chorus, hingga akhir lagu.
-2. Sisipkan akord gitar di posisi ketukan yang tepat menggunakan tanda kurung siku [Chord], misalnya [Em], [G], [Am7], [D/F#].
-3. Tambahkan timestamp sinkronisasi per baris lagu dengan format standar LRC: [mm:ss.xx] di awal baris.
-Contoh:
-[00:15.50] [Em] Lirik kalimat pertama [C] sambungan kata [D]
-[00:22.00] [G] Masuk ke kalimat kedua...
-
-Keluarkan HANYA teks LRC tersinkronisasi murni, tanpa teks basa-basi sebelum atau sesudahnya.`;
+PETUNJUK PENYUSUNAN CHORD & LIRIK:
+1. Susun struktur lagu lengkap: [Intro], [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Bridge / Solo Gitar], [Outro].
+2. Sisipkan akord gitar tepat sebelum kata atau suku kata dengan format kurung siku [Chord], misalnya:
+[C]Dan... bila [F]esok datang kembali
+Seperti se[C]dia kala di mana kau bi[F]sa bernafas lebih le[C]ga
+3. Gunakan akord yang akurat (termasuk slash chord seperti [D/F#], [C/E], [Am7]).
+4. JANGAN sertakan disclaimer penolakan hak cipta atau kata pengantar basa-basi. Keluarkan HANYA teks chord sheet dan lirik bersih.`;
 
   try {
     const rawText = await callAIGateway(prompt);
-    return rawText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
+    const cleaned = rawText
+      .replace(/^```[a-z]*\n/i, '')
+      .replace(/\n```$/, '')
+      .trim();
+    if (cleaned.toLowerCase().includes('tidak dapat ditampilkan') || cleaned.toLowerCase().includes('hak cipta')) {
+      // Fallback secondary prompt if model is being pedantic
+      const retryPrompt = `Tuliskan progresi akord bar per bar dan panduan harmoni vokal untuk lagu "${songTitle}" oleh "${artistName || ''}" dalam format [Intro] [Verse] [Chorus] dengan akord [Chord] per baris.`;
+      const retryText = await callAIGateway(retryPrompt);
+      return retryText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
+    }
+    return cleaned;
   } catch (err) {
-    console.warn('Gemini lyrics generation failed:', err);
+    console.warn('AI lyrics/chord generation failed:', err);
     return null;
   }
 }

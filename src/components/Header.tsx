@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 2. Right: Admin Badge, Video Toggle, Solo Alert Badge & Vista Window Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Admin Mode Badge / Toggle */}
-        {onToggleAdmin && (
+        {onToggleAdmin && isAdmin && (
           <button
             onClick={onToggleAdmin}
             className={`px-3 py-1 rounded-full text-[11px] font-black border transition flex items-center gap-1.5 shadow-xs active:scale-95 ${

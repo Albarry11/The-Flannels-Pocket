@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useRef } from 'react';
+
+const ADMIN_UNLOCK_SEQUENCE = ['m', 'ArrowLeft', 'ArrowRight', 'ArrowRight'];
 import type { Song, LoopRegion } from './types';
 import { globalAudioEngine } from './services/audioEngine';
 import { globalMetronome } from './services/metronomeEngine';
@@ -47,21 +50,37 @@ export function App() {
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
 
-  // Admin Mode toggle
-  const handleToggleAdmin = () => {
-    if (isAdmin) {
-      setIsAdmin(false);
-      localStorage.setItem('flannels_is_admin', 'false');
-    } else {
-      const pin = prompt('Masukkan Password Admin (Albarry):', 'albarry');
+  // Admin controls stay hidden. Unlock only via middle-left-right-right key sequence.
+  const adminSequenceRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const handleAdminShortcut = (event: KeyboardEvent) => {
+      const key = event.key === 'm' || event.key === 'M' ? 'm' : event.key;
+      adminSequenceRef.current = [...adminSequenceRef.current, key].slice(-ADMIN_UNLOCK_SEQUENCE.length);
+      if (adminSequenceRef.current.join('|') !== ADMIN_UNLOCK_SEQUENCE.join('|')) return;
+
+      adminSequenceRef.current = [];
+      if (isAdmin) {
+        setIsAdmin(false);
+        localStorage.setItem('flannels_is_admin', 'false');
+        return;
+      }
+
+      const pin = prompt('Masukkan Password Admin:');
       if (pin === 'albarry' || pin === 'flannels') {
         setIsAdmin(true);
         localStorage.setItem('flannels_is_admin', 'true');
-        alert('Mode Admin Aktif. Anda dapat menginput berkas stem studio dan mengelola antrian.');
-      } else if (pin !== null) {
-        alert('Password salah.');
       }
-    }
+    };
+
+    window.addEventListener('keydown', handleAdminShortcut);
+    return () => window.removeEventListener('keydown', handleAdminShortcut);
+  }, [isAdmin]);
+
+  const handleToggleAdmin = () => {
+    if (!isAdmin) return;
+    setIsAdmin(false);
+    localStorage.setItem('flannels_is_admin', 'false');
   };
 
   // Video Background GPU Saver Toggle (Point 12)

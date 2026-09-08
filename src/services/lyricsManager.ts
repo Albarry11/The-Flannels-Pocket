@@ -55,7 +55,7 @@ export function parseLrc(rawText: string): LrcLine[] {
   return result.sort((a, b) => a.time - b.time);
 }
 
-export function transposeChord(chord: string, semitones: number): string {
+function transposeSingleChord(chord: string, semitones: number): string {
   if (!semitones) return chord;
   const match = chord.match(/^([A-G][b#]?)(.*)$/);
   if (!match) return chord;
@@ -72,9 +72,28 @@ export function transposeChord(chord: string, semitones: number): string {
   let newIndex = (index + semitones) % 12;
   if (newIndex < 0) newIndex += 12;
 
-  // Use sharp scale as default
   const newRoot = NOTES_SHARP[newIndex];
   return `${newRoot}${suffix}`;
+}
+
+export function transposeChord(chord: string, semitones: number): string {
+  if (!semitones) return chord;
+  if (chord.includes('/')) {
+    const parts = chord.split('/');
+    return `${transposeSingleChord(parts[0], semitones)}/${transposeSingleChord(parts[1], semitones)}`;
+  }
+  return transposeSingleChord(chord, semitones);
+}
+
+/**
+ * Transpose all [Chord] instances in a block of lyrics/chords text
+ */
+export function transposeLyricsText(text: string, semitones: number): string {
+  if (!semitones || !text) return text;
+  const chordRegex = /\[([A-G][b#]?(?:m|maj|min|dim|aug|sus[24]?|add[9]?|[0-9])*(?:\/[A-G][b#]?)?)\]/g;
+  return text.replace(chordRegex, (_, chord) => {
+    return `[${transposeChord(chord, semitones)}]`;
+  });
 }
 
 export function formatSecondsToTime(seconds: number): string {
