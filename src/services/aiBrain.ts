@@ -195,9 +195,10 @@ Pedoman Ketelitian:
  */
 export async function generateLyricsAndChordsWithAI(
   songTitle: string,
-  artistName?: string
+  artistName?: string,
+  groundedPrompt?: string
 ): Promise<string | null> {
-  const prompt = `Anda adalah transkripter tab dan chord musik profesional standar Ultimate Guitar / Chordify.
+  const prompt = groundedPrompt || `Anda adalah transkripter tab dan chord musik profesional standar Ultimate Guitar / Chordify.
 Tugas Anda: Susun chord sheet dan progresi akord lagu untuk latihan band cover:
 Judul Lagu: "${songTitle}"
 ${artistName ? `Artis / Band: "${artistName}"` : ''}

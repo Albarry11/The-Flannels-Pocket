@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Song } from '../types';
 import { transposeChord } from '../services/lyricsManager';
-import { generateLyricsAndChordsWithAI } from '../services/aiBrain';
+import { researchLyricsAndChords } from '../services/lyricsResearch';
+import type { LyricsResearchResult } from '../services/lyricsResearch';
 import {
   FileText,
   Search,
@@ -33,6 +34,7 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
   const [isSearchingAI, setIsSearchingAI] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [researchResult, setResearchResult] = useState<LyricsResearchResult | null>(null);
 
   // Search input state
   const [searchTitle, setSearchTitle] = useState('');
@@ -75,10 +77,11 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
 
     setIsSearchingAI(true);
     try {
-      const result = await generateLyricsAndChordsWithAI(titleToSearch, artistToSearch);
-      if (result && result.trim()) {
-        setLyricsText(result);
-        await onUpdateLyrics(result);
+      const result = await researchLyricsAndChords(titleToSearch, artistToSearch);
+      setResearchResult(result);
+      if (result.text && result.text.trim()) {
+        setLyricsText(result.text);
+        await onUpdateLyrics(result.text);
         setViewMode('songbook');
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
@@ -290,6 +293,26 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
           )}
         </button>
       </form>
+
+      {researchResult && (
+        <div className="mb-3 p-3 rounded-2xl bg-slate-950/90 text-white border border-sky-400/30">
+          <div className="flex items-center gap-2 text-xs font-black">
+            <Search className="w-3.5 h-3.5 text-sky-300" />
+            <span>Hasil sumber untuk {researchResult.query}</span>
+          </div>
+          {researchResult.sources.length > 0 ? (
+            <div className="mt-2 space-y-1">
+              {researchResult.sources.map((source) => (
+                <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="block text-[10px] text-sky-200 hover:text-white underline truncate">
+                  {source.title || source.url}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-[10px] text-amber-200">Provider web 9Router belum tersedia. Tidak ada sumber yang diklaim.</p>
+          )}
+        </div>
+      )}
 
       {/* Save Success Alert Banner */}
       {saveSuccess && (
