@@ -187,13 +187,39 @@ export async function separateViaDemucsBackend(
   for (const stemKey of stemKeys) {
     downloadedIdx++;
     const stemUrl = `${backendUrl}${statusData!.stems[stemKey]}`;
-    onProgress?.(`Mengunduh stem terpisah: ${stemKey} (${downloadedIdx}/${stemKeys.length})...`);
 
-    const res = await fetch(stemUrl);
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(`Gagal mengunduh stem ${stemKey} (HTTP ${res.status}): ${errText}`);
+    let res: Response | null = null;
+    let lastError: any = null;
+
+    // Retry up to 3 times to withstand Wi-Fi uplink / tunnel fluctuations
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        onProgress?.(
+          `Mengunduh stem terpisah: ${stemKey} (${downloadedIdx}/${stemKeys.length})${
+            attempt > 1 ? ` (percobaan ke-${attempt})...` : '...'
+          }`
+        );
+        res = await fetch(stemUrl, {
+          method: 'GET',
+          cache: 'no-store',
+          credentials: 'omit',
+        });
+        if (res.ok) break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`Attempt ${attempt} to download ${stemKey} failed:`, err);
+        await new Promise((r) => setTimeout(r, 1500));
+      }
     }
+
+    if (!res || !res.ok) {
+      throw new Error(
+        `Gagal mengunduh stem ${stemKey}: ${
+          lastError ? lastError.message : res?.statusText || 'Koneksi terputus'
+        }`
+      );
+    }
+
     const blob = await res.blob();
     const arrayBuffer = await blob.arrayBuffer();
 

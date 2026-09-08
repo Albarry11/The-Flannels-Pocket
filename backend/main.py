@@ -136,20 +136,34 @@ def get_job_status(job_id: str):
     }
 
 @app.get("/api/stems/{job_id}/{stem_name}")
-def download_stem(job_id: str, stem_name: str):
+def download_stem(job_id: str, stem_name: str, format: str = "flac"):
     job_dir = os.path.join(JOBS_DIR, job_id)
     wav_path = os.path.join(job_dir, f"{stem_name}.wav")
     flac_path = os.path.join(job_dir, f"{stem_name}.flac")
 
-    file_path = wav_path if os.path.exists(wav_path) else flac_path
-    if not os.path.exists(file_path):
+    # Prefer compressed lossless FLAC (10-25MB) over 60MB uncompressed WAV to prevent tunnel timeout
+    if format == "wav" and os.path.exists(wav_path):
+        file_path = wav_path
+        media_type = "audio/wav"
+    elif os.path.exists(flac_path):
+        file_path = flac_path
+        media_type = "audio/flac"
+    elif os.path.exists(wav_path):
+        file_path = wav_path
+        media_type = "audio/wav"
+    else:
         raise HTTPException(status_code=404, detail=f"Stem '{stem_name}' tidak ditemukan")
 
-    media_type = "audio/wav" if file_path.endswith(".wav") else "audio/flac"
     return FileResponse(
         file_path,
         media_type=media_type,
         content_disposition_type="inline",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cache-Control": "public, max-age=86400",
+        },
     )
 
 if __name__ == "__main__":
