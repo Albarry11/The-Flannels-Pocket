@@ -15,10 +15,7 @@ import {
   Minus,
   Settings2,
   Music,
-  Info,
-  CheckCircle2,
   Disc,
-  ExternalLink,
 } from 'lucide-react';
 import { formatSecondsToTime, transposeChord } from '../services/lyricsManager';
 import { globalMetronome } from '../services/metronomeEngine';
@@ -87,7 +84,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   onMetronomeBpmChange,
 }) => {
   const [showAdvancedMetronome, setShowAdvancedMetronome] = useState(false);
-  const [showSourceInfo, setShowSourceInfo] = useState(false);
 
   // Advanced metronome local states
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -192,35 +188,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Verified BPM & Key Source Info Tooltip (Point 2 & 4) */}
-      {showSourceInfo && (
-        <div className="absolute bottom-24 left-10 sm:left-72 max-w-sm rounded-2xl bg-white/95 backdrop-blur-2xl border border-sky-300 p-3.5 shadow-2xl z-50 text-[11px] text-[#0f2942] animate-in fade-in duration-100">
-          <div className="flex items-center gap-1.5 text-emerald-700 font-bold mb-1">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Verifikasi Web BPM & Tangga Nada</span>
-          </div>
-          <p className="font-medium text-slate-700">
-            <strong>Sumber:</strong> {currentSong?.verifiedSource || 'Database Musik (SongBPM / Tunebat)'}
-          </p>
-          {currentSong?.researchNotes && (
-            <p className="mt-1 text-slate-600 text-[10px] italic border-t border-sky-100 pt-1">
-              {currentSong.researchNotes}
-            </p>
-          )}
-          {currentSong?.sourceUrl && (
-            <a
-              href={currentSong.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white font-extrabold text-[10px] shadow-xs transition"
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>Buka Tautan Sumber & Cek Ulang →</span>
-            </a>
-          )}
         </div>
       )}
 
@@ -468,15 +435,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     {currentKeyTransposed}
                   </span>
                 )}
-                {/* Info Tooltip */}
-                <button
-                  onClick={() => setShowSourceInfo(!showSourceInfo)}
-                  className="text-slate-400 hover:text-emerald-600 ml-0.5"
-                  title="Bukti Sumber BPM & Key Terverifikasi"
-                  aria-label="Lihat bukti sumber validasi BPM dan Key"
-                >
-                  <Info className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
           </div>

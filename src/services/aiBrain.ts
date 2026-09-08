@@ -155,30 +155,21 @@ async function callAIGateway(prompt: string): Promise<string> {
 export async function researchSongBpmAndKeyWithAI(
   songTitle: string,
   artistName?: string
-): Promise<{ bpm: number; key: string; timeSignature: string; verifiedSource: string; sourceUrl: string; notes: string } | null> {
-  const queryStr = `${artistName || ''} ${songTitle}`.trim();
-  const fallbackUrl = `https://tunebat.com/Search?q=${encodeURIComponent(queryStr)}`;
-
-  const prompt = `Anda adalah musicologist dan peneliti lagu profesional.
-Tugas Anda: Lakukan riset menyeluruh terhadap database web musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax, Beatport) untuk lagu:
+): Promise<{ bpm: number; key: string; timeSignature: string; notes: string } | null> {
+  const prompt = `Anda adalah musicologist profesional.
+Tentukan nilai BPM (tempo resmi lagu rekaman studio) dan Tangga Nada Dasar Asli / Key (misal: C, D, E, Em, G, A, F#m, dll) dari lagu berikut:
 Judul Lagu: "${songTitle}"
 ${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-PEDOMAN KETELITIAN:
-1. Telusuri nilai BPM rekaman master studio resmi lagu ini. Jangan menebak default atau membulatkan sembarangan.
-2. Identifikasi Tangga Nada Dasar Asli (Key) yang pasti dari lagu ini berdasarkan partitur dan progresi akord kunci.
-3. Nilai "bpm" dan "key" yang Anda tuliskan di JSON HARUS SAMA PERSIS dengan apa yang tercantum pada situs web resmi (Tunebat/SongBPM/Ultimate Guitar) agar pengguna saat membuka tautan mendapatkan data yang 100% identik!
-4. Berikan tautan pencarian langsung yang valid pada field "sourceUrl" (misal: "https://tunebat.com/Search?q=..." atau "https://songbpm.com/...").
-5. Format output WAJIB HANYA JSON valid tanpa teks lain:
+Pedoman Ketelitian:
+1. Berikan nilai BPM rekaman master studio resmi yang presisi. Jangan menebak default atau membulatkan sembarangan.
+2. Tentukan Tangga Nada Dasar Asli (Key) yang pasti dari lagu ini.
+3. Format output WAJIB HANYA JSON valid tanpa embel-embel teks lain:
 {
-  "title": "${songTitle}",
-  "artist": "${artistName || ''}",
-  "bpm": 135,
-  "key": "E",
+  "bpm": 120,
+  "key": "C",
   "timeSignature": "4/4",
-  "verifiedSource": "Tunebat / SongBPM Database",
-  "sourceUrl": "${fallbackUrl}",
-  "notes": "Penjelasan detail progresi akord kunci dan versi rekaman"
+  "notes": "Tempo rekaman master studio"
 }`;
 
   try {
@@ -188,15 +179,13 @@ PEDOMAN KETELITIAN:
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         bpm: typeof parsed.bpm === 'number' ? parsed.bpm : 120,
-        key: typeof parsed.key === 'string' ? parsed.key : 'C',
+        key: typeof parsed.key === 'string' ? parsed.key.trim() : 'C',
         timeSignature: typeof parsed.timeSignature === 'string' ? parsed.timeSignature : '4/4',
-        verifiedSource: typeof parsed.verifiedSource === 'string' ? parsed.verifiedSource : 'Database Musik Tunebat & SongBPM',
-        sourceUrl: typeof parsed.sourceUrl === 'string' && parsed.sourceUrl.startsWith('http') ? parsed.sourceUrl : fallbackUrl,
         notes: typeof parsed.notes === 'string' ? parsed.notes : '',
       };
     }
   } catch (err) {
-    console.warn('Gemini song research failed, fallback to local estimation:', err);
+    console.warn('AI song research failed:', err);
   }
   return null;
 }

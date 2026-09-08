@@ -33,6 +33,8 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
   const [artist, setArtist] = useState(initialRequest?.artist || 'The Flannels');
   const [album, setAlbum] = useState(initialRequest?.album || 'Single');
   const [artworkUrl, setArtworkUrl] = useState<string | undefined>(initialRequest?.artworkUrl);
+  const [bpmInput, setBpmInput] = useState<string>('');
+  const [keyInput, setKeyInput] = useState<string>('');
 
   // Discrete stem files
   const [vocalFile, setVocalFile] = useState<File | null>(null);
@@ -123,9 +125,14 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
       setIsProcessing(true);
       setProgressStatus('Membuat track stem studio dan folder lagu...');
 
+      const parsedBpm = bpmInput ? parseInt(bpmInput, 10) : undefined;
+      const cleanKey = keyInput ? keyInput.trim() : undefined;
+
       const song = await createSongFromFiles(title, artist, stemFilesList, {
         album,
         artworkUrl,
+        bpm: parsedBpm && parsedBpm > 0 ? parsedBpm : undefined,
+        key: cleanKey || undefined,
         onProgress: (status) => setProgressStatus(status),
       });
 
@@ -224,6 +231,34 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
                   placeholder="Contoh: Sheila On 7"
                   className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-sky-500"
                 />
+              </div>
+
+              {/* Explicit BPM & Tangga Nada (Key) Controls for Admin */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-sky-900 block mb-1">
+                    BPM (Tempo)
+                  </label>
+                  <input
+                    type="number"
+                    value={bpmInput}
+                    onChange={(e) => setBpmInput(e.target.value)}
+                    placeholder="Auto AI jika kosong"
+                    className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-sky-900 block mb-1">
+                    Tangga Nada (Key)
+                  </label>
+                  <input
+                    type="text"
+                    value={keyInput}
+                    onChange={(e) => setKeyInput(e.target.value)}
+                    placeholder="Auto AI jika kosong (misal: E, G)"
+                    className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold focus:outline-none focus:border-sky-500 uppercase"
+                  />
+                </div>
               </div>
             </div>
 

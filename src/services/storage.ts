@@ -183,9 +183,9 @@ export async function createSongFromFiles(
     } catch (_) {}
   }
 
-  // STRICT PRIORITY: If AI Web Research succeeds, its BPM and Key ALWAYS win!
-  const finalBpm = options?.bpm || aiResearched?.bpm || bpmKeyReport?.bpm || 120;
-  const finalKey = options?.key || aiResearched?.key || bpmKeyReport?.key || 'C';
+  // STRICT PRIORITY: Manual Admin input ALWAYS wins, followed by AI research
+  const finalBpm = options?.bpm || aiResearched?.bpm || 120;
+  const finalKey = options?.key || aiResearched?.key || 'C';
   const finalTimeSignature = aiResearched?.timeSignature || '4/4';
 
   const cleanTitle = title.trim() || 'Untitled Cover';
@@ -222,9 +222,7 @@ export async function createSongFromFiles(
     timeSignature: finalTimeSignature,
     lyrics: autoLyrics,
     artworkUrl: extractedArt || undefined,
-    verifiedSource: aiResearched?.verifiedSource || 'Web Search (SongBPM / Tunebat)',
-    sourceUrl: aiResearched?.sourceUrl || `https://tunebat.com/Search?q=${encodeURIComponent(`${cleanArtist} ${cleanTitle}`.trim())}`,
-    researchNotes: aiResearched?.notes || `Verifikasi web resmi: tempo ${finalBpm} BPM dan tangga nada ${finalKey}`,
+    researchNotes: aiResearched?.notes || `Tempo ${finalBpm} BPM, Key ${finalKey}`,
     folderName,
     discreteFiles,
     stems,

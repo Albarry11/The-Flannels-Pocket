@@ -8,8 +8,6 @@ import {
   Music2,
   Play,
   FileDown,
-  ShieldCheck,
-  ExternalLink,
   Download,
   FileAudio,
   ChevronDown,
@@ -222,28 +220,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                           {song.stems.length} Stems
                         </span>
                       </div>
-
-                      {/* Verified Web Source Link */}
-                      {song.verifiedSource && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold mt-1.5 flex-wrap">
-                          <span className="flex items-center gap-1">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                            <span>{song.verifiedSource}</span>
-                          </span>
-                          {song.sourceUrl && (
-                            <a
-                              href={song.sourceUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sky-700 hover:text-sky-900 underline flex items-center gap-0.5 ml-1"
-                              title="Buka web untuk verifikasi silang BPM & Tangga Nada"
-                            >
-                              <span>Cek Web</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
 
