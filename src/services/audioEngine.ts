@@ -27,7 +27,9 @@ export class AudioEngine {
   private metronomeSyncEnabled: boolean = false;
   private metronomeVolume: number = 0.7;
   private metronomeBeatsPerBar: number = 4;
-  private lastScheduledBeat: number = -1;
+  private metronomeSchedulerId: number | null = null;
+  private nextClickTime: number = 0;
+  private nextClickBeat: number = 0;
 
   private animationFrameId: number | null = null;
   private onTimeUpdateCallback?: (time: number) => void;
@@ -129,7 +131,6 @@ export class AudioEngine {
 
     this.isPlaying = true;
     this.startTime = ctx.currentTime - (this.pauseOffset / this.speed);
-    this.lastScheduledBeat = -1;
 
     // Create fresh AudioBufferSourceNodes
     this.currentSong.stems.forEach((stem) => {
@@ -157,6 +158,7 @@ export class AudioEngine {
     const ctx = this.getContext();
     this.isPlaying = false;
     this.pauseOffset = (ctx.currentTime - this.startTime) * this.speed;
+    this.stopMetronomeScheduler();
 
     this.stemNodes.forEach((nodes) => {
       try {
@@ -175,7 +177,7 @@ export class AudioEngine {
   public stop() {
     this.pause();
     this.pauseOffset = 0;
-    this.lastScheduledBeat = -1;
+    this.stopMetronomeScheduler();
     if (this.onTimeUpdateCallback) {
       this.onTimeUpdateCallback(0);
     }
@@ -187,7 +189,6 @@ export class AudioEngine {
       this.pause();
     }
     this.pauseOffset = Math.max(0, Math.min(timeInSeconds, this.currentSong?.duration || 0));
-    this.lastScheduledBeat = -1;
     if (this.onTimeUpdateCallback) {
       this.onTimeUpdateCallback(this.pauseOffset);
     }
@@ -395,6 +396,11 @@ export class AudioEngine {
     this.metronomeSyncEnabled = enabled;
     this.metronomeVolume = Math.max(0, Math.min(1, volume));
     this.metronomeBeatsPerBar = Math.max(1, Math.min(12, Math.round(beatsPerBar)));
+    if (enabled && this.isPlaying) {
+      this.startMetronomeScheduler();
+    } else if (!enabled) {
+      this.stopMetronomeScheduler();
+    }
   }
 
   public setMetronomeVolume(volume: number) {
@@ -403,7 +409,84 @@ export class AudioEngine {
 
   public setMetronomeBeatsPerBar(beatsPerBar: number) {
     this.metronomeBeatsPerBar = Math.max(1, Math.min(12, Math.round(beatsPerBar)));
-    this.lastScheduledBeat = -1;
+    if (this.metronomeSyncEnabled && this.isPlaying) {
+      this.restartMetronomeScheduler();
+    }
+  }
+
+  private startMetronomeScheduler() {
+    if (this.metronomeSchedulerId !== null) return;
+    if (!this.ctx || !this.currentSong) return;
+
+    const songBpm = (this.currentSong.bpm || 120) * this.speed;
+    const beatSec = 60 / songBpm;
+    const currentPos = this.getCurrentTime();
+
+    // Calculate first click: align to the next beat boundary from current playback position
+    this.nextClickBeat = Math.floor(currentPos / beatSec) + 1;
+    this.nextClickTime = this.ctx.currentTime + ((this.nextClickBeat * beatSec) - currentPos);
+
+    this.scheduleClicks();
+  }
+
+  private restartMetronomeScheduler() {
+    this.stopMetronomeScheduler();
+    this.startMetronomeScheduler();
+  }
+
+  private stopMetronomeScheduler() {
+    if (this.metronomeSchedulerId !== null) {
+      clearInterval(this.metronomeSchedulerId);
+      this.metronomeSchedulerId = null;
+    }
+  }
+
+  private scheduleClicks() {
+    if (!this.ctx || !this.currentSong) return;
+    const lookahead = 0.1; // Schedule 100ms ahead
+    const scheduleInterval = 25; // Check every 25ms
+
+    const tick = () => {
+      if (!this.ctx || !this.currentSong || !this.isPlaying) {
+        this.stopMetronomeScheduler();
+        return;
+      }
+
+      const songBpm = (this.currentSong.bpm || 120) * this.speed;
+      const beatSec = 60 / songBpm;
+      const songEnd = this.currentSong.duration;
+
+      while (this.nextClickTime < this.ctx.currentTime + lookahead) {
+        const clickPosInSong = this.getCurrentTime() + (this.nextClickTime - this.ctx.currentTime);
+
+        // Stop scheduling if past song end
+        if (clickPosInSong >= songEnd) {
+          this.stopMetronomeScheduler();
+          return;
+        }
+
+        const beatInBar = this.nextClickBeat % this.metronomeBeatsPerBar;
+        const isDownbeat = beatInBar === 0;
+
+        // Schedule click at the precise AudioContext time
+        this.playMetronomeTick(this.nextClickTime, isDownbeat);
+
+        if (this.onBeatTickCallback) {
+          const delayMs = Math.max(0, (this.nextClickTime - this.ctx.currentTime) * 1000);
+          const beat = beatInBar;
+          const downbeat = isDownbeat;
+          setTimeout(() => {
+            if (this.onBeatTickCallback) this.onBeatTickCallback(beat, downbeat);
+          }, delayMs);
+        }
+
+        this.nextClickBeat++;
+        this.nextClickTime += beatSec;
+      }
+    };
+
+    tick();
+    this.metronomeSchedulerId = window.setInterval(tick, scheduleInterval);
   }
 
   private playMetronomeTick(time: number, isDownbeat: boolean) {
@@ -443,23 +526,9 @@ export class AudioEngine {
       if (!this.isPlaying) return;
       const current = this.getCurrentTime();
 
-      // Synced Metronome Click Scheduler
-      if (this.metronomeSyncEnabled && this.currentSong && this.ctx) {
-        const songBpm = (this.currentSong.bpm || 120) * this.speed;
-        const beatSec = 60 / songBpm;
-        const totalBeatsElapsed = Math.floor(current / beatSec);
-
-        if (totalBeatsElapsed > this.lastScheduledBeat) {
-          this.lastScheduledBeat = totalBeatsElapsed;
-          const beatInBar = totalBeatsElapsed % this.metronomeBeatsPerBar;
-          const isDownbeat = beatInBar === 0;
-
-          // Schedule click tick
-          this.playMetronomeTick(this.ctx.currentTime, isDownbeat);
-          if (this.onBeatTickCallback) {
-            this.onBeatTickCallback(beatInBar, isDownbeat);
-          }
-        }
+      // Synced Metronome: start scheduler when playback begins if enabled
+      if (this.metronomeSyncEnabled && this.metronomeSchedulerId === null && this.currentSong) {
+        this.startMetronomeScheduler();
       }
 
       // Check loop boundary
@@ -473,6 +542,7 @@ export class AudioEngine {
       // Check song end
       if (this.currentSong && current >= this.currentSong.duration) {
         this.stop();
+        this.stopMetronomeScheduler();
         if (this.onEndedCallback) this.onEndedCallback();
         return;
       }
