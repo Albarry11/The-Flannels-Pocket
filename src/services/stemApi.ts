@@ -2,7 +2,10 @@ import type { StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
 import { separateAudioIntoStems as separateLocalDSP } from './stemSeparator';
 
-export const DEMUCS_BACKEND_URL = (import.meta as any).env?.VITE_DEMUCS_BACKEND_URL || 'http://localhost:8000';
+// Default fallback to public Cloudflare Tunnel, local dev, or environment variable
+export const DEMUCS_BACKEND_URL =
+  (import.meta as any).env?.VITE_DEMUCS_BACKEND_URL ||
+  'https://extends-psychological-review-metal.trycloudflare.com';
 
 export interface DemucsJobStatus {
   job_id: string;
