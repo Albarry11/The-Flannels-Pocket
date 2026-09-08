@@ -90,6 +90,19 @@ export async function deleteSongFromStorage(songId: string): Promise<void> {
   await del(`${SONGS_KEY_PREFIX}${songId}`);
 }
 
+export async function updateSongMetadata(
+  songId: string,
+  updates: { title?: string; artist?: string; bpm?: number; originalKey?: string }
+): Promise<void> {
+  const meta: any = await get(`${SONGS_KEY_PREFIX}${songId}`);
+  if (!meta) return;
+  if (updates.title) meta.title = updates.title;
+  if (updates.artist) meta.artist = updates.artist;
+  if (typeof updates.bpm === 'number' && updates.bpm > 0) meta.bpm = updates.bpm;
+  if (updates.originalKey) meta.originalKey = updates.originalKey.trim();
+  await set(`${SONGS_KEY_PREFIX}${songId}`, meta);
+}
+
 /**
  * Creates a new song from discrete studio stem files uploaded by Admin.
  * 100% discrete, zero-bleed audio without any in-browser DSP filter hacks.

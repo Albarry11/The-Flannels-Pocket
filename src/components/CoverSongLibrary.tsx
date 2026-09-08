@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import type { Song, StemTrack } from '../types';
-import { deleteSongFromStorage } from '../services/storage';
+import { deleteSongFromStorage, updateSongMetadata } from '../services/storage';
 import {
   Folder,
   Plus,
   Trash2,
+  Pencil,
   Music2,
   Play,
   FileDown,
@@ -15,6 +16,8 @@ import {
   Lock,
   Flame,
   Upload,
+  Check,
+  X,
 } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 import { exportSongPackage } from '../services/cloudDatabase';
@@ -41,6 +44,27 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   onUnlockAdmin,
 }) => {
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
+
+  // Edit Metadata State (Admin only)
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [editBpm, setEditBpm] = useState<number>(120);
+  const [editKey, setEditKey] = useState<string>('C');
+
+  const handleOpenEdit = (song: Song) => {
+    setEditingSong(song);
+    setEditBpm(song.bpm);
+    setEditKey(song.originalKey);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSong) return;
+    await updateSongMetadata(editingSong.id, {
+      bpm: editBpm,
+      originalKey: editKey,
+    });
+    await onRefreshSongs();
+    setEditingSong(null);
+  };
 
   const handleDownloadStem = (stem: StemTrack, songTitle: string) => {
     if (!stem.blob) return;
@@ -283,13 +307,22 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                     </button>
 
                     {isAdmin && (
-                      <button
-                        onClick={() => handleDelete(song.id)}
-                        className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                        title="Hapus lagu dari studio"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenEdit(song)}
+                          className="p-1.5 rounded-full text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition"
+                          title="Edit BPM & Tangga Nada"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(song.id)}
+                          className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                          title="Hapus lagu dari studio"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -298,6 +331,64 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit BPM & Key Modal for Admin */}
+      {editingSong && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-100">
+          <div className="w-full max-w-sm rounded-3xl bg-white/95 backdrop-blur-2xl border border-sky-300 p-5 shadow-2xl text-[#0f2942] space-y-4">
+            <div className="flex items-center justify-between border-b border-sky-100 pb-2">
+              <div>
+                <h4 className="font-black text-sm text-[#0f2942]">Edit BPM & Tangga Nada</h4>
+                <p className="text-[11px] text-slate-500 truncate max-w-[200px]">{editingSong.title} - {editingSong.artist}</p>
+              </div>
+              <button onClick={() => setEditingSong(null)} className="text-slate-400 hover:text-slate-700 font-bold p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">BPM (Tempo)</label>
+                <input
+                  type="number"
+                  value={editBpm}
+                  onChange={(e) => setEditBpm(parseInt(e.target.value, 10) || 0)}
+                  className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Tangga Nada Asli (Key)</label>
+                <input
+                  type="text"
+                  value={editKey}
+                  onChange={(e) => setEditKey(e.target.value)}
+                  placeholder="Contoh: E, G, Am"
+                  className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:border-sky-500 uppercase"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2 border-t border-sky-100">
+              <button
+                type="button"
+                onClick={() => setEditingSong(null)}
+                className="px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold hover:bg-slate-200 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="px-5 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-black shadow-md shadow-sky-500/20 active:scale-95 transition flex items-center gap-1"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Simpan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
