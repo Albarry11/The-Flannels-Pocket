@@ -56,7 +56,7 @@ export async function resolveDemucsBackendUrl(): Promise<string> {
   if (envUrl && !candidates.includes(envUrl)) candidates.push(envUrl);
 
   // Default fallback tunnel
-  const defaultTunnel = 'https://extends-psychological-review-metal.trycloudflare.com';
+  const defaultTunnel = 'https://glasses-opposed-freely-likewise.trycloudflare.com';
   if (!candidates.includes(defaultTunnel)) candidates.push(defaultTunnel);
 
   for (const url of candidates) {
