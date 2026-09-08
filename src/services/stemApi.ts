@@ -110,8 +110,6 @@ export async function separateViaDemucsBackend(
     guitar: { role: 'guitar', name: 'Guitar', pan: 0 },
     bass: { role: 'bass', name: 'Bass', pan: 0 },
     drums: { role: 'drums', name: 'Drums', pan: 0 },
-    piano: { role: 'piano', name: 'Piano / Keys', pan: -0.25 },
-    other: { role: 'other', name: 'Other', pan: 0.25 },
   };
 
   const stemKeys = Object.keys(statusData?.stems || {});
