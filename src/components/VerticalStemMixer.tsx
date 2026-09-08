@@ -93,16 +93,20 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   // Show discrete band instruments (filter out 'other' by default unless it's a specific track)
   const visibleStems = stems.filter((s) => s.role !== 'other');
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const visibleStemIds = visibleStems.map((s) => s.id).join('|');
 
   // Direct DOM VU Meter Animation (Decoupled from React State -> 0 Main-Thread Lag & 0 Glitches)
+  // Re-run only when the set of visible stem IDs changes, not on every volume/pan tweak
   useEffect(() => {
     let animId: number;
+    const stemIds = visibleStemIds.split('|');
+
     const updateMeters = () => {
       if (globalAudioEngine.getIsPlaying()) {
-        visibleStems.forEach((stem) => {
-          const el = meterRefs.current[stem.id];
+        stemIds.forEach((stemId) => {
+          const el = meterRefs.current[stemId];
           if (el) {
-            const level = globalAudioEngine.getStemLevel(stem.id);
+            const level = globalAudioEngine.getStemLevel(stemId);
             const heightPct = Math.min(100, Math.round(level * 100));
             el.style.height = `${heightPct}%`;
             el.style.backgroundColor = level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#10b981';
@@ -110,8 +114,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
           }
         });
       } else {
-        visibleStems.forEach((stem) => {
-          const el = meterRefs.current[stem.id];
+        stemIds.forEach((stemId) => {
+          const el = meterRefs.current[stemId];
           if (el) {
             el.style.height = '0%';
             el.style.boxShadow = 'none';
@@ -123,7 +127,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
     animId = requestAnimationFrame(updateMeters);
     return () => cancelAnimationFrame(animId);
-  }, [visibleStems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleStemIds]);
 
   return (
     <div className="flex flex-col gap-2.5 h-[calc(100vh-230px)] min-h-[380px] max-h-[520px] max-w-5xl mx-auto w-full overflow-hidden select-none">

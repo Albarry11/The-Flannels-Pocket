@@ -271,8 +271,9 @@ export class AudioEngine {
     const stem = this.currentSong?.stems.find((s) => s.id === stemId);
     if (stem) stem.pan = pan;
     const nodes = this.stemNodes.get(stemId);
-    if (nodes) {
-      nodes.pannerNode.pan.value = pan;
+    if (nodes && this.ctx) {
+      const clamped = Math.max(-1, Math.min(1, pan));
+      nodes.pannerNode.pan.setTargetAtTime(clamped, this.ctx.currentTime, 0.015);
     }
   }
 

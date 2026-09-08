@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const ADMIN_UNLOCK_SEQUENCE = ['maximize', 'minimize', 'close', 'close'] as const;
 import type { Song, LoopRegion } from './types';
@@ -235,26 +235,56 @@ export function App() {
     globalAudioEngine.setMetronomeVolume(clamped);
   };
 
-  // Stems manipulation
+  // Stems manipulation — rAF throttled to prevent main-thread flooding on slider drag
+  const rafVolumeRef = useRef<number | null>(null);
+  const pendingVolumeRef = useRef<{ stemId: string; vol: number } | null>(null);
+
   const handleVolumeChange = (stemId: string, vol: number) => {
+    // Audio engine updates immediately (no React state needed for audio)
     globalAudioEngine.setStemVolume(stemId, vol);
-    if (currentSong) {
-      const updatedStems = currentSong.stems.map((s) =>
-        s.id === stemId ? { ...s, volume: vol } : s
-      );
-      setCurrentSong({ ...currentSong, stems: updatedStems });
+    // Throttle React state update to one per frame max
+    pendingVolumeRef.current = { stemId, vol };
+    if (rafVolumeRef.current === null) {
+      rafVolumeRef.current = requestAnimationFrame(() => {
+        rafVolumeRef.current = null;
+        const pending = pendingVolumeRef.current;
+        if (!pending || !currentSong) return;
+        const updatedStems = currentSong.stems.map((s) =>
+          s.id === pending.stemId ? { ...s, volume: pending.vol } : s
+        );
+        setCurrentSong({ ...currentSong, stems: updatedStems });
+      });
     }
   };
 
+  const rafPanRef = useRef<number | null>(null);
+  const pendingPanRef = useRef<{ stemId: string; pan: number } | null>(null);
+
   const handlePanChange = (stemId: string, pan: number) => {
+    // Audio engine updates immediately
     globalAudioEngine.setStemPan(stemId, pan);
-    if (currentSong) {
-      const updatedStems = currentSong.stems.map((s) =>
-        s.id === stemId ? { ...s, pan } : s
-      );
-      setCurrentSong({ ...currentSong, stems: updatedStems });
+    // Throttle React state update
+    pendingPanRef.current = { stemId, pan };
+    if (rafPanRef.current === null) {
+      rafPanRef.current = requestAnimationFrame(() => {
+        rafPanRef.current = null;
+        const pending = pendingPanRef.current;
+        if (!pending || !currentSong) return;
+        const updatedStems = currentSong.stems.map((s) =>
+          s.id === pending.stemId ? { ...s, pan: pending.pan } : s
+        );
+        setCurrentSong({ ...currentSong, stems: updatedStems });
+      });
     }
   };
+
+  // Cleanup pending rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafVolumeRef.current !== null) cancelAnimationFrame(rafVolumeRef.current);
+      if (rafPanRef.current !== null) cancelAnimationFrame(rafPanRef.current);
+    };
+  }, []);
 
   const handleToggleMute = (stemId: string) => {
     if (!currentSong) return;
