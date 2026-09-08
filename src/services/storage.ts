@@ -160,7 +160,14 @@ export async function createSongFromFiles(
     }
   }
 
-  // Audio analysis
+  // 1. Prioritize AI Web Research for official BPM & Key (Point 1)
+  options?.onProgress?.('AI Web Research: Meneliti BPM dan Tangga Nada resmi lagu...');
+  let aiResearched;
+  try {
+    aiResearched = await researchSongBpmAndKeyWithAI(title, artist);
+  } catch (_) {}
+
+  // 2. Audio analytical engines (only used as fallback if AI web research has no result)
   options?.onProgress?.('SpotiFLAC: Menghitung kualitas audio & kelantangan LUFS...');
   let qualityReport;
   let bpmKeyReport;
@@ -178,23 +185,17 @@ export async function createSongFromFiles(
     } catch (_) {}
   }
 
-  // AI Web Research for official BPM & Key (Point 7)
-  options?.onProgress?.('AI Web Research: Meneliti BPM dan Tangga Nada resmi lagu...');
-  let aiResearched;
-  try {
-    aiResearched = await researchSongBpmAndKeyWithAI(title, artist);
-  } catch (_) {}
-
   // AI Auto-LRC Lyrics & Chords generation (Point 10)
   let autoLyrics = options?.lyrics || '';
   if (!autoLyrics) {
-    options?.onProgress?.('AI Lyricist: Membuat lirik tersinkronisasi dan akord lagu...');
+    options?.onProgress?.('AI Lyricist: Menelusuri lirik resmi dan progresi akord lagu...');
     try {
       const generated = await generateLyricsAndChordsWithAI(title, artist);
       if (generated) autoLyrics = generated;
     } catch (_) {}
   }
 
+  // STRICT PRIORITY: If AI Web Research succeeds, its BPM and Key ALWAYS win!
   const finalBpm = options?.bpm || aiResearched?.bpm || bpmKeyReport?.bpm || 120;
   const finalKey = options?.key || aiResearched?.key || bpmKeyReport?.key || 'C';
   const finalTimeSignature = aiResearched?.timeSignature || '4/4';

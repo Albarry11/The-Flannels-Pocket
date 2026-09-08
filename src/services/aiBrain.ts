@@ -109,26 +109,26 @@ export async function researchSongBpmAndKeyWithAI(
   const queryStr = `${artistName || ''} ${songTitle}`.trim();
   const fallbackUrl = `https://tunebat.com/Search?q=${encodeURIComponent(queryStr)}`;
 
-  const prompt = `Anda adalah musicologist dan peneliti lagu yang sangat teliti, santai, dan mendalam.
-Tugas Anda: Lakukan riset dan verifikasi silang terhadap database musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax, Beatport, dan partitur chord resmi) untuk lagu:
+  const prompt = `Anda adalah musicologist dan peneliti lagu profesional.
+Tugas Anda: Lakukan riset menyeluruh terhadap database web musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax, Beatport) untuk lagu:
 Judul Lagu: "${songTitle}"
 ${artistName ? `Artis / Band: "${artistName}"` : ''}
 
-PEDOMAN KETELITIAN & SUMBER VALID:
-1. Luangkan analisis secara cermat. Prioritaskan keakuratan 100% di atas kecepatan.
-2. Analisis progresi akord kunci lagu (verse & chorus) untuk menentukan Tangga Nada Asli (Key) secara pasti (contoh: "Dan - Sheila On 7" verse C-Em-F-G atau E-G#m-A-B sesuai rekaman master studio, Peterpan "Menghapus Jejakmu" = G Mayor, Dewa 19 "Kangen" = D Mayor).
-3. Tentukan tempo metronom studio resmi (BPM) yang stabil.
-4. Cantumkan nama sumber data musik yang Anda verifikasi pada field "verifiedSource" dan URL verifikasi pada "sourceUrl" (misal: "https://tunebat.com/Search?q=..." atau "https://songbpm.com/...").
-5. Format output WAJIB HANYA JSON valid:
+PEDOMAN KETELITIAN:
+1. Telusuri nilai BPM rekaman master studio resmi lagu ini. Jangan menebak default atau membulatkan sembarangan.
+2. Identifikasi Tangga Nada Dasar Asli (Key) yang pasti dari lagu ini berdasarkan partitur dan progresi akord kunci.
+3. Nilai "bpm" dan "key" yang Anda tuliskan di JSON HARUS SAMA PERSIS dengan apa yang tercantum pada situs web resmi (Tunebat/SongBPM/Ultimate Guitar) agar pengguna saat membuka tautan mendapatkan data yang 100% identik!
+4. Berikan tautan pencarian langsung yang valid pada field "sourceUrl" (misal: "https://tunebat.com/Search?q=..." atau "https://songbpm.com/...").
+5. Format output WAJIB HANYA JSON valid tanpa teks lain:
 {
   "title": "${songTitle}",
   "artist": "${artistName || ''}",
   "bpm": 135,
   "key": "E",
   "timeSignature": "4/4",
-  "verifiedSource": "Tunebat & SongBPM Database",
+  "verifiedSource": "Tunebat / SongBPM Database",
   "sourceUrl": "${fallbackUrl}",
-  "notes": "Detail progresi akord chord, tuning, dan versi rekaman master resmi"
+  "notes": "Penjelasan detail progresi akord kunci dan versi rekaman"
 }`;
 
   try {
@@ -159,14 +159,17 @@ export async function generateLyricsAndChordsWithAI(
   artistName?: string
 ): Promise<string | null> {
   const prompt = `Anda adalah transkripter lirik dan akord musik profesional.
-Tugas Anda: Buatkan lirik lengkap lagu dengan akord format [Chord] dan timestamp sinkron format [mm:ss.xx] untuk lagu:
-Judul: "${songTitle}"
-${artistName ? `Artis / Band: "${artistName}"` : ''}
+Tugas Anda: Telusuri lirik asli dan progresi akord lagu "${songTitle}" oleh "${artistName || ''}" dari situs akord terverifikasi (seperti Ultimate Guitar, Chordify, atau Songsterr).
 
-ATURAN KETELITIAN:
-1. Pastikan akord di dalam [Chord] akurat dan harmonis dengan progresi nada dasar lagu aslinya.
-2. Timestamp [mm:ss.xx] teratur per baris lirik.
-3. Berikan HANYA teks LRC murni tanpa intro/outro percakapan.`;
+PETUNJUK FORMAT:
+1. Ekstrak lirik lengkap lagu dari bait awal, reff/chorus, hingga akhir lagu.
+2. Sisipkan akord gitar di posisi ketukan yang tepat menggunakan tanda kurung siku [Chord], misalnya [Em], [G], [Am7], [D/F#].
+3. Tambahkan timestamp sinkronisasi per baris lagu dengan format standar LRC: [mm:ss.xx] di awal baris.
+Contoh:
+[00:15.50] [Em] Lirik kalimat pertama [C] sambungan kata [D]
+[00:22.00] [G] Masuk ke kalimat kedua...
+
+Keluarkan HANYA teks LRC tersinkronisasi murni, tanpa teks basa-basi sebelum atau sesudahnya.`;
 
   try {
     const rawText = await callGeminiGenerateContent(prompt);
