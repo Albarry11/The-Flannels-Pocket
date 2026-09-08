@@ -207,7 +207,8 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
       setCustomArtwork('');
     } catch (err) {
       console.error(err);
-      alert('Gagal memproses audio.');
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`Gagal memproses audio: ${msg}`);
       setIsProcessing(false);
     }
   };

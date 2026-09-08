@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import torch
+import numpy as np
 import soundfile as sf
 from pathlib import Path
 from typing import Callable, Optional
@@ -68,21 +69,34 @@ class DemucsSeparatorWorker:
         total_stems = len(separated)
         current_idx = 0
 
-        # Save each stem to lossless FLAC (16-bit, 44.1kHz)
+        # Save each stem to discrete standard 16-bit 44.1kHz WAV and FLAC
         for stem_name, stem_tensor in separated.items():
             current_idx += 1
+            wav_path = os.path.join(output_dir, f"{stem_name}.wav")
             flac_path = os.path.join(output_dir, f"{stem_name}.flac")
 
             if progress_callback:
                 pct = 0.5 + (current_idx / total_stems) * 0.4
-                progress_callback(pct, f"Mengekspor {stem_name}.flac (Lossless 44.1kHz)...")
+                progress_callback(pct, f"Mengekspor {stem_name}.wav (Lossless 44.1kHz)...")
 
             # Demucs tensors are (channels, time) in float32 [-1, 1]
             audio_np = stem_tensor.cpu().numpy()
             if audio_np.ndim == 2:
-                # Transpose to (samples, channels) for soundfile
                 audio_np = audio_np.T
 
+            # Clamp float samples to prevent numeric overflow
+            audio_np = np.clip(audio_np, -1.0, 1.0)
+
+            # 1. Export standard PCM WAV for instant universal Web Audio decoding
+            sf.write(
+                wav_path,
+                audio_np,
+                samplerate=separator.samplerate,
+                format="WAV",
+                subtype="PCM_16",
+            )
+
+            # 2. Export FLAC for compressed archival
             sf.write(
                 flac_path,
                 audio_np,
@@ -90,8 +104,9 @@ class DemucsSeparatorWorker:
                 format="FLAC",
                 subtype="PCM_16",
             )
-            exported_paths[stem_name] = flac_path
-            print(f"[Demucs Worker] Exported {flac_path} ({os.path.getsize(flac_path)} bytes)")
+
+            exported_paths[stem_name] = wav_path
+            print(f"[Demucs Worker] Exported {wav_path} ({os.path.getsize(wav_path)} bytes)")
 
         # Verify stems zero-bleed
         if progress_callback:

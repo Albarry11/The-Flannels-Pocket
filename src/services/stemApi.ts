@@ -187,12 +187,23 @@ export async function separateViaDemucsBackend(
   for (const stemKey of stemKeys) {
     downloadedIdx++;
     const stemUrl = `${backendUrl}${statusData!.stems[stemKey]}`;
-    onProgress?.(`Mengunduh stem terpisah: ${stemKey}.flac (${downloadedIdx}/${stemKeys.length})...`);
+    onProgress?.(`Mengunduh stem terpisah: ${stemKey} (${downloadedIdx}/${stemKeys.length})...`);
 
     const res = await fetch(stemUrl);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Gagal mengunduh stem ${stemKey} (HTTP ${res.status}): ${errText}`);
+    }
     const blob = await res.blob();
     const arrayBuffer = await blob.arrayBuffer();
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+    let audioBuffer: AudioBuffer;
+    try {
+      audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    } catch (decodeErr) {
+      console.error(`decodeAudioData error on ${stemKey}:`, decodeErr);
+      throw new Error(`Gagal mendekode berkas audio ${stemKey}: ${decodeErr instanceof Error ? decodeErr.message : decodeErr}`);
+    }
 
     const config = stemMap[stemKey];
 
@@ -206,7 +217,7 @@ export async function separateViaDemucsBackend(
       solo: false,
       audioBuffer,
       blob,
-      fileName: `${stemKey}.flac`,
+      fileName: `${stemKey}.wav`,
     });
   }
 

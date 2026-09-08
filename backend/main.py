@@ -138,15 +138,18 @@ def get_job_status(job_id: str):
 @app.get("/api/stems/{job_id}/{stem_name}")
 def download_stem(job_id: str, stem_name: str):
     job_dir = os.path.join(JOBS_DIR, job_id)
+    wav_path = os.path.join(job_dir, f"{stem_name}.wav")
     flac_path = os.path.join(job_dir, f"{stem_name}.flac")
 
-    if not os.path.exists(flac_path):
-        raise HTTPException(status_code=404, detail=f"Stem '{stem_name}.flac' tidak ditemukan")
+    file_path = wav_path if os.path.exists(wav_path) else flac_path
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"Stem '{stem_name}' tidak ditemukan")
 
+    media_type = "audio/wav" if file_path.endswith(".wav") else "audio/flac"
     return FileResponse(
-        flac_path,
-        media_type="audio/flac",
-        filename=f"{stem_name}.flac",
+        file_path,
+        media_type=media_type,
+        content_disposition_type="inline",
     )
 
 if __name__ == "__main__":
