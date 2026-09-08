@@ -3,9 +3,10 @@ import type { Song, StemRole, StemTrack } from '../types';
 import { createSongFromFiles, deleteSongFromStorage, saveSongToStorage } from '../services/storage';
 import { createProceduralDemoSong } from '../services/proceduralSongs';
 import { extractEmbeddedArtwork } from '../services/embeddedArtwork';
-import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon, ShieldCheck, ExternalLink, Download, FileAudio, ChevronDown, ChevronUp } from 'lucide-react';
+import { Folder, Upload, Plus, Trash2, CheckCircle2, Music2, Loader2, Play, FileDown, Image as ImageIcon, ShieldCheck, ExternalLink, Download, FileAudio, ChevronDown, ChevronUp, Cpu, RefreshCw, Settings2 } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 import { exportSongPackage } from '../services/cloudDatabase';
+import { checkDemucsBackendHealth, getCustomBackendUrl, setCustomBackendUrl } from '../services/stemApi';
 
 interface CoverSongLibraryProps {
   songs: Song[];
@@ -78,6 +79,19 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
+  const [demucsHealth, setDemucsHealth] = useState<{ online: boolean; device?: string; url?: string }>({ online: false });
+  const [customTunnelUrl, setCustomTunnelUrl] = useState<string>(getCustomBackendUrl());
+  const [showTunnelConfig, setShowTunnelConfig] = useState(false);
+
+  // Check Demucs GPU Server health
+  const refreshDemucsHealth = async () => {
+    const health = await checkDemucsBackendHealth();
+    setDemucsHealth(health);
+  };
+
+  React.useEffect(() => {
+    refreshDemucsHealth();
+  }, [view]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const artworkInputRef = useRef<HTMLInputElement | null>(null);
@@ -467,12 +481,83 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         ) : (
           /* Upload View with Robust Scaling & No Overlap (Point 5) */
           <div className="space-y-4 max-w-xl mx-auto pb-10">
+            {/* Demucs Neural AI Server Status Banner */}
+            <div className={`p-3.5 rounded-2xl border flex flex-col gap-2 text-xs shadow-xs transition ${
+              demucsHealth.online
+                ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                : 'bg-amber-50/90 border-amber-300 text-amber-950'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${demucsHealth.online ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500 animate-ping'}`} />
+                  <span className="font-extrabold flex items-center gap-1">
+                    <Cpu className="w-3.5 h-3.5" />
+                    <span>Demucs AI Server: {demucsHealth.online ? `Online (${demucsHealth.device?.toUpperCase() || 'CUDA RTX 2050'})` : 'Offline / Belum Terhubung'}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={refreshDemucsHealth}
+                    className="p-1 rounded-lg bg-white/80 hover:bg-white text-slate-700 transition"
+                    title="Cek ulang status server"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setShowTunnelConfig(!showTunnelConfig)}
+                    className="p-1 rounded-lg bg-white/80 hover:bg-white text-slate-700 transition"
+                    title="Atur URL Tunnel / Backend"
+                  >
+                    <Settings2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {demucsHealth.online ? (
+                <p className="text-[11px] text-emerald-800 font-medium">
+                  GPU NVIDIA RTX 2050 siap memisahkan vokal, gitar, bass, dan drum murni lossless zero-bleed via model Meta Demucs <code className="font-bold">htdemucs_6s</code>.
+                </p>
+              ) : (
+                <div className="text-[11px] text-amber-900 space-y-1">
+                  <p className="font-semibold">
+                    Untuk pemisahan AI murni lossless: Buka file <code className="bg-amber-200/80 px-1 py-0.5 rounded font-mono">backend/start_demucs.bat</code> di laptop.
+                  </p>
+                  <p className="text-[10px] text-slate-600">
+                    Sistem The Flannels Pocket tidak lagi menggunakan filter equalizer browser palsu agar kualitas instrumen tetap terjaga murni.
+                  </p>
+                </div>
+              )}
+
+              {/* Collapsible Custom URL / Tunnel Configuration */}
+              {showTunnelConfig && (
+                <div className="pt-2 mt-1 border-t border-sky-200/60 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={customTunnelUrl}
+                    onChange={(e) => setCustomTunnelUrl(e.target.value)}
+                    placeholder="Contoh: https://xyz.trycloudflare.com atau http://localhost:8000"
+                    className="flex-1 bg-white border border-sky-300 rounded-xl px-2.5 py-1 text-xs text-[#0f2942] font-mono focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      setCustomBackendUrl(customTunnelUrl);
+                      refreshDemucsHealth();
+                      setShowTunnelConfig(false);
+                    }}
+                    className="px-3 py-1 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-xs"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="p-4 rounded-2xl bg-sky-100/90 border border-sky-300 text-xs text-sky-950 space-y-1 shadow-xs">
               <span className="font-extrabold text-sky-900 block text-sm">
-                ✨ AI Multi-Stage Stem Separator & Album Artwork
+                ✨ Demucs Neural Audio Separator (Meta htdemucs_6s)
               </span>
               <p className="font-medium">
-                Cukup pilih <strong>1 file lagu audio</strong> (MP3/FLAC/WAV). AI akan otomatis memisahkan vokal, rhythm guitar, lead guitar, bass, dan drum, serta mengekstrak gambar album dari file audio!
+                Cukup pilih <strong>1 file lagu audio</strong> (MP3/FLAC/WAV). AI akan memisahkan vokal, gitar, bass, dan drum ke 4 berkas WAV fisik terpisah!
               </p>
             </div>
 

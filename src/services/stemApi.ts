@@ -1,11 +1,7 @@
 import type { StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
-import { separateAudioIntoStems as separateLocalDSP } from './stemSeparator';
 
-// Default fallback to public Cloudflare Tunnel, local dev, or environment variable
-export const DEMUCS_BACKEND_URL =
-  (import.meta as any).env?.VITE_DEMUCS_BACKEND_URL ||
-  'https://extends-psychological-review-metal.trycloudflare.com';
+export const DEMUCS_URL_STORAGE = 'flannels_demucs_backend_url';
 
 export interface DemucsJobStatus {
   job_id: string;
@@ -16,15 +12,88 @@ export interface DemucsJobStatus {
   error?: string;
 }
 
+let activeBackendUrl: string | null = null;
+
+export function getCustomBackendUrl(): string {
+  try {
+    return localStorage.getItem(DEMUCS_URL_STORAGE) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setCustomBackendUrl(url: string) {
+  try {
+    localStorage.setItem(DEMUCS_URL_STORAGE, url.trim().replace(/\/$/, ''));
+    activeBackendUrl = null; // reset cached resolution
+  } catch (_) {}
+}
+
+/**
+ * Resolves candidate backend URLs:
+ * 1. User custom configured URL in localStorage (if set)
+ * 2. http://localhost:8000 (if running on laptop or local dev)
+ * 3. VITE_DEMUCS_BACKEND_URL environment variable
+ * 4. Default public Cloudflare Tunnel URL
+ */
+export async function resolveDemucsBackendUrl(): Promise<string> {
+  if (activeBackendUrl) return activeBackendUrl;
+
+  const candidates: string[] = [];
+
+  const custom = getCustomBackendUrl();
+  if (custom) candidates.push(custom);
+
+  // If on localhost / desktop browser, check local port 8000 first
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal || window.location.protocol === 'http:') {
+      candidates.push('http://localhost:8000');
+    }
+  }
+
+  const envUrl = (import.meta as any).env?.VITE_DEMUCS_BACKEND_URL;
+  if (envUrl && !candidates.includes(envUrl)) candidates.push(envUrl);
+
+  // Default fallback tunnel
+  const defaultTunnel = 'https://extends-psychological-review-metal.trycloudflare.com';
+  if (!candidates.includes(defaultTunnel)) candidates.push(defaultTunnel);
+
+  for (const url of candidates) {
+    try {
+      const clean = url.replace(/\/$/, '');
+      const res = await fetch(`${clean}/api/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1500),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'online') {
+          activeBackendUrl = clean;
+          return clean;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Fallback to first candidate or local
+  activeBackendUrl = candidates[0] || 'http://localhost:8000';
+  return activeBackendUrl;
+}
+
 /**
  * Checks if the Demucs neural separation backend is running
  */
-export async function checkDemucsBackendHealth(): Promise<{ online: boolean; device?: string }> {
+export async function checkDemucsBackendHealth(): Promise<{ online: boolean; device?: string; url?: string }> {
   try {
-    const res = await fetch(`${DEMUCS_BACKEND_URL}/api/health`, { method: 'GET', signal: AbortSignal.timeout(1800) });
+    const backendUrl = await resolveDemucsBackendUrl();
+    const res = await fetch(`${backendUrl}/api/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000),
+    });
     if (res.ok) {
       const data = await res.json();
-      return { online: true, device: data.device };
+      return { online: true, device: data.device, url: backendUrl };
     }
   } catch (_) {}
   return { online: false };
@@ -32,30 +101,28 @@ export async function checkDemucsBackendHealth(): Promise<{ online: boolean; dev
 
 /**
  * Production-grade Stem Separation:
- * First attempts true neural separation via Demucs (htdemucs_6s).
- * If Demucs backend is offline or unreachable, seamlessly falls back to high-order DSP matrix.
+ * Exclusively uses true neural separation via Demucs (htdemucs_6s).
+ * STRICT POLICY: NO EQ FALLBACK! If Demucs is offline, informs user honestly.
  */
 export async function processSeparationWithFallback(
   file: File,
-  audioBuffer: AudioBuffer,
+  _audioBuffer: AudioBuffer,
   onProgress?: (status: string) => void
 ): Promise<StemTrack[]> {
+  onProgress?.('Memeriksa koneksi server AI Demucs (GPU)...');
   const health = await checkDemucsBackendHealth();
 
-  if (health.online) {
-    onProgress?.(`Demucs Neural Server terdeteksi (${health.device?.toUpperCase() || 'CPU'}). Mengunggah audio...`);
-    try {
-      return await separateViaDemucsBackend(file, onProgress);
-    } catch (err) {
-      console.warn('Demucs backend separation failed, falling back to local DSP:', err);
-      onProgress?.('Demucs backend mengalami kendala, melanjutkan via DSP multi-stage matrix...');
-    }
-  } else {
-    onProgress?.('Server Demucs AI offline. Memproses audio via matriks Mid/Side internal browser...');
+  if (!health.online) {
+    throw new Error(
+      'Server AI Demucs (GPU/Laptop) belum aktif! Jalankan "backend/start_demucs.bat" di laptop. Sistem The Flannels Pocket tidak lagi menggunakan manipulasi equalizer browser palsu agar kualitas audio tetap murni dan tidak bocor.'
+    );
   }
 
-  // Local fallback
-  return await separateLocalDSP(audioBuffer, onProgress);
+  onProgress?.(
+    `Demucs Neural Server terdeteksi (${health.device?.toUpperCase() || 'CUDA'}). Mengunggah audio ke model htdemucs_6s...`
+  );
+
+  return await separateViaDemucsBackend(file, onProgress);
 }
 
 /**
@@ -65,18 +132,20 @@ export async function separateViaDemucsBackend(
   file: File,
   onProgress?: (status: string) => void
 ): Promise<StemTrack[]> {
+  const backendUrl = await resolveDemucsBackendUrl();
   const formData = new FormData();
   formData.append('file', file);
 
   // 1. Submit separation job
   onProgress?.('Mengunggah file ke engine Meta Demucs...');
-  const uploadRes = await fetch(`${DEMUCS_BACKEND_URL}/api/separate`, {
+  const uploadRes = await fetch(`${backendUrl}/api/separate`, {
     method: 'POST',
     body: formData,
   });
 
   if (!uploadRes.ok) {
-    throw new Error(`Gagal mengirim file ke backend Demucs: ${uploadRes.statusText}`);
+    const errText = await uploadRes.text();
+    throw new Error(`Gagal mengirim file ke backend Demucs: ${errText || uploadRes.statusText}`);
   }
 
   const { job_id } = await uploadRes.json();
@@ -88,7 +157,7 @@ export async function separateViaDemucsBackend(
 
   while (!completed) {
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    const statusRes = await fetch(`${DEMUCS_BACKEND_URL}/api/status/${job_id}`);
+    const statusRes = await fetch(`${backendUrl}/api/status/${job_id}`);
     if (!statusRes.ok) throw new Error('Gagal memeriksa status pemisahan');
 
     statusData = await statusRes.json();
@@ -102,7 +171,7 @@ export async function separateViaDemucsBackend(
     }
   }
 
-  // 3. Download generated lossless FLAC stems and decode into AudioBuffers
+  // 3. Download generated discrete lossless FLAC stems and decode into AudioBuffers
   const ctx = globalAudioEngine.getContext();
   const stems: StemTrack[] = [];
   const stemMap: Record<string, { role: StemRole; name: string; pan: number }> = {
@@ -112,12 +181,12 @@ export async function separateViaDemucsBackend(
     drums: { role: 'drums', name: 'Drums', pan: 0 },
   };
 
-  const stemKeys = Object.keys(statusData?.stems || {});
+  const stemKeys = Object.keys(statusData?.stems || {}).filter((k) => k in stemMap);
   let downloadedIdx = 0;
 
   for (const stemKey of stemKeys) {
     downloadedIdx++;
-    const stemUrl = `${DEMUCS_BACKEND_URL}${statusData!.stems[stemKey]}`;
+    const stemUrl = `${backendUrl}${statusData!.stems[stemKey]}`;
     onProgress?.(`Mengunduh stem terpisah: ${stemKey}.flac (${downloadedIdx}/${stemKeys.length})...`);
 
     const res = await fetch(stemUrl);
@@ -125,7 +194,7 @@ export async function separateViaDemucsBackend(
     const arrayBuffer = await blob.arrayBuffer();
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-    const config = stemMap[stemKey] || { role: 'other' as StemRole, name: stemKey, pan: 0 };
+    const config = stemMap[stemKey];
 
     stems.push({
       id: `stem-demucs-${stemKey}-${Date.now()}`,
