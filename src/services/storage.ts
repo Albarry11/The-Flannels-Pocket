@@ -3,7 +3,6 @@ import type { Song, StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
 import { audioBufferToWavBlob } from './stemSeparator';
-import { processSeparationWithFallback } from './stemApi';
 import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
 import { extractEmbeddedArtwork } from './embeddedArtwork';
 
@@ -92,9 +91,8 @@ export async function deleteSongFromStorage(songId: string): Promise<void> {
 }
 
 /**
- * Creates a new song from uploaded audio files
- * If 1 single audio file is provided, automatically uses AI Stem Separation
- * to generate Vocal, Lead Guitar, Rhythm Guitar, Bass, and Drums!
+ * Creates a new song from discrete studio stem files uploaded by Admin.
+ * 100% discrete, zero-bleed audio without any in-browser DSP filter hacks.
  */
 export async function createSongFromFiles(
   title: string,
@@ -104,60 +102,50 @@ export async function createSongFromFiles(
     bpm?: number;
     key?: string;
     lyrics?: string;
+    album?: string;
+    artworkUrl?: string;
     onProgress?: (status: string) => void;
   }
 ): Promise<Song> {
   const ctx = globalAudioEngine.getContext();
-  options?.onProgress?.('Mendekode audio utama...');
+  options?.onProgress?.('Mendekode berkas stem studio...');
 
-  let stems: StemTrack[] = [];
+  const stems: StemTrack[] = [];
   let maxDuration = 0;
   let masterBuffer: AudioBuffer | null = null;
-  let extractedArt: string | null = null;
+  let extractedArt = options?.artworkUrl || null;
 
-  if (stemFiles.length === 1) {
-    // SINGLE FULL AUDIO FILE UPLOAD -> Extract embedded artwork & Run AI Stem Splitter!
-    const file = stemFiles[0].file;
-    try {
-      extractedArt = await extractEmbeddedArtwork(file);
-    } catch (_) {}
+  for (let i = 0; i < stemFiles.length; i++) {
+    const sf = stemFiles[i];
+    options?.onProgress?.(`Mendekode stem ${sf.name} (${i + 1}/${stemFiles.length})...`);
 
-    const arrayBuffer = await file.arrayBuffer();
-    masterBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-    maxDuration = masterBuffer.duration;
-
-    options?.onProgress?.('AI Stem Separator: Memisahkan vokal dan instrumen...');
-    stems = await processSeparationWithFallback(file, masterBuffer, options?.onProgress);
-  } else {
-    // MULTI-STEM UPLOAD -> Map each stem file
-    for (const sf of stemFiles) {
-      if (!extractedArt) {
-        try {
-          extractedArt = await extractEmbeddedArtwork(sf.file);
-        } catch (_) {}
-      }
-      const arrayBuffer = await sf.file.arrayBuffer();
-      const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-      if (audioBuffer.duration > maxDuration) {
-        maxDuration = audioBuffer.duration;
-      }
-      if (!masterBuffer) {
-        masterBuffer = audioBuffer;
-      }
-
-      stems.push({
-        id: `stem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-        role: sf.role,
-        name: sf.name,
-        volume: 0.85,
-        pan: 0,
-        muted: false,
-        solo: false,
-        audioBuffer,
-        blob: sf.file,
-        fileName: sf.file.name,
-      });
+    if (!extractedArt) {
+      try {
+        extractedArt = await extractEmbeddedArtwork(sf.file);
+      } catch (_) {}
     }
+
+    const arrayBuffer = await sf.file.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    if (audioBuffer.duration > maxDuration) {
+      maxDuration = audioBuffer.duration;
+    }
+    if (!masterBuffer) {
+      masterBuffer = audioBuffer;
+    }
+
+    stems.push({
+      id: `stem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      role: sf.role,
+      name: sf.name,
+      volume: 0.85,
+      pan: sf.role === 'lead' ? 0.35 : sf.role === 'rhythm' ? -0.35 : 0,
+      muted: false,
+      solo: false,
+      audioBuffer,
+      blob: sf.file,
+      fileName: sf.file.name,
+    });
   }
 
   // 1. Prioritize AI Web Research for official BPM & Key (Point 1)

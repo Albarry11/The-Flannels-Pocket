@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import type { Song } from '../types';
-import { Search, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Video, VideoOff } from 'lucide-react';
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Video,
+  VideoOff,
+  Shield,
+  ShieldCheck,
+  Music,
+  Loader2,
+} from 'lucide-react';
+import { searchMusicSuggestions } from '../services/musicSearch';
 
 interface HeaderProps {
   currentSong: Song | null;
@@ -10,6 +23,9 @@ interface HeaderProps {
   onToggleNav?: () => void;
   isVideoActive?: boolean;
   onToggleVideo?: () => void;
+  isAdmin?: boolean;
+  onToggleAdmin?: () => void;
+  onSelectSuggestion?: (title: string, artist: string, album?: string, artwork?: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,10 +35,45 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleNav,
   isVideoActive = true,
   onToggleVideo,
+  isAdmin = false,
+  onToggleAdmin,
+  onSelectSuggestion,
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = (val: string) => {
+    setSearchQuery(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (val.trim().length < 2) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setShowDropdown(true);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchMusicSuggestions(val);
+      setSuggestions(results);
+      setIsSearching(false);
+    }, 300);
+  };
+
+  const handlePick = (item: any) => {
+    onSelectSuggestion?.(item.title, item.artist, item.album, item.artworkUrl);
+    setShowDropdown(false);
+    setSearchQuery('');
+  };
+
   return (
     <header className="aero-window-header w-full px-3 sm:px-6 py-2 transition-all sticky top-0 z-40 flex items-center justify-between gap-3 shadow-xs">
-      {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title (Point 3 & 4) */}
+      {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title, Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4">
         {onToggleNav && (
           <button
@@ -35,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Windows Aero Back / Forward Navigation Circles (like image_f35097.png) */}
+        {/* Windows Aero Back / Forward Navigation Circles */}
         <div className="hidden sm:flex items-center gap-1">
           <button
             className="w-7 h-7 rounded-full bg-white/70 hover:bg-white text-sky-900 border border-white/90 shadow-xs flex items-center justify-center transition active:scale-95"
@@ -53,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Clean Brand Typography (H1 Landmark for SEO & Accessibility) */}
+        {/* Clean Brand Typography */}
         <h1 className="flex items-baseline select-none m-0 text-inherit font-normal">
           <span className="text-xl sm:text-2xl font-black text-[#0c233c] tracking-tight">
             The Flannels
@@ -63,15 +114,70 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </h1>
 
-        {/* Aero Glass Search Pill (like image_f35097.png) */}
-        <div className="hidden lg:flex items-center gap-2 bg-white/70 hover:bg-white/90 border border-sky-200/80 rounded-full px-3.5 py-1 text-xs text-sky-800 shadow-xs transition w-56">
-          <Search className="w-3.5 h-3.5 text-sky-500" />
-          <span className="text-slate-400 font-medium">Cari lagu cover...</span>
+        {/* Interactive Aero Glass Search Bar with Auto-Suggestions */}
+        <div className="hidden lg:block relative">
+          <div className="flex items-center gap-2 bg-white/70 hover:bg-white/90 focus-within:bg-white border border-sky-200/80 rounded-full px-3.5 py-1 text-xs text-sky-800 shadow-xs transition w-64 focus-within:w-72">
+            <Search className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+              placeholder="Cari lagu nasional & internasional..."
+              className="w-full bg-transparent text-xs font-semibold focus:outline-none placeholder:text-slate-400"
+            />
+            {isSearching && <Loader2 className="w-3 h-3 text-sky-500 animate-spin flex-shrink-0" />}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showDropdown && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-2xl border border-sky-300 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-60 overflow-y-auto">
+              <div className="p-1.5 text-[9px] font-bold uppercase text-slate-400 border-b border-sky-100">
+                Pilih Lagu untuk Request:
+              </div>
+              {suggestions.map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handlePick(item)}
+                  className="flex items-center gap-2 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left"
+                >
+                  {item.artworkUrl ? (
+                    <img src={item.artworkUrl} alt={item.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
+                      <Music className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-[#0f2942] truncate block">{item.title}</span>
+                    <span className="text-[10px] text-slate-500 truncate block">{item.artist} {item.album ? `• ${item.album}` : ''}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 2. Right: Video Toggle, Solo Alert Badge & Windows Vista Aero Window Controls */}
+      {/* 2. Right: Admin Badge, Video Toggle, Solo Alert Badge & Vista Window Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Admin Mode Badge / Toggle */}
+        {onToggleAdmin && (
+          <button
+            onClick={onToggleAdmin}
+            className={`px-3 py-1 rounded-full text-[11px] font-black border transition flex items-center gap-1.5 shadow-xs active:scale-95 ${
+              isAdmin
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                : 'bg-white/80 hover:bg-white text-slate-700 border-sky-200'
+            }`}
+            title={isAdmin ? 'Mode Admin Aktif (Klik untuk Keluar)' : 'Masuk Mode Admin (Albarry)'}
+          >
+            {isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-white" /> : <Shield className="w-3.5 h-3.5 text-slate-400" />}
+            <span>{isAdmin ? 'Admin Studio' : 'Admin'}</span>
+          </button>
+        )}
+
+        {/* Video Background Toggle */}
         {onToggleVideo && (
           <button
             onClick={onToggleVideo}
@@ -87,6 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
+        {/* Solo Active Alert */}
         {activeSoloNames.length > 0 && (
           <div className="flex items-center gap-2 bg-amber-100/95 border border-amber-400/80 px-3 py-0.5 rounded-full text-xs shadow-xs">
             <span className="text-amber-950 font-extrabold text-[11px]">

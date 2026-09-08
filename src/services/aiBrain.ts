@@ -49,6 +49,41 @@ export function saveAIBrainConfig(config: AIBrainConfig): void {
   }
 }
 
+export const NINEROUTER_BASE_URL = 'http://localhost:20128/v1/chat/completions';
+export const NINEROUTER_MODEL = 'ag/gemini-3.8-flash-high';
+
+/**
+ * 9Router local/remote gateway - OpenAI-compatible REST
+ */
+async function call9RouterChat(prompt: string): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(NINEROUTER_BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: NINEROUTER_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        temperature: 0.2,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      throw new Error(`9router HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || '';
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
 /**
  * Pemanggilan Google Gemini generateContent API langsung tanpa 9router.
  * Fallback langsung ke aturan musik lokal jika Google API gagal/timeout/503.
@@ -99,6 +134,21 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
 }
 
 /**
+ * AI Gateway orchestrator:
+ * 1. Coba 9Router (ag/gemini-3.8-flash-high)
+ * 2. Fallback ke Google Gemini API Direct
+ */
+async function callAIGateway(prompt: string): Promise<string> {
+  try {
+    const text = await call9RouterChat(prompt);
+    if (text) return text;
+  } catch (e) {
+    // 9Router offline/failover, lanjut ke direct Gemini
+  }
+  return await callGeminiGenerateContent(prompt);
+}
+
+/**
  * Riset BPM dan Tangga Nada Resmi lagu via Google Gemini Flash
  * Memvalidasi sumber musik resmi (SongBPM, Tunebat, Ultimate Guitar, Musicstax)
  */
@@ -132,7 +182,7 @@ PEDOMAN KETELITIAN:
 }`;
 
   try {
-    const rawText = await callGeminiGenerateContent(prompt);
+    const rawText = await callAIGateway(prompt);
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -172,7 +222,7 @@ Contoh:
 Keluarkan HANYA teks LRC tersinkronisasi murni, tanpa teks basa-basi sebelum atau sesudahnya.`;
 
   try {
-    const rawText = await callGeminiGenerateContent(prompt);
+    const rawText = await callAIGateway(prompt);
     return rawText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '').trim();
   } catch (err) {
     console.warn('Gemini lyrics generation failed:', err);
@@ -318,7 +368,7 @@ Berikan respons JSON valid SAJA:
 }`;
 
   try {
-    const rawText = await callGeminiGenerateContent(prompt);
+    const rawText = await callAIGateway(prompt);
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]) as AICoachingReport;
@@ -342,7 +392,7 @@ export async function askAIBandProducer(
 Pertanyaan personil: "${question}"`;
 
   try {
-    const rawText = await callGeminiGenerateContent(prompt);
+    const rawText = await callAIGateway(prompt);
     return rawText || 'Tidak ada respons dari AI Producer.';
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

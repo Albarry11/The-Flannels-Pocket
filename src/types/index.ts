@@ -112,3 +112,30 @@ export interface AICoachingReport {
   personilGuides: AIPersonilGuide[];
   mixDoctorNotes: string;
 }
+
+export interface MusicSuggestion {
+  title: string;
+  artist: string;
+  album: string;
+  artworkUrl?: string;
+  previewUrl?: string;
+  releaseYear?: string;
+  genre?: string;
+}
+
+export interface SongRequest {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  artworkUrl?: string;
+  previewUrl?: string;
+  requesterName: string;      // e.g. "Albarry (Vocal)", "Bassist", "Gitaris Lead", etc.
+  requesterRole: 'vocal' | 'guitar' | 'bass' | 'drums' | 'other';
+  notes?: string;
+  upvotes: number;
+  upvotedBy: string[];        // list of client IDs who upvoted
+  status: 'pending' | 'in_progress' | 'fulfilled';
+  createdAt: number;
+  fulfilledSongId?: string;
+}

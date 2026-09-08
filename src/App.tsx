@@ -9,16 +9,26 @@ import { VerticalStemMixer } from './components/VerticalStemMixer';
 import { CoverSongLibrary } from './components/CoverSongLibrary';
 import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
-import { Sliders, Folder, FileText, Brain, Loader2 } from 'lucide-react';
+import { SongRequestLeaderboard } from './components/SongRequestLeaderboard';
+import { AdminStemUploadModal } from './components/AdminStemUploadModal';
+import { Sliders, Folder, FileText, Brain, Flame, Loader2 } from 'lucide-react';
+import type { SongRequest } from './types';
 
-export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
+export type ActiveNavTab = 'mixer' | 'requests' | 'library' | 'lyrics' | 'brain';
 
 export function App() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<ActiveNavTab>('library');
+  const [activeTab, setActiveTab] = useState<ActiveNavTab>('requests');
   const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
+
+  // Admin & Song Request Modal State
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem('flannels_is_admin') === 'true';
+  });
+  const [showAdminUploadModal, setShowAdminUploadModal] = useState<boolean>(false);
+  const [requestToFulfill, setRequestToFulfill] = useState<SongRequest | null>(null);
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -36,6 +46,23 @@ export function App() {
   // Integrated Metronome State in Master Player
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
+
+  // Admin Mode toggle
+  const handleToggleAdmin = () => {
+    if (isAdmin) {
+      setIsAdmin(false);
+      localStorage.setItem('flannels_is_admin', 'false');
+    } else {
+      const pin = prompt('Masukkan Password Admin (Albarry):', 'albarry');
+      if (pin === 'albarry' || pin === 'flannels') {
+        setIsAdmin(true);
+        localStorage.setItem('flannels_is_admin', 'true');
+        alert('Mode Admin Aktif. Anda dapat menginput berkas stem studio dan mengelola antrian.');
+      } else if (pin !== null) {
+        alert('Password salah.');
+      }
+    }
+  };
 
   // Video Background GPU Saver Toggle (Point 12)
   const [isVideoBgActive, setIsVideoBgActive] = useState<boolean>(() => {
@@ -367,6 +394,11 @@ export function App() {
         onToggleNav={() => setIsNavOpen(!isNavOpen)}
         isVideoActive={isVideoBgActive}
         onToggleVideo={handleToggleVideo}
+        isAdmin={isAdmin}
+        onToggleAdmin={handleToggleAdmin}
+        onSelectSuggestion={() => {
+          setActiveTab('requests');
+        }}
       />
 
       {/* 2. Below Header: Workspace Layout with Collapsible Aero Sidebar */}
@@ -378,11 +410,11 @@ export function App() {
           }`}
         >
           {/* Dark Translucent Backing for High Contrast (SiteCritic & Roast Fix) */}
-          <div className="w-full h-full rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 flex flex-col items-center py-6 justify-center gap-5 shadow-2xl">
+          <div className="w-full h-full rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 flex flex-col items-center py-6 justify-center gap-4 shadow-2xl">
             {/* Mixer Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('mixer')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'mixer'
                   ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -397,10 +429,28 @@ export function App() {
               </div>
             </button>
 
+            {/* Antrian Request Button with Tooltip Popover */}
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+                activeTab === 'requests'
+                  ? 'bg-gradient-to-b from-amber-400 via-orange-500 to-rose-600 text-white font-black shadow-lg shadow-orange-500/40 border border-white scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+              title="Antrian Request Lagu"
+              aria-label="Buka Antrian Request Lagu"
+            >
+              <Flame className="w-5 h-5 text-amber-400" />
+              <span className="text-[9px] font-extrabold tracking-tight">Antrian</span>
+              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                Antrian Request Lagu
+              </div>
+            </button>
+
             {/* Library Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('library')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'library'
                   ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -418,7 +468,7 @@ export function App() {
             {/* Lyrics Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('lyrics')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'lyrics'
                   ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -436,7 +486,7 @@ export function App() {
             {/* Tilikan Button with Tooltip Popover */}
             <button
               onClick={() => setActiveTab('brain')}
-              className={`w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
+              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
                 activeTab === 'brain'
                   ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -472,18 +522,42 @@ export function App() {
               <CoverSongLibrary
                 songs={songs}
                 currentSongId={currentSong?.id || null}
+                isAdmin={isAdmin}
                 onSelectSong={selectSong}
                 onRefreshSongs={refreshSongs}
+                onOpenAdminUpload={() => {
+                  setRequestToFulfill(null);
+                  setShowAdminUploadModal(true);
+                }}
+                onNavigateToRequests={() => setActiveTab('requests')}
+                onUnlockAdmin={handleToggleAdmin}
               />
             )
+          )}
+
+          {activeTab === 'requests' && (
+            <SongRequestLeaderboard
+              isAdmin={isAdmin}
+              onFulfillRequest={(req) => {
+                setRequestToFulfill(req);
+                setShowAdminUploadModal(true);
+              }}
+            />
           )}
 
           {activeTab === 'library' && (
             <CoverSongLibrary
               songs={songs}
               currentSongId={currentSong?.id || null}
+              isAdmin={isAdmin}
               onSelectSong={selectSong}
               onRefreshSongs={refreshSongs}
+              onOpenAdminUpload={() => {
+                setRequestToFulfill(null);
+                setShowAdminUploadModal(true);
+              }}
+              onNavigateToRequests={() => setActiveTab('requests')}
+              onUnlockAdmin={handleToggleAdmin}
             />
           )}
 
@@ -506,6 +580,23 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Admin Stem Upload Modal */}
+      {showAdminUploadModal && (
+        <AdminStemUploadModal
+          isOpen={showAdminUploadModal}
+          onClose={() => {
+            setShowAdminUploadModal(false);
+            setRequestToFulfill(null);
+          }}
+          onSongCreated={(newSong) => {
+            refreshSongs();
+            selectSong(newSong);
+            setActiveTab('mixer');
+          }}
+          initialRequest={requestToFulfill}
+        />
+      )}
 
       {/* 3. Modern Edge-to-Edge Player Dock */}
       <MasterPlayer
@@ -543,7 +634,7 @@ export function App() {
       <nav className="fixed bottom-0 left-0 right-0 h-14 bg-[#08182b]/95 backdrop-blur-3xl border-t border-sky-400/30 flex items-center justify-around z-50 md:hidden px-2 shadow-2xl">
         <button
           onClick={() => setActiveTab('mixer')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
             activeTab === 'mixer' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Mixer"
@@ -552,8 +643,18 @@ export function App() {
           <span className="text-[10px]">Mixer</span>
         </button>
         <button
+          onClick={() => setActiveTab('requests')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'requests' ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-white'
+          }`}
+          aria-label="Buka Antrian Request"
+        >
+          <Flame className="w-4 h-4" />
+          <span className="text-[10px]">Antrian</span>
+        </button>
+        <button
           onClick={() => setActiveTab('library')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
             activeTab === 'library' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Library"
@@ -563,7 +664,7 @@ export function App() {
         </button>
         <button
           onClick={() => setActiveTab('lyrics')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
             activeTab === 'lyrics' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Lirik"
@@ -573,7 +674,7 @@ export function App() {
         </button>
         <button
           onClick={() => setActiveTab('brain')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
             activeTab === 'brain' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Tilikan"
