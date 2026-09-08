@@ -66,7 +66,7 @@ export function App() {
       }
 
       const pin = prompt('Masukkan Password Admin:');
-      if (pin === 'albarry' || pin === 'flannels') {
+      if (pin === 'lempiz') {
         setIsAdmin(true);
         localStorage.setItem('flannels_is_admin', 'true');
       }
