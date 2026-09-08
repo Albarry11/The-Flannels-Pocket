@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useRef } from 'react';
 
-const ADMIN_UNLOCK_SEQUENCE = ['m', 'ArrowLeft', 'ArrowRight', 'ArrowRight'];
+const ADMIN_UNLOCK_SEQUENCE = ['maximize', 'minimize', 'close', 'close'] as const;
 import type { Song, LoopRegion } from './types';
 import { globalAudioEngine } from './services/audioEngine';
 import { globalMetronome } from './services/metronomeEngine';
@@ -50,16 +49,16 @@ export function App() {
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
 
-  // Admin controls stay hidden. Unlock only via middle-left-right-right key sequence.
-  const adminSequenceRef = useRef<string[]>([]);
-
+  // Dummy window controls provide hidden Admin unlock sequence.
   useEffect(() => {
-    const handleAdminShortcut = (event: KeyboardEvent) => {
-      const key = event.key === 'm' || event.key === 'M' ? 'm' : event.key;
-      adminSequenceRef.current = [...adminSequenceRef.current, key].slice(-ADMIN_UNLOCK_SEQUENCE.length);
-      if (adminSequenceRef.current.join('|') !== ADMIN_UNLOCK_SEQUENCE.join('|')) return;
+    let sequence: string[] = [];
+    const handleAdminShortcut = (event: Event) => {
+      const control = (event as CustomEvent<string>).detail;
+      if (!control) return;
+      sequence = [...sequence, control].slice(-ADMIN_UNLOCK_SEQUENCE.length);
+      if (sequence.join('|') !== ADMIN_UNLOCK_SEQUENCE.join('|')) return;
 
-      adminSequenceRef.current = [];
+      sequence = [];
       if (isAdmin) {
         setIsAdmin(false);
         localStorage.setItem('flannels_is_admin', 'false');
@@ -73,8 +72,8 @@ export function App() {
       }
     };
 
-    window.addEventListener('keydown', handleAdminShortcut);
-    return () => window.removeEventListener('keydown', handleAdminShortcut);
+    window.addEventListener('flannels-window-control', handleAdminShortcut);
+    return () => window.removeEventListener('flannels-window-control', handleAdminShortcut);
   }, [isAdmin]);
 
   const handleToggleAdmin = () => {

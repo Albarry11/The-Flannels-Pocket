@@ -211,6 +211,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Windows Vista / 7 Aero Window Buttons (Minimize, Maximize, Close) */}
         <div className="flex items-center gap-1">
           <button
+            onClick={() => window.dispatchEvent(new CustomEvent('flannels-window-control', { detail: 'minimize' }))}
             className="w-7 h-5 rounded-md vista-win-btn flex items-center justify-center text-[10px] text-slate-700 font-bold transition"
             title="Minimize jendela"
             aria-label="Minimize jendela aplikasi"
@@ -218,6 +219,7 @@ export const Header: React.FC<HeaderProps> = ({
             _
           </button>
           <button
+            onClick={() => window.dispatchEvent(new CustomEvent('flannels-window-control', { detail: 'maximize' }))}
             className="w-7 h-5 rounded-md vista-win-btn flex items-center justify-center text-[10px] text-slate-700 font-bold transition"
             title="Maximize jendela"
             aria-label="Maximize jendela aplikasi"
@@ -225,6 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
             □
           </button>
           <button
+            onClick={() => window.dispatchEvent(new CustomEvent('flannels-window-control', { detail: 'close' }))}
             className="w-8 h-5 rounded-md vista-close-btn flex items-center justify-center text-[10px] text-white font-black transition"
             title="Tutup jendela"
             aria-label="Tutup jendela aplikasi"
