@@ -26,6 +26,7 @@ export class AudioEngine {
   // Synced Metronome Click Track state
   private metronomeSyncEnabled: boolean = false;
   private metronomeVolume: number = 0.7;
+  private metronomeBeatsPerBar: number = 4;
   private lastScheduledBeat: number = -1;
 
   private animationFrameId: number | null = null;
@@ -389,9 +390,19 @@ export class AudioEngine {
   }
 
   // Synced Metronome Click Configuration
-  public setMetronomeSync(enabled: boolean, volume: number = 0.7) {
+  public setMetronomeSync(enabled: boolean, volume: number = 0.7, beatsPerBar: number = 4) {
     this.metronomeSyncEnabled = enabled;
-    this.metronomeVolume = volume;
+    this.metronomeVolume = Math.max(0, Math.min(1, volume));
+    this.metronomeBeatsPerBar = Math.max(1, Math.min(12, Math.round(beatsPerBar)));
+  }
+
+  public setMetronomeVolume(volume: number) {
+    this.metronomeVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  public setMetronomeBeatsPerBar(beatsPerBar: number) {
+    this.metronomeBeatsPerBar = Math.max(1, Math.min(12, Math.round(beatsPerBar)));
+    this.lastScheduledBeat = -1;
   }
 
   private playMetronomeTick(time: number, isDownbeat: boolean) {
@@ -439,7 +450,7 @@ export class AudioEngine {
 
         if (totalBeatsElapsed > this.lastScheduledBeat) {
           this.lastScheduledBeat = totalBeatsElapsed;
-          const beatInBar = totalBeatsElapsed % 4;
+          const beatInBar = totalBeatsElapsed % this.metronomeBeatsPerBar;
           const isDownbeat = beatInBar === 0;
 
           // Schedule click tick

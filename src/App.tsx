@@ -48,6 +48,8 @@ export function App() {
   // Integrated Metronome State in Master Player
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
+  const [metronomeBeatsPerBar, setMetronomeBeatsPerBar] = useState<number>(4);
+  const [metronomeVolume, setMetronomeVolume] = useState<number>(0.8);
 
   // Dummy window controls provide hidden Admin unlock sequence.
   useEffect(() => {
@@ -136,7 +138,11 @@ export function App() {
     setPitchSemitones(0);
     setLoopRegion({ enabled: false, start: 0, end: song.duration });
     setMetronomeBpm(song.bpm);
+    const beats = song.timeSignature?.startsWith('6/8') ? 6 : Number(song.timeSignature?.split('/')[0]) || 4;
+    setMetronomeBeatsPerBar(beats);
     globalMetronome.setBpm(song.bpm);
+    globalMetronome.setBeatsPerBar(beats);
+    globalAudioEngine.setMetronomeBeatsPerBar(beats);
     setActiveTab('mixer');
   };
 
@@ -202,17 +208,31 @@ export function App() {
   const handleToggleMetronomeClick = () => {
     const next = !metronomeClickActive;
     setMetronomeClickActive(next);
-    globalAudioEngine.setMetronomeSync(next, 0.8);
+    globalAudioEngine.setMetronomeSync(next, metronomeVolume, metronomeBeatsPerBar);
   };
 
   const handleMetronomeBpmChange = (newBpm: number) => {
     const clamped = Math.max(30, Math.min(260, newBpm));
     setMetronomeBpm(clamped);
     globalMetronome.setBpm(clamped);
+    globalAudioEngine.setMetronomeSync(metronomeClickActive, metronomeVolume, metronomeBeatsPerBar);
     if (currentSong) {
       currentSong.bpm = clamped;
       saveSongToStorage(currentSong);
     }
+  };
+
+  const handleMetronomeBeatsChange = (beats: number) => {
+    const clamped = Math.max(1, Math.min(12, Math.round(beats)));
+    setMetronomeBeatsPerBar(clamped);
+    globalMetronome.setBeatsPerBar(clamped);
+    globalAudioEngine.setMetronomeBeatsPerBar(clamped);
+  };
+
+  const handleMetronomeVolumeChange = (volume: number) => {
+    const clamped = Math.max(0, Math.min(1, volume));
+    setMetronomeVolume(clamped);
+    globalAudioEngine.setMetronomeVolume(clamped);
   };
 
   // Stems manipulation
@@ -631,6 +651,10 @@ export function App() {
         countInBeat={countInBeat}
         metronomeClickActive={metronomeClickActive}
         metronomeBpm={metronomeBpm}
+        metronomeBeatsPerBar={metronomeBeatsPerBar}
+        metronomeVolume={metronomeVolume}
+        onMetronomeBeatsChange={handleMetronomeBeatsChange}
+        onMetronomeVolumeChange={handleMetronomeVolumeChange}
         onPlay={handlePlay}
         onPlayWithCountIn={handlePlayWithCountIn}
         onPause={handlePause}
