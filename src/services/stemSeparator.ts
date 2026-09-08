@@ -63,14 +63,13 @@ export function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
 }
 
 /**
- * Authentic 5-Stem Multi-Stage Band Separation Engine
+ * 4-Stem Multi-Stage DSP Fallback Separation Engine
  * 
- * Separates into 5 distinct musical channels:
- * 1. Vocal (Center-channel vocal formant 300Hz-3400Hz + high presence shelf)
- * 2. Lead Guitar (Solo bite 1.1kHz-5.8kHz + melodic presence)
- * 3. Rhythm Guitar (Acoustic/electric strum body 240Hz-2200Hz + vocal notch)
- * 4. Bass Guitar (Sub-harmonic lowpass <220Hz cascade)
- * 5. Drums (Transient punch: kick <120Hz + snare 280Hz + cymbals >5.5kHz)
+ * Separates 1 master song file into 4 discrete physical band tracks:
+ * 1. Vocal (vocal.wav)
+ * 2. Guitar (guitar.wav - Lead & Rhythm combined, warm & thick, no hollow phase artifacts)
+ * 3. Bass (bass.wav)
+ * 4. Drums (drums.wav)
  */
 export async function separateAudioIntoStems(
   audioBuffer: AudioBuffer,
@@ -92,65 +91,8 @@ export async function separateAudioIntoStems(
     return await offlineCtx.startRendering();
   }
 
-  // --- 1. BASS GUITAR STEM (< 240Hz, centered mono punch) ---
-  onProgress?.('Mengisolasi Bassline & Sub-Frekuensi (Lowpass 220Hz)...');
-  const bassBuffer = await renderProcessedBuffer((ctx, source) => {
-    const lp1 = ctx.createBiquadFilter();
-    lp1.type = 'lowpass';
-    lp1.frequency.value = 220;
-    lp1.Q.value = 0.8;
-
-    const lp2 = ctx.createBiquadFilter();
-    lp2.type = 'lowpass';
-    lp2.frequency.value = 220;
-    lp2.Q.value = 0.8;
-
-    const gain = ctx.createGain();
-    gain.gain.value = 1.35;
-
-    source.connect(lp1);
-    lp1.connect(lp2);
-    lp2.connect(gain);
-    gain.connect(ctx.destination);
-  });
-
-  // --- 2. DRUMS STEM (Transient punch, kick < 120Hz, snare 200-400Hz, cymbals > 5kHz) ---
-  onProgress?.('Mengisolasi Ketukan Drum & Perkusi...');
-  const drumsBuffer = await renderProcessedBuffer((ctx, source) => {
-    // Kick punch
-    const kickFilter = ctx.createBiquadFilter();
-    kickFilter.type = 'bandpass';
-    kickFilter.frequency.value = 85;
-    kickFilter.Q.value = 1.8;
-
-    // Snare attack
-    const snareFilter = ctx.createBiquadFilter();
-    snareFilter.type = 'bandpass';
-    snareFilter.frequency.value = 280;
-    snareFilter.Q.value = 2.2;
-
-    // Hi-hat / Cymbal highpass
-    const cymbalFilter = ctx.createBiquadFilter();
-    cymbalFilter.type = 'highpass';
-    cymbalFilter.frequency.value = 5500;
-    cymbalFilter.Q.value = 1.0;
-
-    const drumGain = ctx.createGain();
-    drumGain.gain.value = 1.15;
-
-    source.connect(kickFilter);
-    source.connect(snareFilter);
-    source.connect(cymbalFilter);
-
-    kickFilter.connect(drumGain);
-    snareFilter.connect(drumGain);
-    cymbalFilter.connect(drumGain);
-
-    drumGain.connect(ctx.destination);
-  });
-
-  // --- 3. VOCAL STEM (Center-channel vocal formant 300Hz - 3400Hz) ---
-  onProgress?.('Mengekstrak Vokal Utama (Center Formant Isolation)...');
+  // --- 1. VOCAL STEM ---
+  onProgress?.('Mengisolasi Vokal Utama (Center Formant Isolation)...');
   const vocalBuffer = await renderProcessedBuffer((ctx, source) => {
     const vocalBp1 = ctx.createBiquadFilter();
     vocalBp1.type = 'bandpass';
@@ -176,64 +118,97 @@ export async function separateAudioIntoStems(
     vocalGain.connect(ctx.destination);
   });
 
-  // --- 4. LEAD GUITAR STEM (1.2kHz - 5.8kHz high-mid bite & stereo solo) ---
-  onProgress?.('Mengisolasi Lead Guitar & Melodi Solo...');
-  const leadBuffer = await renderProcessedBuffer((ctx, source) => {
+  // --- 2. GUITAR STEM (Combined Full Band Guitar - Rich, Warm, No Phasing Artifacts) ---
+  onProgress?.('Mengisolasi Gitar Band (Lead & Rhythm Utuh)...');
+  const guitarBuffer = await renderProcessedBuffer((ctx, source) => {
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = 1100;
+    hp.frequency.value = 220;
 
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 5800;
+    lp.frequency.value = 6000;
+
+    const vocalNotch = ctx.createBiquadFilter();
+    vocalNotch.type = 'notch';
+    vocalNotch.frequency.value = 1100;
+    vocalNotch.Q.value = 1.6;
 
     const presence = ctx.createBiquadFilter();
     presence.type = 'peaking';
     presence.frequency.value = 2800;
-    presence.Q.value = 1.5;
-    presence.gain.value = 4.0;
+    presence.Q.value = 1.2;
+    presence.gain.value = 3.5;
 
-    const leadGain = ctx.createGain();
-    leadGain.gain.value = 1.1;
+    const gain = ctx.createGain();
+    gain.gain.value = 1.2;
 
     source.connect(hp);
     hp.connect(lp);
-    lp.connect(presence);
-    presence.connect(leadGain);
-    leadGain.connect(ctx.destination);
+    lp.connect(vocalNotch);
+    vocalNotch.connect(presence);
+    presence.connect(gain);
+    gain.connect(ctx.destination);
   });
 
-  // --- 5. RHYTHM GUITAR STEM (240Hz - 1800Hz strum body with vocal notch) ---
-  onProgress?.('Mengisolasi Rhythm Guitar & Acoustic Strumming...');
-  const rhythmBuffer = await renderProcessedBuffer((ctx, source) => {
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 250;
+  // --- 3. BASS GUITAR STEM ---
+  onProgress?.('Mengisolasi Bassline & Sub-Frekuensi (Lowpass 220Hz)...');
+  const bassBuffer = await renderProcessedBuffer((ctx, source) => {
+    const lp1 = ctx.createBiquadFilter();
+    lp1.type = 'lowpass';
+    lp1.frequency.value = 220;
+    lp1.Q.value = 0.8;
 
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 2200;
+    const lp2 = ctx.createBiquadFilter();
+    lp2.type = 'lowpass';
+    lp2.frequency.value = 220;
+    lp2.Q.value = 0.8;
 
-    const vocalNotch = ctx.createBiquadFilter();
-    vocalNotch.type = 'notch';
-    vocalNotch.frequency.value = 1000;
-    vocalNotch.Q.value = 1.8;
+    const gain = ctx.createGain();
+    gain.gain.value = 1.35;
 
-    const rhythmGain = ctx.createGain();
-    rhythmGain.gain.value = 1.1;
-
-    source.connect(hp);
-    hp.connect(vocalNotch);
-    vocalNotch.connect(lp);
-    lp.connect(rhythmGain);
-    rhythmGain.connect(ctx.destination);
+    source.connect(lp1);
+    lp1.connect(lp2);
+    lp2.connect(gain);
+    gain.connect(ctx.destination);
   });
 
-  onProgress?.('Mengekspor 5 berkas stem diskrit (vocal.wav, lead.wav, rhythm.wav, bass.wav, drums.wav)...');
+  // --- 4. DRUMS STEM ---
+  onProgress?.('Mengisolasi Ketukan Drum & Perkusi...');
+  const drumsBuffer = await renderProcessedBuffer((ctx, source) => {
+    const kickFilter = ctx.createBiquadFilter();
+    kickFilter.type = 'bandpass';
+    kickFilter.frequency.value = 85;
+    kickFilter.Q.value = 1.8;
+
+    const snareFilter = ctx.createBiquadFilter();
+    snareFilter.type = 'bandpass';
+    snareFilter.frequency.value = 280;
+    snareFilter.Q.value = 2.2;
+
+    const cymbalFilter = ctx.createBiquadFilter();
+    cymbalFilter.type = 'highpass';
+    cymbalFilter.frequency.value = 5500;
+    cymbalFilter.Q.value = 1.0;
+
+    const drumGain = ctx.createGain();
+    drumGain.gain.value = 1.15;
+
+    source.connect(kickFilter);
+    source.connect(snareFilter);
+    source.connect(cymbalFilter);
+
+    kickFilter.connect(drumGain);
+    snareFilter.connect(drumGain);
+    cymbalFilter.connect(drumGain);
+
+    drumGain.connect(ctx.destination);
+  });
+
+  onProgress?.('Mengekspor 4 berkas stem diskrit (vocal.wav, guitar.wav, bass.wav, drums.wav)...');
 
   const vocalBlob = audioBufferToWavBlob(vocalBuffer);
-  const leadBlob = audioBufferToWavBlob(leadBuffer);
-  const rhythmBlob = audioBufferToWavBlob(rhythmBuffer);
+  const guitarBlob = audioBufferToWavBlob(guitarBuffer);
   const bassBlob = audioBufferToWavBlob(bassBuffer);
   const drumsBlob = audioBufferToWavBlob(drumsBuffer);
 
@@ -251,28 +226,16 @@ export async function separateAudioIntoStems(
       fileName: 'vocal.wav',
     },
     {
-      id: `stem-lead-${Date.now()}`,
-      role: 'lead',
-      name: 'Lead Guitar',
-      volume: 0.8,
-      pan: 0.35,
+      id: `stem-guitar-${Date.now()}`,
+      role: 'guitar',
+      name: 'Guitar',
+      volume: 0.85,
+      pan: 0,
       muted: false,
       solo: false,
-      audioBuffer: leadBuffer,
-      blob: leadBlob,
-      fileName: 'lead_guitar.wav',
-    },
-    {
-      id: `stem-rhythm-${Date.now()}`,
-      role: 'rhythm',
-      name: 'Rhythm Guitar',
-      volume: 0.8,
-      pan: -0.35,
-      muted: false,
-      solo: false,
-      audioBuffer: rhythmBuffer,
-      blob: rhythmBlob,
-      fileName: 'rhythm_guitar.wav',
+      audioBuffer: guitarBuffer,
+      blob: guitarBlob,
+      fileName: 'guitar.wav',
     },
     {
       id: `stem-bass-${Date.now()}`,

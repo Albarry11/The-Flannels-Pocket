@@ -90,7 +90,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   onResetAllStems,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
-  // Filter out 'other' from mixer, keeping only discrete band instruments
+  // Show discrete band instruments (filter out 'other' by default unless it's a specific track)
   const visibleStems = stems.filter((s) => s.role !== 'other');
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
