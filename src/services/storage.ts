@@ -106,6 +106,168 @@ export async function updateSongMetadata(
 }
 
 /**
+ * Mengganti berkas audio satu stem diskrit dalam lagu
+ */
+export async function replaceStemInSong(
+  songId: string,
+  stemId: string,
+  newFile: File,
+  onProgress?: (msg: string) => void
+): Promise<Song> {
+  const song = await loadSongFromStorage(songId);
+  if (!song) throw new Error('Lagu tidak ditemukan.');
+
+  const stem = song.stems.find((s) => s.id === stemId);
+  if (!stem) throw new Error('Stem tidak ditemukan.');
+
+  const ctx = globalAudioEngine.getContext();
+  onProgress?.('Mendekode audio stem pengganti...');
+  const arrayBuffer = await newFile.arrayBuffer();
+  const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+
+  stem.fileName = newFile.name;
+  stem.blob = newFile;
+  stem.audioBuffer = audioBuffer;
+  stem.audioUrl = undefined;
+  stem.audioUrls = undefined;
+
+  // Update durasi lagu jika file baru lebih panjang
+  if (audioBuffer.duration > song.duration) {
+    song.duration = audioBuffer.duration;
+  }
+
+  // Perbarui daftar berkas diskrit
+  if (song.discreteFiles) {
+    const df = song.discreteFiles.find((d) => d.role === stem.role || d.name === stem.fileName);
+    if (df) {
+      df.name = newFile.name;
+      df.size = newFile.size;
+    }
+  }
+
+  await set(`${AUDIO_BLOB_PREFIX}${stem.id}`, newFile);
+  await saveSongToStorage(song);
+
+  // Sinkronisasi otomatis ke cloud
+  try {
+    const { uploadSongToCloud } = await import('./cloudDatabase');
+    onProgress?.('Menyinkronkan stem baru ke cloud storage...');
+    await uploadSongToCloud(song.id, onProgress);
+    const refreshed = await loadSongFromStorage(songId);
+    if (refreshed) return refreshed;
+  } catch (err) {
+    console.warn('Cloud sync error on replace stem:', err);
+  }
+
+  return song;
+}
+
+/**
+ * Menambahkan stem diskrit baru ke dalam lagu
+ */
+export async function addStemToSong(
+  songId: string,
+  role: StemRole,
+  name: string,
+  file: File,
+  onProgress?: (msg: string) => void
+): Promise<Song> {
+  const song = await loadSongFromStorage(songId);
+  if (!song) throw new Error('Lagu tidak ditemukan.');
+
+  const ctx = globalAudioEngine.getContext();
+  onProgress?.('Mendekode berkas audio stem baru...');
+  const arrayBuffer = await file.arrayBuffer();
+  const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+
+  const newStem: StemTrack = {
+    id: `stem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+    role,
+    name: name.trim() || role.toUpperCase(),
+    volume: 0.85,
+    pan: role === 'lead' ? 0.35 : role === 'rhythm' ? -0.35 : 0,
+    muted: false,
+    solo: false,
+    audioBuffer,
+    blob: file,
+    fileName: file.name,
+  };
+
+  song.stems.push(newStem);
+
+  if (audioBuffer.duration > song.duration) {
+    song.duration = audioBuffer.duration;
+  }
+
+  if (song.discreteFiles) {
+    song.discreteFiles.push({
+      name: file.name,
+      size: file.size,
+      role,
+    });
+  }
+
+  await set(`${AUDIO_BLOB_PREFIX}${newStem.id}`, file);
+  await saveSongToStorage(song);
+
+  // Sinkronisasi otomatis ke cloud
+  try {
+    const { uploadSongToCloud } = await import('./cloudDatabase');
+    onProgress?.('Mengunggah stem baru ke cloud...');
+    await uploadSongToCloud(song.id, onProgress);
+    const refreshed = await loadSongFromStorage(songId);
+    if (refreshed) return refreshed;
+  } catch (err) {
+    console.warn('Cloud sync error on add stem:', err);
+  }
+
+  return song;
+}
+
+/**
+ * Menghapus satu stem diskrit dari lagu
+ */
+export async function deleteStemFromSong(
+  songId: string,
+  stemId: string,
+  onProgress?: (msg: string) => void
+): Promise<Song> {
+  const song = await loadSongFromStorage(songId);
+  if (!song) throw new Error('Lagu tidak ditemukan.');
+
+  if (song.stems.length <= 1) {
+    throw new Error('Lagu harus memiliki minimal 1 stem audio.');
+  }
+
+  const stemIndex = song.stems.findIndex((s) => s.id === stemId);
+  if (stemIndex === -1) throw new Error('Stem tidak ditemukan.');
+
+  const [removedStem] = song.stems.splice(stemIndex, 1);
+  await del(`${AUDIO_BLOB_PREFIX}${stemId}`);
+
+  if (song.discreteFiles) {
+    song.discreteFiles = song.discreteFiles.filter(
+      (df) => df.name !== removedStem.fileName && df.role !== removedStem.role
+    );
+  }
+
+  await saveSongToStorage(song);
+
+  // Sinkronisasi pembaruan ke cloud
+  try {
+    const { uploadSongToCloud } = await import('./cloudDatabase');
+    onProgress?.('Memperbarui katalog cloud...');
+    await uploadSongToCloud(song.id, onProgress);
+    const refreshed = await loadSongFromStorage(songId);
+    if (refreshed) return refreshed;
+  } catch (err) {
+    console.warn('Cloud sync error on delete stem:', err);
+  }
+
+  return song;
+}
+
+/**
  * Creates a new song from discrete studio stem files uploaded by Admin.
  * 100% discrete, zero-bleed audio without any in-browser DSP filter hacks.
  */
