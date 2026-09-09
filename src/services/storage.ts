@@ -27,6 +27,7 @@ export async function saveSongToStorage(song: Song): Promise<void> {
       muted: s.muted,
       solo: s.solo,
       fileName: s.fileName,
+      audioUrl: s.audioUrl,
     })),
   };
 

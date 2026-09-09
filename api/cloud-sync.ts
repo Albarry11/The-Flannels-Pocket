@@ -48,13 +48,50 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ items });
     }
 
+    if (req.method === 'GET' && action === 'get-upload-url') {
+      const filePath = req.query.path || req.headers['x-file-path'];
+      if (!filePath) {
+        return res.status(400).json({ error: 'Parameter path is required' });
+      }
+
+      const signRes = await fetch(`${cleanUrl}/storage/v1/object/upload/sign/${BUCKET_NAME}/${encodeURI(String(filePath))}`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ upsert: true }),
+      });
+
+      if (!signRes.ok) {
+        const errText = await signRes.text();
+        return res.status(signRes.status).json({ error: errText });
+      }
+
+      const signData = await signRes.json();
+      const signedUploadUrl = signData.url ? `${cleanUrl}/storage/v1${signData.url}` : null;
+      const publicUrl = `${cleanUrl}/storage/v1/object/public/${BUCKET_NAME}/${encodeURI(String(filePath))}`;
+
+      return res.status(200).json({
+        success: true,
+        signedUploadUrl,
+        publicUrl,
+        token: signData.token || null,
+      });
+    }
+
     if (req.method === 'POST' && action === 'upload') {
-      const filePath = req.headers['x-file-path'];
+      const filePath = req.headers['x-file-path'] || req.query.path;
       if (!filePath) {
         return res.status(400).json({ error: 'Header x-file-path is required' });
       }
 
       const contentType = req.headers['content-type'] || 'application/octet-stream';
+      let uploadBody: any = req.body;
+      if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+        uploadBody = JSON.stringify(req.body);
+      }
+
       const uploadRes = await fetch(`${cleanUrl}/storage/v1/object/${BUCKET_NAME}/${filePath}`, {
         method: 'POST',
         headers: {
@@ -62,7 +99,7 @@ export default async function handler(req: any, res: any) {
           'Content-Type': contentType,
           'x-upsert': 'true',
         },
-        body: req.body,
+        body: uploadBody,
       });
 
       if (!uploadRes.ok) {
@@ -71,7 +108,8 @@ export default async function handler(req: any, res: any) {
       }
 
       const result = await uploadRes.json();
-      return res.status(200).json({ success: true, result });
+      const publicUrl = `${cleanUrl}/storage/v1/object/public/${BUCKET_NAME}/${filePath}`;
+      return res.status(200).json({ success: true, result, publicUrl });
     }
 
     return res.status(404).json({ error: 'Unknown action' });

@@ -107,8 +107,19 @@ export function App() {
         }
       } else {
         setSongs([]);
-        setCurrentSong(null);
       }
+
+      // Auto-sync from Supabase cloud database so songs uploaded by admin appear on all devices
+      try {
+        const { syncSongsFromCloud } = await import('./services/cloudDatabase');
+        const cloudRes = await syncSongsFromCloud();
+        if (cloudRes.songs && cloudRes.songs.length > 0) {
+          setSongs(cloudRes.songs);
+          if (!currentSong && (!stored || stored.length === 0)) {
+            selectSong(cloudRes.songs[0]);
+          }
+        }
+      } catch (_) {}
     } catch (err) {
       console.error('Failed to load songs:', err);
     } finally {
@@ -131,7 +142,12 @@ export function App() {
     });
   }, []);
 
-  const selectSong = (song: Song) => {
+  const selectSong = async (song: Song) => {
+    try {
+      await globalAudioEngine.prepareSongAudio(song);
+    } catch (e) {
+      console.warn('prepareSongAudio error:', e);
+    }
     globalAudioEngine.setSong(song);
     setCurrentSong({ ...song });
     setCurrentTime(0);

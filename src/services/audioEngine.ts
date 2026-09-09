@@ -81,6 +81,40 @@ export class AudioEngine {
     return this.ctx;
   }
 
+  public async prepareSongAudio(song: Song, onProgress?: (msg: string) => void): Promise<void> {
+    const ctx = this.getContext();
+    for (let i = 0; i < song.stems.length; i++) {
+      const stem = song.stems[i];
+      if (!stem.audioBuffer) {
+        if (stem.blob) {
+          onProgress?.(`Mendekode audio ${stem.name}...`);
+          try {
+            const ab = await stem.blob.arrayBuffer();
+            stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          } catch (e) {
+            console.warn(`Failed to decode blob for ${stem.name}:`, e);
+          }
+        } else if (stem.audioUrl) {
+          onProgress?.(`Mengunduh stem ${stem.name} (${i + 1}/${song.stems.length})...`);
+          try {
+            const res = await fetch(stem.audioUrl);
+            if (res.ok) {
+              const ab = await res.arrayBuffer();
+              stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+              stem.blob = new Blob([ab], { type: 'audio/wav' });
+              try {
+                const { set } = await import('idb-keyval');
+                await set(`flannels_audio_${stem.id}`, stem.blob);
+              } catch (_) {}
+            }
+          } catch (e) {
+            console.warn(`Failed to stream stem from ${stem.audioUrl}:`, e);
+          }
+        }
+      }
+    }
+  }
+
   public setSong(song: Song) {
     this.stop();
     this.currentSong = song;

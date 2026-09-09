@@ -45,10 +45,20 @@ export async function fetchSongRequests(): Promise<SongRequest[]> {
     });
 
     if (res.ok) {
-      const cloudList = await res.json();
-      if (Array.isArray(cloudList)) {
-        saveRequestsLocally(cloudList);
-        return sortRequests(cloudList);
+      const text = await res.text();
+      if (text && text.trim().startsWith('[')) {
+        const cloudList = JSON.parse(text);
+        if (Array.isArray(cloudList)) {
+          // Merge local and cloud requests
+          const map = new Map<string, SongRequest>();
+          cloudList.forEach((r) => map.set(r.id, r));
+          localList.forEach((r) => {
+            if (!map.has(r.id)) map.set(r.id, r);
+          });
+          const merged = Array.from(map.values());
+          saveRequestsLocally(merged);
+          return sortRequests(merged);
+        }
       }
     }
   } catch (err) {
@@ -65,7 +75,6 @@ export async function syncRequestsToCloud(requests: SongRequest[]): Promise<void
   saveRequestsLocally(requests);
 
   const payload = JSON.stringify(requests, null, 2);
-  const blob = new Blob([payload], { type: 'application/json' });
 
   // 1. Try Vercel Serverless Function proxy
   try {
@@ -75,7 +84,7 @@ export async function syncRequestsToCloud(requests: SongRequest[]): Promise<void
         'Content-Type': 'application/json',
         'x-file-path': REQUESTS_FILE_PATH,
       },
-      body: blob,
+      body: payload,
     });
     if (apiRes.ok) return;
   } catch (_) {}
@@ -91,7 +100,7 @@ export async function syncRequestsToCloud(requests: SongRequest[]): Promise<void
         'Content-Type': 'application/json',
         'x-upsert': 'true',
       },
-      body: blob,
+      body: payload,
     });
   } catch (err) {
     console.warn('Cloud sync error for requests:', err);

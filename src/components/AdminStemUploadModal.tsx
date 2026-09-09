@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { StemRole, SongRequest, Song } from '../types';
 import { createSongFromFiles } from '../services/storage';
 import { markRequestFulfilled } from '../services/requestQueue';
+import { uploadSongToCloud } from '../services/cloudDatabase';
 import {
   Upload,
   Music,
@@ -139,6 +140,14 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
       // If this was fulfilling an initial request, mark it fulfilled in the leaderboard
       if (initialRequest) {
         await markRequestFulfilled(initialRequest.id, song.id);
+      }
+
+      // Automatically sync to cloud so band members can access from their own PCs/phones
+      try {
+        setProgressStatus('Menyinkronkan stem ke cloud untuk seluruh personil band...');
+        await uploadSongToCloud(song.id, (status) => setProgressStatus(status));
+      } catch (cloudErr) {
+        console.warn('Cloud sync error:', cloudErr);
       }
 
       onSongCreated(song);

@@ -1,7 +1,8 @@
-import type { Song, StemTrack, CloudDbConfig } from '../types';
+import type { Song, CloudDbConfig } from '../types';
 import { saveSongToStorage, loadSongFromStorage, listAllSongsFromStorage } from './storage';
 
 const CLOUD_CONFIG_KEY = 'flannels_cloud_config';
+export const SONGS_INDEX_FILE = 'songs-index.json';
 
 const DEFAULT_CONFIG: CloudDbConfig = {
   provider: 'supabase',
@@ -55,7 +56,8 @@ export async function testCloudConnection(config: CloudDbConfig): Promise<{ succ
 }
 
 /**
- * Upload satu lagu ke Supabase Storage (Vercel Serverless Function atau Client Direct)
+ * Upload satu lagu ke Supabase Storage beserta seluruh stem audio diskrit.
+ * Memperbarui songs-index.json di cloud agar semua device anggota band bisa mengaksesnya.
  */
 export async function uploadSongToCloud(
   songId: string,
@@ -68,52 +70,88 @@ export async function uploadSongToCloud(
   }
 
   const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
-  const headers = {
-    apikey: config.supabaseAnonKey,
-    Authorization: `Bearer ${config.supabaseAnonKey}`,
-  };
 
   try {
     // 1. Upload each stem audio
     for (let i = 0; i < song.stems.length; i++) {
       const stem = song.stems[i];
+      const filePath = `${song.id}/${stem.id}_${stem.fileName || `${stem.role}.wav`}`;
+      const publicUrl = `${cleanUrl}/storage/v1/object/public/${config.bucketName}/${encodeURI(filePath)}`;
+
       if (stem.blob) {
         onProgress?.(`Mengunggah stem ${stem.name} (${i + 1}/${song.stems.length})...`);
-        const filePath = `${song.id}/${stem.id}_${stem.fileName || 'audio.flac'}`;
-
         let uploaded = false;
 
-        // Try Vercel Serverless Function first
+        // A. Coba Signed Upload URL via Vercel Proxy (Direct S3-style upload, tembus file besar > 50MB)
         try {
-          const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': stem.blob.type || 'audio/flac',
-              'x-file-path': filePath,
-            },
-            body: stem.blob,
-          });
-          if (apiRes.ok) uploaded = true;
+          const signRes = await fetch(`/api/cloud-sync?action=get-upload-url&path=${encodeURIComponent(filePath)}`);
+          if (signRes.ok) {
+            const signJson = await signRes.json();
+            if (signJson.signedUploadUrl) {
+              const putRes = await fetch(signJson.signedUploadUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': stem.blob.type || 'audio/wav',
+                },
+                body: stem.blob,
+              });
+              if (putRes.ok) uploaded = true;
+            }
+          }
         } catch (_) {}
 
-        // Fallback to client-direct Supabase API
+        // B. Fallback ke Vercel Serverless Function upload
         if (!uploaded) {
-          await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${filePath}`, {
-            method: 'POST',
-            headers: {
-              ...headers,
-              'Content-Type': stem.blob.type || 'audio/flac',
-              'x-upsert': 'true',
-            },
-            body: stem.blob,
-          });
+          try {
+            const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': stem.blob.type || 'audio/wav',
+                'x-file-path': filePath,
+              },
+              body: stem.blob,
+            });
+            if (apiRes.ok) uploaded = true;
+          } catch (_) {}
+        }
+
+        // C. Fallback direct client upload
+        if (!uploaded) {
+          try {
+            await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${filePath}`, {
+              method: 'POST',
+              headers: {
+                apikey: config.supabaseAnonKey,
+                Authorization: `Bearer ${config.supabaseAnonKey}`,
+                'Content-Type': stem.blob.type || 'audio/wav',
+                'x-upsert': 'true',
+              },
+              body: stem.blob,
+            });
+          } catch (_) {}
         }
       }
+
+      stem.audioUrl = publicUrl;
     }
 
-    // 2. Upload song metadata
-    onProgress?.('Menyimpan metadata lagu ke cloud...');
-    const metaPayload: Omit<Song, 'stems'> & { stems: Omit<StemTrack, 'audioBuffer' | 'blob'>[] } = {
+    // 2. Perbarui master songs-index.json di cloud
+    onProgress?.('Mendaftarkan lagu ke katalog cloud band...');
+    const indexUrl = `${cleanUrl}/storage/v1/object/public/${config.bucketName}/${SONGS_INDEX_FILE}`;
+    let existingSongs: Song[] = [];
+
+    try {
+      const idxRes = await fetch(`${indexUrl}?t=${Date.now()}`, { cache: 'no-store' });
+      if (idxRes.ok) {
+        const text = await idxRes.text();
+        if (text && text.trim().startsWith('[')) {
+          existingSongs = JSON.parse(text);
+        }
+      }
+    } catch (_) {}
+
+    // Clean metadata without giant in-memory buffers for JSON index
+    const cleanSongMeta: Song = {
       ...song,
       stems: song.stems.map((s) => ({
         id: s.id,
@@ -124,42 +162,33 @@ export async function uploadSongToCloud(
         muted: s.muted,
         solo: s.solo,
         fileName: s.fileName,
+        audioUrl: s.audioUrl,
       })),
       cloudSynced: true,
     };
 
-    const metaBlob = new Blob([JSON.stringify(metaPayload, null, 2)], { type: 'application/json' });
-    const metaPath = `${song.id}/meta.json`;
+    const map = new Map<string, Song>();
+    existingSongs.forEach((s) => map.set(s.id, s));
+    map.set(cleanSongMeta.id, cleanSongMeta);
+    const updatedIndex = Array.from(map.values());
 
-    let metaUploaded = false;
+    // Upload index
     try {
-      const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
+      await fetch('/api/cloud-sync?action=upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-file-path': metaPath,
+          'x-file-path': SONGS_INDEX_FILE,
         },
-        body: metaBlob,
+        body: JSON.stringify(updatedIndex, null, 2),
       });
-      if (apiRes.ok) metaUploaded = true;
     } catch (_) {}
 
-    if (!metaUploaded) {
-      await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${metaPath}`, {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-          'x-upsert': 'true',
-        },
-        body: metaBlob,
-      });
-    }
-
+    // Simpan status lokal
     song.cloudSynced = true;
     await saveSongToStorage(song);
 
-    return { success: true, message: `Lagu "${song.title}" berhasil diunggah ke database cloud!` };
+    return { success: true, message: `Lagu "${song.title}" berhasil disinkronkan ke seluruh perangkat band!` };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, message: `Gagal upload: ${msg}` };
@@ -167,82 +196,67 @@ export async function uploadSongToCloud(
 }
 
 /**
- * Unduh daftar lagu dari Supabase Storage ke IndexedDB lokal
+ * Unduh dan sinkronisasikan katalog lagu dari Supabase Storage ke IndexedDB lokal.
+ * Membuat lagu yang diinput admin langsung muncul di device seluruh personil band.
  */
 export async function syncSongsFromCloud(
   onProgress?: (msg: string) => void
-): Promise<{ success: boolean; count: number; message: string }> {
+): Promise<{ success: boolean; count: number; songs: Song[]; message: string }> {
   const config = getCloudConfig();
   const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
-  const headers = {
-    apikey: config.supabaseAnonKey,
-    Authorization: `Bearer ${config.supabaseAnonKey}`,
-  };
+  const indexUrl = `${cleanUrl}/storage/v1/object/public/${config.bucketName}/${SONGS_INDEX_FILE}`;
 
   try {
-    onProgress?.('Mencari lagu di cloud storage...');
+    onProgress?.('Memeriksa katalog lagu cloud...');
+    const res = await fetch(`${indexUrl}?t=${Date.now()}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(4500),
+    });
 
-    let items: { name: string; id: string }[] = [];
-
-    // Try Vercel Serverless route first
-    try {
-      const apiRes = await fetch(`/api/cloud-sync?action=list`);
-      if (apiRes.ok) {
-        const json = await apiRes.json();
-        if (json.items) items = json.items;
-      }
-    } catch (_) {}
-
-    // Fallback to direct Supabase list
-    if (items.length === 0) {
-      const listRes = await fetch(`${cleanUrl}/storage/v1/object/list/${config.bucketName}`, {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prefix: '',
-          limit: 100,
-          sortBy: { column: 'name', order: 'asc' },
-        }),
-      });
-
-      if (listRes.ok) {
-        items = await listRes.json();
-      }
+    if (!res.ok) {
+      const local = await listAllSongsFromStorage();
+      return { success: true, count: local.length, songs: local, message: 'Menggunakan database lokal' };
     }
 
-    let syncedCount = 0;
+    const text = await res.text();
+    if (!text || !text.trim().startsWith('[')) {
+      const local = await listAllSongsFromStorage();
+      return { success: true, count: local.length, songs: local, message: 'Katalog cloud kosong' };
+    }
 
-    for (const item of items) {
-      if (item.name.endsWith('meta.json')) {
-        onProgress?.(`Sinkronisasi ${item.name}...`);
-        const metaRes = await fetch(`${cleanUrl}/storage/v1/object/public/${config.bucketName}/${item.name}`);
-        if (metaRes.ok) {
-          const metaJson: Song = await metaRes.json();
-          const existing = await loadSongFromStorage(metaJson.id);
-          if (!existing) {
-            for (const stem of metaJson.stems) {
-              const stemPath = `${metaJson.id}/${stem.id}_${stem.fileName || 'audio.flac'}`;
-              try {
-                const audioRes = await fetch(`${cleanUrl}/storage/v1/object/public/${config.bucketName}/${stemPath}`);
-                if (audioRes.ok) {
-                  stem.blob = await audioRes.blob();
-                }
-              } catch (_) {}
-            }
-            await saveSongToStorage(metaJson);
-            syncedCount++;
+    const cloudSongs: Song[] = JSON.parse(text);
+    let newOrUpdatedCount = 0;
+
+    for (const cs of cloudSongs) {
+      const existing = await loadSongFromStorage(cs.id);
+      if (!existing) {
+        await saveSongToStorage(cs);
+        newOrUpdatedCount++;
+      } else {
+        // Update stems audioUrl if missing in local
+        let modified = false;
+        existing.stems.forEach((st, idx) => {
+          if (!st.audioUrl && cs.stems[idx]?.audioUrl) {
+            st.audioUrl = cs.stems[idx].audioUrl;
+            modified = true;
           }
+        });
+        if (modified) {
+          await saveSongToStorage(existing);
         }
       }
     }
 
-    return { success: true, count: syncedCount, message: `Sinkronisasi selesai! ${syncedCount} lagu berhasil diunduh.` };
+    const all = await listAllSongsFromStorage();
+    return {
+      success: true,
+      count: newOrUpdatedCount,
+      songs: all,
+      message: `Sinkronisasi cloud berhasil. ${all.length} lagu tersedia.`,
+    };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, count: 0, message: `Gagal sinkronisasi: ${msg}` };
+    const local = await listAllSongsFromStorage();
+    return { success: false, count: local.length, songs: local, message: 'Offline mode' };
   }
 }
 
@@ -266,6 +280,7 @@ export async function exportSongPackage(): Promise<Blob> {
         muted: stem.muted,
         solo: stem.solo,
         fileName: stem.fileName,
+        audioUrl: stem.audioUrl,
       })),
     })),
   };
