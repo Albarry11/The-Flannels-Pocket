@@ -275,12 +275,19 @@ export async function syncSongsFromCloud(
         await saveSongToStorage(cs);
         newOrUpdatedCount++;
       } else {
-        // Update stems audioUrl if missing in local
+        // Update stems audioUrl and audioUrls if missing or updated in cloud
         let modified = false;
         existing.stems.forEach((st, idx) => {
-          if (!st.audioUrl && cs.stems[idx]?.audioUrl) {
-            st.audioUrl = cs.stems[idx].audioUrl;
-            modified = true;
+          const cloudStem = cs.stems[idx];
+          if (cloudStem) {
+            if (cloudStem.audioUrl && st.audioUrl !== cloudStem.audioUrl) {
+              st.audioUrl = cloudStem.audioUrl;
+              modified = true;
+            }
+            if (cloudStem.audioUrls && JSON.stringify(st.audioUrls) !== JSON.stringify(cloudStem.audioUrls)) {
+              st.audioUrls = cloudStem.audioUrls;
+              modified = true;
+            }
           }
         });
         if (modified) {

@@ -143,14 +143,20 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
       }
 
       // Automatically sync to cloud so band members can access from their own PCs/phones
+      let finalSong = song;
       try {
-        setProgressStatus('Menyinkronkan stem ke cloud untuk seluruh personil band...');
-        await uploadSongToCloud(song.id, (status) => setProgressStatus(status));
+        setProgressStatus('Mengunggah berkas stem ke cloud untuk seluruh personil band...');
+        const cloudResult = await uploadSongToCloud(song.id, (status) => setProgressStatus(status));
+        if (cloudResult.success) {
+          const { loadSongFromStorage } = await import('../services/storage');
+          const refreshed = await loadSongFromStorage(song.id);
+          if (refreshed) finalSong = refreshed;
+        }
       } catch (cloudErr) {
         console.warn('Cloud sync error:', cloudErr);
       }
 
-      onSongCreated(song);
+      onSongCreated(finalSong);
       setIsProcessing(false);
       onClose();
     } catch (err) {

@@ -98,36 +98,43 @@ export function App() {
     localStorage.setItem('flannels_video_bg', String(next));
   };
 
-  // Load song library on mount
+  // Load song library on mount - Cloud-First automatic fetch
+  const currentSongRef = useRef<Song | null>(null);
+  useEffect(() => {
+    currentSongRef.current = currentSong;
+  }, [currentSong]);
+
   const refreshSongs = useCallback(async () => {
     try {
-      const stored = await listAllSongsFromStorage();
-      if (stored.length > 0) {
-        setSongs(stored);
-        if (!currentSong) {
-          selectSong(stored[0]);
-        }
-      } else {
-        setSongs([]);
-      }
-
-      // Auto-sync from Supabase cloud database so songs uploaded by admin appear on all devices
+      // 1. Direct fetch from Supabase Cloud Catalog first (automatic for all band members)
+      let songList: Song[] = [];
       try {
         const { syncSongsFromCloud } = await import('./services/cloudDatabase');
         const cloudRes = await syncSongsFromCloud();
         if (cloudRes.songs && cloudRes.songs.length > 0) {
-          setSongs(cloudRes.songs);
-          if (!currentSong && (!stored || stored.length === 0)) {
-            selectSong(cloudRes.songs[0]);
-          }
+          songList = cloudRes.songs;
         }
       } catch (_) {}
+
+      // 2. Fallback to local storage if offline
+      if (songList.length === 0) {
+        songList = await listAllSongsFromStorage();
+      }
+
+      if (songList.length > 0) {
+        setSongs(songList);
+        if (!currentSongRef.current) {
+          selectSong(songList[0]);
+        }
+      } else {
+        setSongs([]);
+      }
     } catch (err) {
       console.error('Failed to load songs:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [currentSong]);
+  }, []);
 
   useEffect(() => {
     refreshSongs();

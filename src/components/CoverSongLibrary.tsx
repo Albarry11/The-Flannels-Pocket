@@ -18,11 +18,9 @@ import {
   Upload,
   Check,
   X,
-  Cloud,
-  RefreshCw,
 } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
-import { exportSongPackage, uploadSongToCloud, syncSongsFromCloud } from '../services/cloudDatabase';
+import { exportSongPackage } from '../services/cloudDatabase';
 
 interface CoverSongLibraryProps {
   songs: Song[];
@@ -46,34 +44,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   onUnlockAdmin,
 }) => {
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [uploadingCloudId, setUploadingCloudId] = useState<string | null>(null);
-
-  const handleManualCloudSync = async () => {
-    setIsSyncing(true);
-    try {
-      const res = await syncSongsFromCloud();
-      await onRefreshSongs();
-      alert(res.message);
-    } catch (e) {
-      alert('Gagal sinkronisasi cloud: ' + e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleManualSongCloudUpload = async (songId: string) => {
-    setUploadingCloudId(songId);
-    try {
-      const res = await uploadSongToCloud(songId);
-      await onRefreshSongs();
-      alert(res.message);
-    } catch (e) {
-      alert('Gagal upload ke cloud: ' + e);
-    } finally {
-      setUploadingCloudId(null);
-    }
-  };
 
   // Edit Metadata State (Admin only)
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -142,20 +112,10 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleManualCloudSync}
-            disabled={isSyncing}
-            className="px-3 py-1.5 rounded-full bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
-            title="Sinkronisasi lagu terbaru dari database cloud"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Sinkron Cloud</span>
-          </button>
-
           {songs.length > 0 && (
             <button
               onClick={handleExportBackup}
-              className="px-3 py-1.5 rounded-full bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-1.5 rounded-full bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
               title="Ekspor paket library JSON"
             >
               <FileDown className="w-3.5 h-3.5" />
@@ -348,24 +308,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
 
                     {isAdmin && (
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleManualSongCloudUpload(song.id)}
-                          disabled={uploadingCloudId === song.id}
-                          className={`p-1.5 rounded-full transition ${
-                            song.cloudSynced
-                              ? 'text-emerald-600 hover:bg-emerald-50'
-                              : 'text-amber-500 hover:text-amber-700 hover:bg-amber-50 animate-pulse'
-                          }`}
-                          title={
-                            uploadingCloudId === song.id
-                              ? 'Sedang mengunggah ke cloud...'
-                              : song.cloudSynced
-                              ? 'Lagu tersinkron di cloud'
-                              : 'Sinkronkan lagu ini ke cloud agar dapat diakses teman'
-                          }
-                        >
-                          <Cloud className={`w-3.5 h-3.5 ${uploadingCloudId === song.id ? 'animate-spin' : ''}`} />
-                        </button>
                         <button
                           onClick={() => handleOpenEdit(song)}
                           className="p-1.5 rounded-full text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition"
