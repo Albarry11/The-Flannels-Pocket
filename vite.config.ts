@@ -5,4 +5,13 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://the-flannels-pocket.vercel.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

@@ -75,8 +75,8 @@ export class AudioEngine {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
@@ -283,10 +283,14 @@ export class AudioEngine {
   public async play() {
     if (this.isPlaying || !this.currentSong) return;
     const ctx = this.getContext();
-    if (ctx.state === 'suspended') {
+    if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') {
       try {
         await ctx.resume();
       } catch (_) {}
+    }
+
+    if (this.pauseOffset >= (this.currentSong.duration - 0.1)) {
+      this.pauseOffset = 0;
     }
 
     // Ensure audio buffers are ready
@@ -318,7 +322,7 @@ export class AudioEngine {
       source.connect(nodes.eqLowNode);
       nodes.source = source;
 
-      const offset = Math.min(this.pauseOffset, stem.audioBuffer.duration);
+      const offset = Math.max(0, Math.min(this.pauseOffset, Math.max(0, stem.audioBuffer.duration - 0.05)));
       source.start(0, offset);
     });
 
