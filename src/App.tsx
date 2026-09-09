@@ -14,6 +14,7 @@ import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
 import { SongRequestLeaderboard } from './components/SongRequestLeaderboard';
 import { AdminStemUploadModal } from './components/AdminStemUploadModal';
+import { AudioLoadingModal } from './components/AudioLoadingModal';
 import { Sliders, Folder, FileText, Brain, Flame, Loader2 } from 'lucide-react';
 import type { SongRequest } from './types';
 
@@ -37,6 +38,19 @@ export function App() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [audioLoadingText, setAudioLoadingText] = useState<string>('');
+  const [loadingModalState, setLoadingModalState] = useState<{
+    isOpen: boolean;
+    song: Song | null;
+    percent: number;
+    text: string;
+    detail?: string;
+  }>({
+    isOpen: false,
+    song: null,
+    percent: 0,
+    text: '',
+    detail: '',
+  });
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [speed, setSpeed] = useState<number>(1.0);
   const [pitchSemitones, setPitchSemitones] = useState<number>(0);
@@ -152,18 +166,49 @@ export function App() {
   }, []);
 
   const selectSong = async (song: Song) => {
+    const needsLoading = song.stems.some((s) => !s.audioBuffer);
+    if (needsLoading) {
+      setLoadingModalState({
+        isOpen: true,
+        song,
+        percent: 5,
+        text: 'Memeriksa berkas audio stem...',
+        detail: `${song.stems.length} Stems`,
+      });
+    }
+
     setIsAudioLoading(true);
     setAudioLoadingText('Memeriksa berkas audio stem...');
+
     try {
-      await globalAudioEngine.prepareSongAudio(song, (status) => {
-        setAudioLoadingText(status);
+      await globalAudioEngine.prepareSongAudio(song, (progress) => {
+        setAudioLoadingText(progress.text);
+        if (needsLoading) {
+          setLoadingModalState((prev) => ({
+            ...prev,
+            percent: progress.percent,
+            text: progress.text,
+            detail: progress.detail,
+          }));
+        }
       });
+
+      if (needsLoading) {
+        setLoadingModalState((prev) => ({
+          ...prev,
+          percent: 100,
+          text: 'Selesai! Audio siap dimainkan.',
+          detail: '100% Studio Quality',
+        }));
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
     } catch (e: any) {
       console.warn('prepareSongAudio error:', e);
       alert(e?.message || 'Gagal memuat berkas audio.');
     } finally {
       setIsAudioLoading(false);
       setAudioLoadingText('');
+      setLoadingModalState((prev) => ({ ...prev, isOpen: false }));
     }
 
     globalAudioEngine.setSong(song);
@@ -183,6 +228,17 @@ export function App() {
 
   const handlePlay = async () => {
     if (!currentSong) return;
+    const needsLoading = currentSong.stems.some((s) => !s.audioBuffer);
+    if (needsLoading) {
+      setLoadingModalState({
+        isOpen: true,
+        song: currentSong,
+        percent: 5,
+        text: 'Memuat audio stem...',
+        detail: `${currentSong.stems.length} Stems`,
+      });
+    }
+
     try {
       setIsAudioLoading(true);
       await globalAudioEngine.play();
@@ -193,6 +249,7 @@ export function App() {
       setIsPlaying(false);
     } finally {
       setIsAudioLoading(false);
+      setLoadingModalState((prev) => ({ ...prev, isOpen: false }));
     }
   };
 
@@ -720,6 +777,15 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Real-Time Audio Fetch & Progress Modal */}
+      <AudioLoadingModal
+        isOpen={loadingModalState.isOpen}
+        song={loadingModalState.song}
+        percent={loadingModalState.percent}
+        text={loadingModalState.text}
+        detail={loadingModalState.detail}
+      />
 
       {/* Admin Stem Upload Modal */}
       {showAdminUploadModal && (

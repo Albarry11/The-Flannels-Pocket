@@ -1,5 +1,11 @@
 import type { Song, StemRole, LoopRegion } from '../types';
 
+export interface AudioProgressPayload {
+  percent: number;
+  text: string;
+  detail?: string;
+}
+
 export type EqPresetName = 'flat' | 'vocal-clarity' | 'guitar-cut' | 'bass-punch' | 'drum-air';
 
 export interface EqSettings {
@@ -37,6 +43,43 @@ interface StemNodes {
   pannerNode: StereoPannerNode;
   analyserNode: AnalyserNode;
   currentEqPreset: EqPresetName;
+}
+
+async function fetchWithByteProgress(
+  url: string,
+  onByteProgress?: (received: number, total: number) => void
+): Promise<ArrayBuffer> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const contentLength = Number(res.headers.get('content-length')) || 0;
+
+  if (!res.body || contentLength === 0) {
+    const buf = await res.arrayBuffer();
+    onByteProgress?.(buf.byteLength, buf.byteLength || buf.byteLength);
+    return buf;
+  }
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      received += value.length;
+      onByteProgress?.(received, contentLength);
+    }
+  }
+
+  const all = new Uint8Array(received);
+  let pos = 0;
+  for (const c of chunks) {
+    all.set(c, pos);
+    pos += c.length;
+  }
+  return all.buffer;
 }
 
 export class AudioEngine {
@@ -81,24 +124,45 @@ export class AudioEngine {
     return this.ctx;
   }
 
-  public async prepareSongAudio(song: Song, onProgress?: (msg: string) => void): Promise<void> {
+  public async prepareSongAudio(
+    song: Song,
+    onProgress?: (progress: AudioProgressPayload) => void
+  ): Promise<void> {
     const ctx = this.getContext();
-    if (ctx.state === 'suspended') {
+    if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') {
       try {
         await ctx.resume();
       } catch (_) {}
     }
 
-    for (let i = 0; i < song.stems.length; i++) {
+    const totalStems = song.stems.length;
+    const report = (pct: number, text: string, detail?: string) => {
+      onProgress?.({
+        percent: Math.max(0, Math.min(100, Math.round(pct))),
+        text,
+        detail,
+      });
+    };
+
+    report(5, 'Memeriksa berkas audio stem...', `${totalStems} track diskrit`);
+
+    for (let i = 0; i < totalStems; i++) {
       const stem = song.stems[i];
-      if (stem.audioBuffer) continue;
+      const basePct = (i / totalStems) * 100;
+      const nextPct = ((i + 1) / totalStems) * 100;
+
+      if (stem.audioBuffer) {
+        report(nextPct, `Stem ${stem.name} sudah siap`, `${i + 1}/${totalStems}`);
+        continue;
+      }
 
       // 1. Check in-memory blob
       if (stem.blob) {
-        onProgress?.(`Mendekode audio ${stem.name} (${i + 1}/${song.stems.length})...`);
+        report(basePct + (100 / totalStems) * 0.3, `Mendekode ${stem.name} (${i + 1}/${totalStems})...`, 'Memori RAM');
         try {
           const ab = await stem.blob.arrayBuffer();
           stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          report(nextPct, `Stem ${stem.name} siap`, `${i + 1}/${totalStems}`);
           continue;
         } catch (e) {
           console.warn(`Failed to decode blob for ${stem.name}:`, e);
@@ -110,10 +174,11 @@ export class AudioEngine {
         const { get } = await import('idb-keyval');
         const cachedBlob: Blob | undefined = await get(`flannels_audio_${stem.id}`);
         if (cachedBlob) {
-          onProgress?.(`Memuat cache ${stem.name} (${i + 1}/${song.stems.length})...`);
+          report(basePct + (100 / totalStems) * 0.4, `Memuat ${stem.name} dari cache lokal...`, `${i + 1}/${totalStems}`);
           const ab = await cachedBlob.arrayBuffer();
           stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
           stem.blob = cachedBlob;
+          report(nextPct, `Stem ${stem.name} siap`, 'Cache lokal');
           continue;
         }
       } catch (_) {}
@@ -127,23 +192,45 @@ export class AudioEngine {
           : [];
 
       if (urlsToFetch.length > 0) {
-        onProgress?.(`Mengunduh stem ${stem.name} (${i + 1}/${song.stems.length})...`);
+        report(basePct + 2, `Menghubungi cloud untuk stem ${stem.name}...`, `${i + 1}/${totalStems}`);
 
         try {
           let mergedBuffer: ArrayBuffer;
           if (urlsToFetch.length === 1) {
-            const res = await fetch(urlsToFetch[0]);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            mergedBuffer = await res.arrayBuffer();
+            mergedBuffer = await fetchWithByteProgress(urlsToFetch[0], (received, total) => {
+              const fraction = total > 0 ? received / total : 0.5;
+              const currentOverall = basePct + fraction * ((100 / totalStems) * 0.85);
+              const mbReceived = (received / 1024 / 1024).toFixed(1);
+              const mbTotal = total > 0 ? (total / 1024 / 1024).toFixed(1) : '?';
+              report(
+                currentOverall,
+                `Mengunduh stem ${stem.name} (${i + 1}/${totalStems})`,
+                `${mbReceived} MB / ${mbTotal} MB`
+              );
+            });
           } else {
-            // Download all chunks concurrently
-            const parts = await Promise.all(
-              urlsToFetch.map(async (u, idx) => {
-                const res = await fetch(u);
-                if (!res.ok) throw new Error(`HTTP ${res.status} pada bagian ${idx + 1}`);
-                return res.arrayBuffer();
-              })
-            );
+            // Download chunks sequentially or with progress tracking
+            const parts: ArrayBuffer[] = [];
+            let totalStemBytes = 0;
+            let loadedStemBytes = 0;
+
+            for (let partIdx = 0; partIdx < urlsToFetch.length; partIdx++) {
+              const partUrl = urlsToFetch[partIdx];
+              const partBuf = await fetchWithByteProgress(partUrl, (rec, tot) => {
+                totalStemBytes = Math.max(totalStemBytes, tot * urlsToFetch.length);
+                const currentBytes = loadedStemBytes + rec;
+                const fraction = totalStemBytes > 0 ? currentBytes / totalStemBytes : 0.5;
+                const currentOverall = basePct + fraction * ((100 / totalStems) * 0.85);
+                report(
+                  currentOverall,
+                  `Mengunduh ${stem.name} bagian ${partIdx + 1}/${urlsToFetch.length}`,
+                  `${(currentBytes / 1024 / 1024).toFixed(1)} MB`
+                );
+              });
+              parts.push(partBuf);
+              loadedStemBytes += partBuf.byteLength;
+            }
+
             const totalBytes = parts.reduce((sum, p) => sum + p.byteLength, 0);
             const mergedBytes = new Uint8Array(totalBytes);
             let byteOffset = 0;
@@ -154,6 +241,7 @@ export class AudioEngine {
             mergedBuffer = mergedBytes.buffer;
           }
 
+          report(basePct + (100 / totalStems) * 0.9, `Mendekode audio ${stem.name}...`, 'Web Audio Engine');
           stem.audioBuffer = await ctx.decodeAudioData(mergedBuffer.slice(0));
           stem.blob = new Blob([mergedBuffer], { type: 'audio/wav' });
 
@@ -162,14 +250,18 @@ export class AudioEngine {
             const { set } = await import('idb-keyval');
             await set(`flannels_audio_${stem.id}`, stem.blob);
           } catch (_) {}
+
+          report(nextPct, `Stem ${stem.name} selesai diunduh`, `${i + 1}/${totalStems}`);
         } catch (dlErr) {
           console.error(`Failed to download stem ${stem.name}:`, dlErr);
-          throw new Error(`Gagal mengunduh stem ${stem.name}. Berkas belum diunggah ke cloud.`);
+          throw new Error(`Gagal mengunduh stem ${stem.name}. Periksa koneksi internet.`);
         }
       } else {
-        throw new Error(`Stem ${stem.name} belum memiliki audio di cloud.`);
+        throw new Error(`Stem ${stem.name} belum memiliki berkas audio di cloud.`);
       }
     }
+
+    report(100, 'Audio siap dimainkan!', '100% Studio Rehearsal Quality');
   }
 
   public setSong(song: Song) {
