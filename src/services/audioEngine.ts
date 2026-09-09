@@ -1,10 +1,42 @@
-import type { Song, LoopRegion } from '../types';
+import type { Song, StemRole, LoopRegion } from '../types';
+
+export type EqPresetName = 'flat' | 'vocal-clarity' | 'guitar-cut' | 'bass-punch' | 'drum-air';
+
+export interface EqSettings {
+  lowGain: number;   // dB, lowshelf at 200Hz
+  midGain: number;   // dB, peaking at 1kHz
+  highGain: number;  // dB, highshelf at 4kHz
+}
+
+export const EQ_PRESETS: Record<EqPresetName, EqSettings & { label: string }> = {
+  flat:           { lowGain: 0,  midGain: 0,  highGain: 0,  label: 'Flat' },
+  'vocal-clarity':{ lowGain: -2, midGain: 2,  highGain: 1,  label: 'Vokal Jernih' },
+  'guitar-cut':   { lowGain: 0,  midGain: 1,  highGain: 2,  label: 'Gitar Tajam' },
+  'bass-punch':   { lowGain: 2,  midGain: -1, highGain: 0,  label: 'Bass Tebal' },
+  'drum-air':     { lowGain: 0,  midGain: 0,  highGain: 3,  label: 'Drum Ringan' },
+};
+
+export function getEqPresetForRole(role: StemRole): EqPresetName {
+  switch (role) {
+    case 'vocal': return 'vocal-clarity';
+    case 'guitar':
+    case 'lead':
+    case 'rhythm': return 'guitar-cut';
+    case 'bass': return 'bass-punch';
+    case 'drums': return 'drum-air';
+    default: return 'flat';
+  }
+}
 
 interface StemNodes {
   source: AudioBufferSourceNode | null;
+  eqLowNode: BiquadFilterNode;
+  eqMidNode: BiquadFilterNode;
+  eqHighNode: BiquadFilterNode;
   gainNode: GainNode;
   pannerNode: StereoPannerNode;
   analyserNode: AnalyserNode;
+  currentEqPreset: EqPresetName;
 }
 
 export class AudioEngine {
@@ -100,6 +132,23 @@ export class AudioEngine {
 
     // Create channel strips for each stem
     this.currentSong.stems.forEach((stem) => {
+      // 3-band EQ: lowshelf (200Hz), peaking (1kHz), highshelf (4kHz)
+      const eqLowNode = ctx.createBiquadFilter();
+      eqLowNode.type = 'lowshelf';
+      eqLowNode.frequency.value = 200;
+      eqLowNode.gain.value = 0;
+
+      const eqMidNode = ctx.createBiquadFilter();
+      eqMidNode.type = 'peaking';
+      eqMidNode.frequency.value = 1000;
+      eqMidNode.Q.value = 0.7;
+      eqMidNode.gain.value = 0;
+
+      const eqHighNode = ctx.createBiquadFilter();
+      eqHighNode.type = 'highshelf';
+      eqHighNode.frequency.value = 4000;
+      eqHighNode.gain.value = 0;
+
       const gainNode = ctx.createGain();
       gainNode.gain.value = stem.volume;
 
@@ -110,15 +159,30 @@ export class AudioEngine {
       analyserNode.fftSize = 256;
       analyserNode.smoothingTimeConstant = 0.7;
 
+      // Chain: source -> EQ(low -> mid -> high) -> gain -> panner -> analyser -> replayGain
+      eqLowNode.connect(eqMidNode);
+      eqMidNode.connect(eqHighNode);
+      eqHighNode.connect(gainNode);
       gainNode.connect(pannerNode);
       pannerNode.connect(analyserNode);
       analyserNode.connect(this.replayGainNode!);
 
+      // Auto-apply role-based EQ preset
+      const presetName = getEqPresetForRole(stem.role);
+      const preset = EQ_PRESETS[presetName];
+      eqLowNode.gain.value = preset.lowGain;
+      eqMidNode.gain.value = preset.midGain;
+      eqHighNode.gain.value = preset.highGain;
+
       this.stemNodes.set(stem.id, {
         source: null,
+        eqLowNode,
+        eqMidNode,
+        eqHighNode,
         gainNode,
         pannerNode,
         analyserNode,
+        currentEqPreset: presetName,
       });
     });
 
@@ -143,7 +207,7 @@ export class AudioEngine {
       source.playbackRate.value = this.speed;
       source.detune.value = this.pitchSemitones * 100;
 
-      source.connect(nodes.gainNode);
+      source.connect(nodes.eqLowNode);
       nodes.source = source;
 
       const offset = Math.min(this.pauseOffset, stem.audioBuffer.duration);
@@ -266,6 +330,21 @@ export class AudioEngine {
       nodes.gainNode.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.02);
       this.applyMuteSoloInternal();
     }
+  }
+
+  public setStemEqPreset(stemId: string, presetName: EqPresetName) {
+    const nodes = this.stemNodes.get(stemId);
+    const preset = EQ_PRESETS[presetName];
+    if (!nodes || !preset || !this.ctx) return;
+    nodes.currentEqPreset = presetName;
+    nodes.eqLowNode.gain.setTargetAtTime(preset.lowGain, this.ctx.currentTime, 0.02);
+    nodes.eqMidNode.gain.setTargetAtTime(preset.midGain, this.ctx.currentTime, 0.02);
+    nodes.eqHighNode.gain.setTargetAtTime(preset.highGain, this.ctx.currentTime, 0.02);
+  }
+
+  public getStemEqPreset(stemId: string): EqPresetName {
+    const nodes = this.stemNodes.get(stemId);
+    return nodes?.currentEqPreset || 'flat';
   }
 
   public setStemPan(stemId: string, pan: number) {

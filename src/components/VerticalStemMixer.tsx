@@ -14,6 +14,8 @@ interface VerticalStemMixerProps {
   onSoloGuitarOnly: () => void;
   onSoloRhythmSection: () => void;
   onResetAllStems: () => void;
+  onCycleEqPreset: (stemId: string) => void;
+  getEqPresetLabel: (stemId: string) => string;
 }
 
 const ROLE_CONFIG: Record<
@@ -88,6 +90,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   onSoloGuitarOnly,
   onSoloRhythmSection,
   onResetAllStems,
+  onCycleEqPreset,
+  getEqPresetLabel,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
   // Show discrete band instruments (filter out 'other' by default unless it's a specific track)
@@ -294,14 +298,26 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </div>
               </div>
 
-              {/* 5. Bottom: Volume readout & Status */}
-              <div className="w-full text-center pt-1 border-t border-sky-100 flex-shrink-0">
-                <span className="text-xs font-mono font-black text-[#0f2942] block">
-                  {Math.round(stem.volume * 100)}%
-                </span>
-                <span className="text-[9px] font-mono font-extrabold text-sky-700 truncate block">
-                  {stem.muted ? 'MUTED' : isSilenced ? 'SILENCED' : 'ON'}
-                </span>
+              {/* 5. Bottom: Volume readout, Status & Tone Preset */}
+              <div className="w-full text-center pt-1 border-t border-sky-100 flex-shrink-0 flex flex-col items-center gap-1">
+                <div className="flex items-center justify-between w-full px-1">
+                  <span className="text-xs font-mono font-black text-[#0f2942]">
+                    {Math.round(stem.volume * 100)}%
+                  </span>
+                  <span className="text-[9px] font-mono font-extrabold text-sky-700 truncate">
+                    {stem.muted ? 'MUTED' : isSilenced ? 'SILENCED' : 'ON'}
+                  </span>
+                </div>
+                {/* Tone Preset Pill */}
+                <button
+                  onClick={() => onCycleEqPreset(stem.id)}
+                  className="w-full py-0.5 px-1 rounded-lg text-[9px] font-bold bg-sky-100/90 hover:bg-sky-200 text-sky-950 border border-sky-300 transition truncate active:scale-95 shadow-2xs flex items-center justify-center gap-1"
+                  title="Klik untuk ganti karakter tone EQ (Flat, Vokal Jernih, Gitar Tajam, Bass Tebal, Drum Ringan)"
+                  aria-label="Ubah preset EQ stem"
+                >
+                  <Music className="w-2.5 h-2.5 text-sky-600 flex-shrink-0" />
+                  <span className="truncate">{getEqPresetLabel(stem.id)}</span>
+                </button>
               </div>
 
             </div>

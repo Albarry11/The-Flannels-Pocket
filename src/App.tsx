@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 const ADMIN_UNLOCK_SEQUENCE = ['maximize', 'minimize', 'close', 'close'] as const;
 import type { Song, LoopRegion } from './types';
-import { globalAudioEngine } from './services/audioEngine';
+import { globalAudioEngine, EQ_PRESETS } from './services/audioEngine';
+import type { EqPresetName } from './services/audioEngine';
 import { globalMetronome } from './services/metronomeEngine';
 import { listAllSongsFromStorage, saveSongToStorage } from './services/storage';
 import { Header } from './components/Header';
@@ -235,7 +236,7 @@ export function App() {
     globalAudioEngine.setMetronomeVolume(clamped);
   };
 
-  // Stems manipulation — rAF throttled to prevent main-thread flooding on slider drag
+  // Stems manipulation - rAF throttled to prevent main-thread flooding on slider drag
   const rafVolumeRef = useRef<number | null>(null);
   const pendingVolumeRef = useRef<{ stemId: string; vol: number } | null>(null);
 
@@ -276,6 +277,23 @@ export function App() {
         setCurrentSong({ ...currentSong, stems: updatedStems });
       });
     }
+  };
+
+  const handleCycleEqPreset = (stemId: string) => {
+    const presets: EqPresetName[] = ['flat', 'vocal-clarity', 'guitar-cut', 'bass-punch', 'drum-air'];
+    const current = globalAudioEngine.getStemEqPreset(stemId);
+    const nextIndex = (presets.indexOf(current) + 1) % presets.length;
+    const next = presets[nextIndex];
+    globalAudioEngine.setStemEqPreset(stemId, next);
+    // Force visual update
+    if (currentSong) {
+      setCurrentSong({ ...currentSong });
+    }
+  };
+
+  const getEqPresetLabel = (stemId: string): string => {
+    const presetName = globalAudioEngine.getStemEqPreset(stemId);
+    return EQ_PRESETS[presetName]?.label || 'Flat';
   };
 
   // Cleanup pending rAF on unmount
@@ -585,6 +603,8 @@ export function App() {
                 onSoloGuitarOnly={handleSoloGuitarOnly}
                 onSoloRhythmSection={handleSoloRhythmSection}
                 onResetAllStems={handleResetAllStems}
+                onCycleEqPreset={handleCycleEqPreset}
+                getEqPresetLabel={getEqPresetLabel}
               />
             ) : (
               <CoverSongLibrary
