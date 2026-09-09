@@ -55,6 +55,91 @@ export async function testCloudConnection(config: CloudDbConfig): Promise<{ succ
   }
 }
 
+const MAX_UPLOAD_CHUNK_BYTES = 35 * 1024 * 1024; // 35MB per chunk (Supabase free limit is 50MB)
+
+/**
+ * Upload single blob or sliced chunks if file > 35MB
+ */
+async function uploadBlobToSupabaseWithChunking(
+  blob: Blob,
+  basePath: string,
+  onStatus?: (msg: string) => void
+): Promise<string[]> {
+  const config = getCloudConfig();
+  const cleanUrl = config.supabaseUrl.replace(/\/$/, '');
+
+  const uploadSingle = async (targetPath: string, targetBlob: Blob): Promise<string> => {
+    let signedUrl: string | null = null;
+    let publicUrl = `${cleanUrl}/storage/v1/object/public/${config.bucketName}/${encodeURI(targetPath)}`;
+
+    // 1. Get Signed Upload URL via Vercel Proxy
+    try {
+      const signRes = await fetch(`/api/cloud-sync?action=get-upload-url&path=${encodeURIComponent(targetPath)}`);
+      if (signRes.ok) {
+        const signJson = await signRes.json();
+        if (signJson.signedUploadUrl) signedUrl = signJson.signedUploadUrl;
+        if (signJson.publicUrl) publicUrl = signJson.publicUrl;
+      }
+    } catch (_) {}
+
+    // 2. Upload using Signed URL (Bypasses serverless payload limit)
+    if (signedUrl) {
+      const putRes = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        body: targetBlob,
+      });
+      if (putRes.ok) {
+        return publicUrl;
+      }
+      const err = await putRes.text();
+      console.warn(`Signed upload failed (${putRes.status}):`, err);
+    }
+
+    // 3. Direct client upload
+    const directRes = await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${targetPath}`, {
+      method: 'POST',
+      headers: {
+        apikey: config.supabaseAnonKey,
+        Authorization: `Bearer ${config.supabaseAnonKey}`,
+        'Content-Type': 'application/octet-stream',
+        'x-upsert': 'true',
+      },
+      body: targetBlob,
+    });
+
+    if (directRes.ok) {
+      return publicUrl;
+    }
+
+    const directErr = await directRes.text();
+    throw new Error(`Upload gagal (${directRes.status}): ${directErr.slice(0, 100)}`);
+  };
+
+  if (blob.size <= MAX_UPLOAD_CHUNK_BYTES) {
+    const url = await uploadSingle(basePath, blob);
+    return [url];
+  } else {
+    // Slicing into safe chunks under 50MB
+    const totalParts = Math.ceil(blob.size / MAX_UPLOAD_CHUNK_BYTES);
+    const urls: string[] = [];
+
+    for (let part = 0; part < totalParts; part++) {
+      const start = part * MAX_UPLOAD_CHUNK_BYTES;
+      const end = Math.min(blob.size, start + MAX_UPLOAD_CHUNK_BYTES);
+      const slice = blob.slice(start, end);
+      const partPath = `${basePath}_part${part + 1}.bin`;
+      onStatus?.(`bagian ${part + 1}/${totalParts} (${Math.round(slice.size / 1024 / 1024)} MB)...`);
+      const partUrl = await uploadSingle(partPath, slice);
+      urls.push(partUrl);
+    }
+
+    return urls;
+  }
+}
+
 /**
  * Upload satu lagu ke Supabase Storage beserta seluruh stem audio diskrit.
  * Memperbarui songs-index.json di cloud agar semua device anggota band bisa mengaksesnya.
@@ -76,63 +161,19 @@ export async function uploadSongToCloud(
     for (let i = 0; i < song.stems.length; i++) {
       const stem = song.stems[i];
       const filePath = `${song.id}/${stem.id}_${stem.fileName || `${stem.role}.wav`}`;
-      const publicUrl = `${cleanUrl}/storage/v1/object/public/${config.bucketName}/${encodeURI(filePath)}`;
 
       if (stem.blob) {
         onProgress?.(`Mengunggah stem ${stem.name} (${i + 1}/${song.stems.length})...`);
-        let uploaded = false;
-
-        // A. Coba Signed Upload URL via Vercel Proxy (Direct S3-style upload, tembus file besar > 50MB)
-        try {
-          const signRes = await fetch(`/api/cloud-sync?action=get-upload-url&path=${encodeURIComponent(filePath)}`);
-          if (signRes.ok) {
-            const signJson = await signRes.json();
-            if (signJson.signedUploadUrl) {
-              const putRes = await fetch(signJson.signedUploadUrl, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': stem.blob.type || 'audio/wav',
-                },
-                body: stem.blob,
-              });
-              if (putRes.ok) uploaded = true;
-            }
-          }
-        } catch (_) {}
-
-        // B. Fallback ke Vercel Serverless Function upload
-        if (!uploaded) {
-          try {
-            const apiRes = await fetch(`/api/cloud-sync?action=upload`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': stem.blob.type || 'audio/wav',
-                'x-file-path': filePath,
-              },
-              body: stem.blob,
-            });
-            if (apiRes.ok) uploaded = true;
-          } catch (_) {}
-        }
-
-        // C. Fallback direct client upload
-        if (!uploaded) {
-          try {
-            await fetch(`${cleanUrl}/storage/v1/object/${config.bucketName}/${filePath}`, {
-              method: 'POST',
-              headers: {
-                apikey: config.supabaseAnonKey,
-                Authorization: `Bearer ${config.supabaseAnonKey}`,
-                'Content-Type': stem.blob.type || 'audio/wav',
-                'x-upsert': 'true',
-              },
-              body: stem.blob,
-            });
-          } catch (_) {}
-        }
+        const urls = await uploadBlobToSupabaseWithChunking(
+          stem.blob,
+          filePath,
+          (subMsg) => onProgress?.(`Mengunggah stem ${stem.name} ${subMsg}`)
+        );
+        stem.audioUrls = urls;
+        stem.audioUrl = urls[0];
+      } else if (!stem.audioUrl && !stem.audioUrls) {
+        throw new Error(`Stem ${stem.name} tidak memiliki berkas audio lokal maupun URL cloud.`);
       }
-
-      stem.audioUrl = publicUrl;
     }
 
     // 2. Perbarui master songs-index.json di cloud
@@ -163,6 +204,7 @@ export async function uploadSongToCloud(
         solo: s.solo,
         fileName: s.fileName,
         audioUrl: s.audioUrl,
+        audioUrls: s.audioUrls,
       })),
       cloudSynced: true,
     };

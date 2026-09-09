@@ -12,6 +12,7 @@ export interface StemTrack {
   blob?: Blob;
   fileName?: string;
   audioUrl?: string;
+  audioUrls?: string[];
   peakLevel?: number;  // 0 to 1 for VU meter
 }
 

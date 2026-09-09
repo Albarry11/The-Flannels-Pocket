@@ -35,6 +35,8 @@ export function App() {
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
+  const [audioLoadingText, setAudioLoadingText] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [speed, setSpeed] = useState<number>(1.0);
   const [pitchSemitones, setPitchSemitones] = useState<number>(0);
@@ -143,11 +145,20 @@ export function App() {
   }, []);
 
   const selectSong = async (song: Song) => {
+    setIsAudioLoading(true);
+    setAudioLoadingText('Memeriksa berkas audio stem...');
     try {
-      await globalAudioEngine.prepareSongAudio(song);
-    } catch (e) {
+      await globalAudioEngine.prepareSongAudio(song, (status) => {
+        setAudioLoadingText(status);
+      });
+    } catch (e: any) {
       console.warn('prepareSongAudio error:', e);
+      alert(e?.message || 'Gagal memuat berkas audio.');
+    } finally {
+      setIsAudioLoading(false);
+      setAudioLoadingText('');
     }
+
     globalAudioEngine.setSong(song);
     setCurrentSong({ ...song });
     setCurrentTime(0);
@@ -163,22 +174,40 @@ export function App() {
     setActiveTab('mixer');
   };
 
-  const handlePlay = () => {
-    globalAudioEngine.play();
-    setIsPlaying(true);
+  const handlePlay = async () => {
+    if (!currentSong) return;
+    try {
+      setIsAudioLoading(true);
+      await globalAudioEngine.play();
+      setIsPlaying(true);
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'Tidak dapat memutar audio.');
+      setIsPlaying(false);
+    } finally {
+      setIsAudioLoading(false);
+    }
   };
 
-  const handlePlayWithCountIn = () => {
+  const handlePlayWithCountIn = async () => {
     if (!currentSong || isPlaying) return;
-    setCountInActive(true);
-    setCountInBeat(1);
-    globalAudioEngine.playWithCountIn(
-      (beat) => setCountInBeat(beat),
-      () => {
-        setCountInActive(false);
-        setIsPlaying(true);
-      }
-    );
+    try {
+      setIsAudioLoading(true);
+      await globalAudioEngine.prepareSongAudio(currentSong);
+      setIsAudioLoading(false);
+      setCountInActive(true);
+      setCountInBeat(1);
+      globalAudioEngine.playWithCountIn(
+        (beat) => setCountInBeat(beat),
+        () => {
+          setCountInActive(false);
+          setIsPlaying(true);
+        }
+      );
+    } catch (err: any) {
+      setIsAudioLoading(false);
+      alert(err?.message || 'Tidak dapat memuat audio.');
+    }
   };
 
   const handlePause = () => {
@@ -719,6 +748,8 @@ export function App() {
         metronomeBpm={metronomeBpm}
         metronomeBeatsPerBar={metronomeBeatsPerBar}
         metronomeVolume={metronomeVolume}
+        isAudioLoading={isAudioLoading}
+        audioLoadingText={audioLoadingText}
         onMetronomeBeatsChange={handleMetronomeBeatsChange}
         onMetronomeVolumeChange={handleMetronomeVolumeChange}
         onPlay={handlePlay}

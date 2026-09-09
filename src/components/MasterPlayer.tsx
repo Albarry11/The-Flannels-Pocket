@@ -16,6 +16,7 @@ import {
   Settings2,
   Music,
   Disc,
+  Loader2,
 } from 'lucide-react';
 import { formatSecondsToTime, transposeChord } from '../services/lyricsManager';
 import { globalMetronome } from '../services/metronomeEngine';
@@ -38,6 +39,8 @@ interface MasterPlayerProps {
   metronomeBpm: number;
   metronomeBeatsPerBar: number;
   metronomeVolume: number;
+  isAudioLoading?: boolean;
+  audioLoadingText?: string;
   onMetronomeBeatsChange: (beats: number) => void;
   onMetronomeVolumeChange: (volume: number) => void;
   onPlay: () => void;
@@ -73,6 +76,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   metronomeBpm,
   metronomeBeatsPerBar,
   metronomeVolume,
+  isAudioLoading = false,
+  audioLoadingText,
   onMetronomeBeatsChange,
   onMetronomeVolumeChange,
   onPlay,
@@ -318,13 +323,15 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             {/* Play/Pause Spotify Green Glossy Aero Orb Button (Point 5) */}
             <button
               onClick={isPlaying ? onPause : onPlay}
-              disabled={countInActive}
+              disabled={countInActive || isAudioLoading}
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-full aero-play-orb text-white flex items-center justify-center hover:scale-105 active:scale-90 transition relative overflow-hidden flex-shrink-0"
-              title={isPlaying ? 'Pause' : 'Play'}
+              title={isPlaying ? 'Pause' : isAudioLoading ? 'Mengunduh audio stem...' : 'Play'}
               aria-label={isPlaying ? 'Jeda pemutaran musik' : 'Mulai putar musik'}
             >
               <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/55 to-transparent rounded-t-full pointer-events-none" />
-              {isPlaying ? (
+              {isAudioLoading ? (
+                <Loader2 className="w-5 h-5 text-white animate-spin relative z-10" />
+              ) : isPlaying ? (
                 <Pause className="w-5 h-5 fill-current relative z-10" />
               ) : (
                 <Play className="w-5 h-5 fill-current ml-0.5 relative z-10" />
@@ -469,8 +476,16 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Time text indicator under center buttons */}
-          <div className="text-[10px] font-mono text-sky-800 font-bold pt-0.5">
-            <span>{formatSecondsToTime(currentTime)}</span> / <span>{formatSecondsToTime(duration)}</span>
+          <div className="text-[10px] font-mono text-sky-800 font-bold pt-0.5 min-h-[16px] flex items-center justify-center">
+            {isAudioLoading ? (
+              <span className="text-sky-600 font-extrabold animate-pulse">
+                {audioLoadingText || 'Mengunduh audio stem dari cloud...'}
+              </span>
+            ) : (
+              <span>
+                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+              </span>
+            )}
           </div>
         </div>
 

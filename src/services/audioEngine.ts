@@ -83,34 +83,91 @@ export class AudioEngine {
 
   public async prepareSongAudio(song: Song, onProgress?: (msg: string) => void): Promise<void> {
     const ctx = this.getContext();
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch (_) {}
+    }
+
     for (let i = 0; i < song.stems.length; i++) {
       const stem = song.stems[i];
-      if (!stem.audioBuffer) {
-        if (stem.blob) {
-          onProgress?.(`Mendekode audio ${stem.name}...`);
-          try {
-            const ab = await stem.blob.arrayBuffer();
-            stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
-          } catch (e) {
-            console.warn(`Failed to decode blob for ${stem.name}:`, e);
-          }
-        } else if (stem.audioUrl) {
-          onProgress?.(`Mengunduh stem ${stem.name} (${i + 1}/${song.stems.length})...`);
-          try {
-            const res = await fetch(stem.audioUrl);
-            if (res.ok) {
-              const ab = await res.arrayBuffer();
-              stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
-              stem.blob = new Blob([ab], { type: 'audio/wav' });
-              try {
-                const { set } = await import('idb-keyval');
-                await set(`flannels_audio_${stem.id}`, stem.blob);
-              } catch (_) {}
-            }
-          } catch (e) {
-            console.warn(`Failed to stream stem from ${stem.audioUrl}:`, e);
-          }
+      if (stem.audioBuffer) continue;
+
+      // 1. Check in-memory blob
+      if (stem.blob) {
+        onProgress?.(`Mendekode audio ${stem.name} (${i + 1}/${song.stems.length})...`);
+        try {
+          const ab = await stem.blob.arrayBuffer();
+          stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          continue;
+        } catch (e) {
+          console.warn(`Failed to decode blob for ${stem.name}:`, e);
         }
+      }
+
+      // 2. Check local IndexedDB cache
+      try {
+        const { get } = await import('idb-keyval');
+        const cachedBlob: Blob | undefined = await get(`flannels_audio_${stem.id}`);
+        if (cachedBlob) {
+          onProgress?.(`Memuat cache ${stem.name} (${i + 1}/${song.stems.length})...`);
+          const ab = await cachedBlob.arrayBuffer();
+          stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          stem.blob = cachedBlob;
+          continue;
+        }
+      } catch (_) {}
+
+      // 3. Download from cloud (supports single file or chunked parts)
+      const urlsToFetch =
+        stem.audioUrls && stem.audioUrls.length > 0
+          ? stem.audioUrls
+          : stem.audioUrl
+          ? [stem.audioUrl]
+          : [];
+
+      if (urlsToFetch.length > 0) {
+        onProgress?.(`Mengunduh stem ${stem.name} (${i + 1}/${song.stems.length})...`);
+
+        try {
+          let mergedBuffer: ArrayBuffer;
+          if (urlsToFetch.length === 1) {
+            const res = await fetch(urlsToFetch[0]);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            mergedBuffer = await res.arrayBuffer();
+          } else {
+            // Download all chunks concurrently
+            const parts = await Promise.all(
+              urlsToFetch.map(async (u, idx) => {
+                const res = await fetch(u);
+                if (!res.ok) throw new Error(`HTTP ${res.status} pada bagian ${idx + 1}`);
+                return res.arrayBuffer();
+              })
+            );
+            const totalBytes = parts.reduce((sum, p) => sum + p.byteLength, 0);
+            const mergedBytes = new Uint8Array(totalBytes);
+            let byteOffset = 0;
+            for (const p of parts) {
+              mergedBytes.set(new Uint8Array(p), byteOffset);
+              byteOffset += p.byteLength;
+            }
+            mergedBuffer = mergedBytes.buffer;
+          }
+
+          stem.audioBuffer = await ctx.decodeAudioData(mergedBuffer.slice(0));
+          stem.blob = new Blob([mergedBuffer], { type: 'audio/wav' });
+
+          // Save to local IndexedDB cache
+          try {
+            const { set } = await import('idb-keyval');
+            await set(`flannels_audio_${stem.id}`, stem.blob);
+          } catch (_) {}
+        } catch (dlErr) {
+          console.error(`Failed to download stem ${stem.name}:`, dlErr);
+          throw new Error(`Gagal mengunduh stem ${stem.name}. Berkas belum diunggah ke cloud.`);
+        }
+      } else {
+        throw new Error(`Stem ${stem.name} belum memiliki audio di cloud.`);
       }
     }
   }
@@ -223,9 +280,26 @@ export class AudioEngine {
     this.applyMuteSoloInternal();
   }
 
-  public play() {
+  public async play() {
     if (this.isPlaying || !this.currentSong) return;
     const ctx = this.getContext();
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch (_) {}
+    }
+
+    // Ensure audio buffers are ready
+    const hasAnyBuffer = this.currentSong.stems.some((s) => !!s.audioBuffer);
+    if (!hasAnyBuffer) {
+      await this.prepareSongAudio(this.currentSong);
+    }
+
+    const hasReadyBuffers = this.currentSong.stems.some((s) => !!s.audioBuffer);
+    if (!hasReadyBuffers) {
+      this.isPlaying = false;
+      throw new Error('Berkas audio stem belum tersedia atau belum selesai diunduh.');
+    }
 
     this.isPlaying = true;
     this.startTime = ctx.currentTime - (this.pauseOffset / this.speed);
