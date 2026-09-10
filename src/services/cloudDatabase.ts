@@ -1,5 +1,5 @@
 import type { Song, CloudDbConfig } from '../types';
-import { saveSongToStorage, loadSongFromStorage, listAllSongsFromStorage } from './storage';
+import { saveSongToStorage, loadSongFromStorage, listAllSongsFromStorage, deleteSongFromStorage } from './storage';
 
 const CLOUD_CONFIG_KEY = 'flannels_cloud_config';
 export const SONGS_INDEX_FILE = 'songs-index.json';
@@ -267,8 +267,18 @@ export async function syncSongsFromCloud(
     }
 
     const cloudSongs: Song[] = JSON.parse(text);
+    const cloudSongIds = new Set(cloudSongs.map((s) => s.id));
     let newOrUpdatedCount = 0;
 
+    // 1. Purge songs from local IndexedDB that were deleted from cloud
+    const currentLocalSongs = await listAllSongsFromStorage();
+    for (const localSong of currentLocalSongs) {
+      if (!cloudSongIds.has(localSong.id)) {
+        await deleteSongFromStorage(localSong.id, false);
+      }
+    }
+
+    // 2. Sync / update songs from cloud
     for (const cs of cloudSongs) {
       const existing = await loadSongFromStorage(cs.id);
       if (!existing) {
@@ -306,6 +316,28 @@ export async function syncSongsFromCloud(
   } catch (err: unknown) {
     const local = await listAllSongsFromStorage();
     return { success: false, count: local.length, songs: local, message: 'Offline mode' };
+  }
+}
+
+/**
+ * Hapus lagu dari Supabase Storage dan songs-index.json
+ */
+export async function deleteSongFromCloud(
+  songId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await fetch(`/api/cloud-sync?action=delete-song&songId=${encodeURIComponent(songId)}`, {
+      method: 'POST',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, message: data.message || 'Lagu berhasil dihapus dari cloud.' };
+    }
+    const errText = await res.text();
+    return { success: false, message: `Gagal hapus di cloud: ${errText}` };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, message: `Gagal menghubungi server sync: ${msg}` };
   }
 }
 

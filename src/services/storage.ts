@@ -82,14 +82,24 @@ export async function listAllSongsFromStorage(): Promise<Song[]> {
   return result.sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export async function deleteSongFromStorage(songId: string): Promise<void> {
+export async function deleteSongFromStorage(songId: string, syncCloud: boolean = true): Promise<void> {
   const song = await loadSongFromStorage(songId);
   if (song) {
     for (const stem of song.stems) {
       await del(`${AUDIO_BLOB_PREFIX}${stem.id}`);
+      await del(`flannels_audio_${stem.id}`);
     }
   }
   await del(`${SONGS_KEY_PREFIX}${songId}`);
+
+  if (syncCloud) {
+    try {
+      const { deleteSongFromCloud } = await import('./cloudDatabase');
+      await deleteSongFromCloud(songId);
+    } catch (e) {
+      console.warn('Failed to delete song from cloud:', e);
+    }
+  }
 }
 
 export async function updateSongMetadata(

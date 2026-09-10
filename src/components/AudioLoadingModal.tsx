@@ -8,6 +8,7 @@ interface AudioLoadingModalProps {
   percent: number;
   text: string;
   detail?: string;
+  onCancel?: () => void;
 }
 
 export const AudioLoadingModal: React.FC<AudioLoadingModalProps> = ({
@@ -16,6 +17,7 @@ export const AudioLoadingModal: React.FC<AudioLoadingModalProps> = ({
   percent,
   text,
   detail,
+  onCancel,
 }) => {
   if (!isOpen || !song) return null;
 
@@ -97,6 +99,15 @@ export const AudioLoadingModal: React.FC<AudioLoadingModalProps> = ({
               Berkas studio diunduh sekali dan disimpan ke penyimpanan lokal perangkat. Pemutaran selanjutnya otomatis instan 0 detik tanpa kuota!
             </p>
           </div>
+
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-[11px] font-bold text-sky-300 hover:text-white transition underline active:scale-95 pt-1"
+            >
+              Batal & Kembali
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -170,9 +170,13 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   };
 
   const handleDelete = async (songId: string) => {
-    if (confirm('Hapus lagu cover ini dari library?')) {
-      await deleteSongFromStorage(songId);
-      await onRefreshSongs();
+    if (confirm('Hapus lagu cover ini dari library dan cloud? Berkas audio di Supabase dan seluruh perangkat akan dihapus.')) {
+      try {
+        await deleteSongFromStorage(songId, true);
+        await onRefreshSongs();
+      } catch (e: any) {
+        alert('Gagal menghapus lagu: ' + (e?.message || e));
+      }
     }
   };
 

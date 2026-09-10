@@ -48,39 +48,47 @@ interface StemNodes {
 
 async function fetchWithByteProgress(
   url: string,
-  onByteProgress?: (received: number, total: number) => void
+  onByteProgress?: (received: number, total: number) => void,
+  timeoutMs: number = 60000
 ): Promise<ArrayBuffer> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const contentLength = Number(res.headers.get('content-length')) || 0;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!res.body || contentLength === 0) {
-    const buf = await res.arrayBuffer();
-    onByteProgress?.(buf.byteLength, buf.byteLength || buf.byteLength);
-    return buf;
-  }
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const contentLength = Number(res.headers.get('content-length')) || 0;
 
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      received += value.length;
-      onByteProgress?.(received, contentLength);
+    if (!res.body) {
+      const buf = await res.arrayBuffer();
+      onByteProgress?.(buf.byteLength, buf.byteLength || contentLength);
+      return buf;
     }
-  }
 
-  const all = new Uint8Array(received);
-  let pos = 0;
-  for (const c of chunks) {
-    all.set(c, pos);
-    pos += c.length;
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        chunks.push(value);
+        received += value.length;
+        onByteProgress?.(received, contentLength);
+      }
+    }
+
+    const all = new Uint8Array(received);
+    let pos = 0;
+    for (const c of chunks) {
+      all.set(c, pos);
+      pos += c.length;
+    }
+    return all.buffer;
+  } finally {
+    clearTimeout(timer);
   }
-  return all.buffer;
 }
 
 async function resolveAllPartUrls(initialUrl: string): Promise<string[]> {
@@ -229,17 +237,23 @@ export class AudioEngine {
         }
       }
 
-      // 2. Check local IndexedDB cache
+      // 2. Check local IndexedDB cache with corruption safeguard
       try {
-        const { get } = await import('idb-keyval');
+        const { get, del } = await import('idb-keyval');
         const cachedBlob: Blob | undefined = await get(`flannels_audio_${stem.id}`);
-        if (cachedBlob) {
+        if (cachedBlob && cachedBlob.size > 1000) {
           report(basePct + (100 / totalStems) * 0.4, `Memuat ${stem.name} dari cache lokal...`, `${i + 1}/${totalStems}`);
-          const ab = await cachedBlob.arrayBuffer();
-          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, ab.slice(0));
-          stem.blob = cachedBlob;
-          report(nextPct, `Stem ${stem.name} siap`, 'Cache lokal');
-          continue;
+          try {
+            const ab = await cachedBlob.arrayBuffer();
+            stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, ab.slice(0), 20000);
+            stem.blob = cachedBlob;
+            report(nextPct, `Stem ${stem.name} siap`, 'Cache lokal');
+            continue;
+          } catch (cachedDecodeErr) {
+            console.warn(`Cache audio stem ${stem.name} korup/rusak, membersihkan cache...`, cachedDecodeErr);
+            await del(`flannels_audio_${stem.id}`);
+            // Lanjut ke pengunduhan cloud bersih di bawah
+          }
         }
       } catch (_) {}
 
@@ -265,33 +279,35 @@ export class AudioEngine {
           let mergedBuffer: ArrayBuffer;
           if (urlsToFetch.length === 1) {
             mergedBuffer = await fetchWithByteProgress(urlsToFetch[0], (received, total) => {
-              const fraction = total > 0 ? received / total : 0.5;
+              const estimatedTotal = total > 0 ? total : 10 * 1024 * 1024;
+              const fraction = Math.min(0.96, received / estimatedTotal);
               const currentOverall = basePct + fraction * ((100 / totalStems) * 0.85);
               const mbReceived = (received / 1024 / 1024).toFixed(1);
-              const mbTotal = total > 0 ? (total / 1024 / 1024).toFixed(1) : '?';
+              const mbTotal = total > 0 ? (total / 1024 / 1024).toFixed(1) : (estimatedTotal / 1024 / 1024).toFixed(0);
               report(
                 currentOverall,
                 `Mengunduh stem ${stem.name} (${i + 1}/${totalStems})`,
-                `${mbReceived} MB / ${mbTotal} MB`
+                `${mbReceived} MB / ${total > 0 ? mbTotal : '~' + mbTotal} MB`
               );
             });
           } else {
-            // Download chunks sequentially or with progress tracking
+            // Download chunks sequentially with live progress tracking
             const parts: ArrayBuffer[] = [];
-            let totalStemBytes = 0;
             let loadedStemBytes = 0;
+            const estimatedStemTotal = urlsToFetch.length * 28 * 1024 * 1024;
 
             for (let partIdx = 0; partIdx < urlsToFetch.length; partIdx++) {
               const partUrl = urlsToFetch[partIdx];
-              const partBuf = await fetchWithByteProgress(partUrl, (rec, tot) => {
-                totalStemBytes = Math.max(totalStemBytes, tot * urlsToFetch.length);
+              const partBuf = await fetchWithByteProgress(partUrl, (rec) => {
                 const currentBytes = loadedStemBytes + rec;
-                const fraction = totalStemBytes > 0 ? currentBytes / totalStemBytes : 0.5;
+                const totalTarget = Math.max(estimatedStemTotal, currentBytes * 1.05);
+                const fraction = Math.min(0.96, currentBytes / totalTarget);
                 const currentOverall = basePct + fraction * ((100 / totalStems) * 0.85);
+                const mbCurr = (currentBytes / 1024 / 1024).toFixed(1);
                 report(
                   currentOverall,
-                  `Mengunduh ${stem.name} bagian ${partIdx + 1}/${urlsToFetch.length}`,
-                  `${(currentBytes / 1024 / 1024).toFixed(1)} MB`
+                  `Mengunduh ${stem.name} part ${partIdx + 1}/${urlsToFetch.length}`,
+                  `${mbCurr} MB`
                 );
               });
               parts.push(partBuf);
@@ -309,7 +325,7 @@ export class AudioEngine {
           }
 
           report(basePct + (100 / totalStems) * 0.9, `Mendekode audio ${stem.name}...`, 'Web Audio Engine');
-          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, mergedBuffer.slice(0));
+          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, mergedBuffer.slice(0), 30000);
           stem.blob = new Blob([mergedBuffer], { type: 'audio/wav' });
 
           // Save to local IndexedDB cache

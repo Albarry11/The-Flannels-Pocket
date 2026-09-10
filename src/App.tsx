@@ -821,6 +821,11 @@ export function App() {
         percent={loadingModalState.percent}
         text={loadingModalState.text}
         detail={loadingModalState.detail}
+        onCancel={() => {
+          setIsAudioLoading(false);
+          setAudioLoadingText('');
+          setLoadingModalState((prev) => ({ ...prev, isOpen: false }));
+        }}
       />
 
       {/* Admin Stem Upload Modal */}
