@@ -15,6 +15,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { searchMusicSuggestions } from '../services/musicSearch';
+import { submitSongRequest } from '../services/requestQueue';
 
 interface HeaderProps {
   currentSong: Song | null;
@@ -44,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [addingTitle, setAddingTitle] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = (val: string) => {
@@ -66,14 +68,29 @@ export const Header: React.FC<HeaderProps> = ({
     }, 300);
   };
 
-  const handlePick = (item: any) => {
-    onSelectSuggestion?.(item.title, item.artist, item.album, item.artworkUrl);
-    setShowDropdown(false);
-    setSearchQuery('');
+  const handleDirectAddRequest = async (item: any) => {
+    try {
+      setAddingTitle(item.title);
+      await submitSongRequest(item.title, item.artist, 'Member Band', 'vocal', {
+        album: item.album,
+        artworkUrl: item.artworkUrl,
+        previewUrl: item.previewUrl,
+        notes: 'Direquest via Quick Search Header',
+      });
+      window.dispatchEvent(new CustomEvent('flannels-request-added'));
+      onSelectSuggestion?.(item.title, item.artist, item.album, item.artworkUrl);
+      setShowDropdown(false);
+      setSearchQuery('');
+      alert(`Lagu "${item.title}" oleh ${item.artist} langsung ditambahkan ke antrian request!`);
+    } catch (err: any) {
+      alert('Gagal menambahkan request: ' + (err?.message || err));
+    } finally {
+      setAddingTitle(null);
+    }
   };
 
   return (
-    <header className="aero-window-header w-full px-3 sm:px-6 py-2 transition-all sticky top-0 z-40 flex items-center justify-between gap-3 shadow-xs">
+    <header className="aero-window-header w-full px-3 sm:px-6 py-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs">
       {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title, Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4">
         {onToggleNav && (
@@ -139,7 +156,7 @@ export const Header: React.FC<HeaderProps> = ({
               {suggestions.map((item, idx) => (
                 <div
                   key={idx}
-                  onClick={() => handlePick(item)}
+                  onClick={() => handleDirectAddRequest(item)}
                   className="flex items-center justify-between gap-2 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left group"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -158,12 +175,17 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handlePick(item);
+                      handleDirectAddRequest(item);
                     }}
-                    className="w-7 h-7 rounded-full bg-gradient-to-b from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition active:scale-95 flex-shrink-0"
-                    title="Request lagu ini"
+                    disabled={addingTitle === item.title}
+                    className="w-7 h-7 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-rose-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition active:scale-95 flex-shrink-0 disabled:opacity-50"
+                    title="Tambah langsung ke antrian request lagu"
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    {addingTitle === item.title ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    )}
                   </button>
                 </div>
               ))}

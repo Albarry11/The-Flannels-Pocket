@@ -24,6 +24,8 @@ export function App() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadingProgress, setLoadingProgress] = useState<number>(15);
+  const [loadingStatusText, setLoadingStatusText] = useState<string>('Menyiapkan Web Audio Engine...');
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('requests');
   const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
 
@@ -120,11 +122,17 @@ export function App() {
 
   const refreshSongs = useCallback(async () => {
     try {
+      setLoadingProgress(25);
+      setLoadingStatusText('Menghubungkan ke Supabase Cloud...');
       // 1. Direct fetch from Supabase Cloud Catalog first (automatic for all band members)
       let songList: Song[] = [];
       try {
         const { syncSongsFromCloud } = await import('./services/cloudDatabase');
-        const cloudRes = await syncSongsFromCloud();
+        setLoadingProgress(45);
+        const cloudRes = await syncSongsFromCloud((msg) => {
+          if (msg) setLoadingStatusText(msg);
+        });
+        setLoadingProgress(70);
         if (cloudRes.songs && cloudRes.songs.length > 0) {
           songList = cloudRes.songs;
         }
@@ -132,17 +140,21 @@ export function App() {
 
       // 2. Fallback to local storage if offline
       if (songList.length === 0) {
+        setLoadingProgress(85);
+        setLoadingStatusText('Memeriksa penyimpanan lokal IndexedDB...');
         songList = await listAllSongsFromStorage();
       }
 
+      setLoadingProgress(95);
+      setLoadingStatusText('Menyiapkan workspace...');
       if (songList.length > 0) {
         setSongs(songList);
-        if (!currentSongRef.current) {
-          selectSong(songList[0]);
-        }
+        // User directive: jangan auto-fetch lagu saat loading selesai, fetching dilakukan manual oleh user
       } else {
         setSongs([]);
       }
+      setLoadingProgress(100);
+      await new Promise((resolve) => setTimeout(resolve, 200));
     } catch (err) {
       console.error('Failed to load songs:', err);
     } finally {
@@ -562,13 +574,14 @@ export function App() {
           <div className="w-full space-y-1.5 pt-2">
             <div className="w-full h-3.5 bg-sky-950/20 rounded-full p-0.5 border border-white/80 shadow-inner overflow-hidden relative">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 relative overflow-hidden animate-pulse shadow-sm"
-                style={{ width: '85%' }}
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 transition-all duration-300 relative overflow-hidden shadow-sm"
+                style={{ width: `${loadingProgress}%` }}
               />
             </div>
-            <p className="text-[10px] font-mono font-bold text-sky-900">
-              Menyiapkan Web Audio Engine & Supabase Cloud...
-            </p>
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold text-sky-900">
+              <span className="truncate">{loadingStatusText}</span>
+              <span className="ml-2 flex-shrink-0">{loadingProgress}%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -576,9 +589,9 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-x-hidden">
-      {/* Grand Background - Positioned directly below header (Item 14) */}
-      <div className="fixed top-[52px] bottom-0 left-0 right-0 z-0 overflow-hidden pointer-events-none">
+    <div className="h-screen max-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-hidden">
+      {/* Grand Background - Seamless full viewport glass backdrop */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {isVideoBgActive ? (
           <video
             autoPlay
@@ -621,12 +634,12 @@ export function App() {
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
         onSelectSuggestion={() => {
-          setActiveTab('library');
+          setActiveTab('requests');
         }}
       />
 
       {/* 2. Below Header: Workspace Layout with Spotify-Style Aero Sidebar (Item 6) */}
-      <div className="flex-1 flex relative w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex relative w-full overflow-hidden">
         {/* Spotify-style Sturdy Aero Sidebar (Desktop only, non-scrollable) */}
         <aside
           className={`hidden md:flex flex-shrink-0 transition-all duration-200 ${
@@ -727,7 +740,7 @@ export function App() {
         </aside>
 
         {/* Main View: Padded at bottom so player dock never obstructs it */}
-        <main className="flex-1 p-3 sm:p-5 pb-28 sm:pb-32 overflow-y-auto">
+        <main className="flex-1 min-h-0 p-2 sm:p-4 pb-24 sm:pb-28 overflow-hidden flex flex-col">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
