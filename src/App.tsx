@@ -15,7 +15,7 @@ import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
 import { SongRequestLeaderboard } from './components/SongRequestLeaderboard';
 import { AdminStemUploadModal } from './components/AdminStemUploadModal';
 import { AudioLoadingModal } from './components/AudioLoadingModal';
-import { Sliders, Folder, FileText, Brain, Flame, Loader2 } from 'lucide-react';
+import { Sliders, Folder, FileText, Brain } from 'lucide-react';
 import type { SongRequest } from './types';
 
 export type ActiveNavTab = 'mixer' | 'requests' | 'library' | 'lyrics' | 'brain';
@@ -101,9 +101,9 @@ export function App() {
     localStorage.setItem('flannels_is_admin', 'false');
   };
 
-  // Video Background GPU Saver Toggle (Point 12)
+  // Video Background GPU Saver Toggle (Point 12) - Default OFF for maximum responsiveness (Item 17)
   const [isVideoBgActive, setIsVideoBgActive] = useState<boolean>(() => {
-    return localStorage.getItem('flannels_video_bg') !== 'false';
+    return localStorage.getItem('flannels_video_bg') === 'true';
   });
 
   const handleToggleVideo = () => {
@@ -212,9 +212,12 @@ export function App() {
     }
 
     globalAudioEngine.setSong(song);
+    globalAudioEngine.setSpeed(1.0);
+    globalAudioEngine.setPitchSemitones(0);
     setCurrentSong({ ...song });
     setCurrentTime(0);
     setIsPlaying(false);
+    setSpeed(1.0);
     setPitchSemitones(0);
     setLoopRegion({ enabled: false, start: 0, end: song.duration });
     setMetronomeBpm(song.bpm);
@@ -345,47 +348,31 @@ export function App() {
     globalAudioEngine.setMetronomeVolume(clamped);
   };
 
-  // Stems manipulation - rAF throttled to prevent main-thread flooding on slider drag
-  const rafVolumeRef = useRef<number | null>(null);
-  const pendingVolumeRef = useRef<{ stemId: string; vol: number } | null>(null);
-
+  // Stems manipulation: Web Audio engine updates at 0ms, React tree debounced to prevent GPU crashes (Item 8)
+  const volTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleVolumeChange = (stemId: string, vol: number) => {
-    // Audio engine updates immediately (no React state needed for audio)
     globalAudioEngine.setStemVolume(stemId, vol);
-    // Throttle React state update to one per frame max
-    pendingVolumeRef.current = { stemId, vol };
-    if (rafVolumeRef.current === null) {
-      rafVolumeRef.current = requestAnimationFrame(() => {
-        rafVolumeRef.current = null;
-        const pending = pendingVolumeRef.current;
-        if (!pending || !currentSong) return;
-        const updatedStems = currentSong.stems.map((s) =>
-          s.id === pending.stemId ? { ...s, volume: pending.vol } : s
-        );
-        setCurrentSong({ ...currentSong, stems: updatedStems });
-      });
-    }
+    if (volTimeoutRef.current) clearTimeout(volTimeoutRef.current);
+    volTimeoutRef.current = setTimeout(() => {
+      if (!currentSong) return;
+      const updatedStems = currentSong.stems.map((s) =>
+        s.id === stemId ? { ...s, volume: vol } : s
+      );
+      setCurrentSong({ ...currentSong, stems: updatedStems });
+    }, 120);
   };
 
-  const rafPanRef = useRef<number | null>(null);
-  const pendingPanRef = useRef<{ stemId: string; pan: number } | null>(null);
-
+  const panTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handlePanChange = (stemId: string, pan: number) => {
-    // Audio engine updates immediately
     globalAudioEngine.setStemPan(stemId, pan);
-    // Throttle React state update
-    pendingPanRef.current = { stemId, pan };
-    if (rafPanRef.current === null) {
-      rafPanRef.current = requestAnimationFrame(() => {
-        rafPanRef.current = null;
-        const pending = pendingPanRef.current;
-        if (!pending || !currentSong) return;
-        const updatedStems = currentSong.stems.map((s) =>
-          s.id === pending.stemId ? { ...s, pan: pending.pan } : s
-        );
-        setCurrentSong({ ...currentSong, stems: updatedStems });
-      });
-    }
+    if (panTimeoutRef.current) clearTimeout(panTimeoutRef.current);
+    panTimeoutRef.current = setTimeout(() => {
+      if (!currentSong) return;
+      const updatedStems = currentSong.stems.map((s) =>
+        s.id === stemId ? { ...s, pan } : s
+      );
+      setCurrentSong({ ...currentSong, stems: updatedStems });
+    }, 120);
   };
 
   const handleCycleEqPreset = (stemId: string) => {
@@ -405,11 +392,11 @@ export function App() {
     return EQ_PRESETS[presetName]?.label || 'Flat';
   };
 
-  // Cleanup pending rAF on unmount
+  // Cleanup pending timeouts on unmount
   useEffect(() => {
     return () => {
-      if (rafVolumeRef.current !== null) cancelAnimationFrame(rafVolumeRef.current);
-      if (rafPanRef.current !== null) cancelAnimationFrame(rafPanRef.current);
+      if (volTimeoutRef.current) clearTimeout(volTimeoutRef.current);
+      if (panTimeoutRef.current) clearTimeout(panTimeoutRef.current);
     };
   }, []);
 
@@ -538,18 +525,60 @@ export function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-sky-900 gap-3 bg-sky-100/60">
-        <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
-        <h2 className="text-base font-black text-[#0f2942] tracking-tight">The Flannels pocket</h2>
-        <p className="text-xs text-sky-800 font-medium">Menyiapkan workstation musik...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#7ec5f9] via-[#4fa3e3] to-[#256ea8] text-[#0a233c] select-none p-4">
+        {/* Background authentic aero asset elements */}
+        <img
+          src="/aero-assets/horizon-glow.png"
+          alt=""
+          className="absolute bottom-0 w-full object-cover opacity-60 pointer-events-none"
+        />
+        <img
+          src="/aero-assets/bubble-cluster.png"
+          alt=""
+          className="absolute -top-10 -right-10 w-72 sm:w-96 opacity-40 pointer-events-none animate-pulse"
+        />
+        <img
+          src="/aero-assets/flare-glint.png"
+          alt=""
+          className="absolute top-1/4 left-1/4 w-40 opacity-70 pointer-events-none"
+        />
+
+        {/* Windows Vista / 7 Style Glass Dialog Box */}
+        <div className="w-full max-w-sm rounded-3xl p-6 bg-white/65 backdrop-blur-2xl border border-white/80 shadow-[0_16px_40px_rgba(0,40,90,0.3)] relative z-10 flex flex-col items-center gap-4 text-center">
+          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-3xl" />
+
+          {/* Glowing Orb Logo */}
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_24px_rgba(14,165,233,0.6)] border border-white flex items-center justify-center relative">
+            <div className="absolute top-1 inset-x-2 h-6 bg-white/60 rounded-full blur-[1px]" />
+            <Sliders className="w-8 h-8 text-white relative z-10" />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-black text-[#071f38] tracking-tight">The Flannels pocket</h2>
+            <p className="text-xs font-bold text-sky-900 mt-0.5">Windows Aero Music Workstation</p>
+          </div>
+
+          {/* Authentic Vista Candy Progress Bar */}
+          <div className="w-full space-y-1.5 pt-2">
+            <div className="w-full h-3.5 bg-sky-950/20 rounded-full p-0.5 border border-white/80 shadow-inner overflow-hidden relative">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 relative overflow-hidden animate-pulse shadow-sm"
+                style={{ width: '85%' }}
+              />
+            </div>
+            <p className="text-[10px] font-mono font-bold text-sky-900">
+              Menyiapkan Web Audio Engine & Supabase Cloud...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-x-hidden">
-      {/* Grand Background (Frutiger Aero Workspace) */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      {/* Grand Background - Positioned directly below header (Item 14) */}
+      <div className="fixed top-[52px] bottom-0 left-0 right-0 z-0 overflow-hidden pointer-events-none">
         {isVideoBgActive ? (
           <video
             autoPlay
@@ -592,109 +621,108 @@ export function App() {
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
         onSelectSuggestion={() => {
-          setActiveTab('requests');
+          setActiveTab('library');
         }}
       />
 
-      {/* 2. Below Header: Workspace Layout with Collapsible Aero Sidebar */}
+      {/* 2. Below Header: Workspace Layout with Spotify-Style Aero Sidebar (Item 6) */}
       <div className="flex-1 flex relative w-full overflow-hidden">
-        {/* Collapsible Left Sidebar (like image_f35097.png - Desktop only, hidden on mobile) */}
+        {/* Spotify-style Sturdy Aero Sidebar (Desktop only, non-scrollable) */}
         <aside
-          className={`hidden md:flex flex-shrink-0 transition-all duration-300 py-3 pl-3 ${
-            isNavOpen ? 'w-20 sm:w-24 opacity-100' : 'w-0 pl-0 opacity-0 overflow-hidden pointer-events-none'
+          className={`hidden md:flex flex-shrink-0 transition-all duration-200 ${
+            isNavOpen ? 'w-56 lg:w-60' : 'w-0 overflow-hidden pointer-events-none'
           }`}
         >
-          {/* Dark Translucent Backing for High Contrast (SiteCritic & Roast Fix) */}
-          <div className="w-full h-full rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 flex flex-col items-center py-6 justify-center gap-4 shadow-2xl">
-            {/* Mixer Button with Tooltip Popover */}
-            <button
-              onClick={() => setActiveTab('mixer')}
-              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
-                activeTab === 'mixer'
-                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-              }`}
-              title="Mixer Console"
-              aria-label="Buka Mixer Console 4-Channel"
-            >
-              <Sliders className="w-5 h-5 text-emerald-400" />
-              <span className="text-[9px] font-extrabold tracking-tight">Mixer</span>
-              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                Mixer Console
+          <div className="w-full h-full bg-[#071628]/92 backdrop-blur-2xl border-r border-sky-400/25 flex flex-col justify-between py-4 px-3 select-none overflow-hidden">
+            {/* Top Navigation Rows */}
+            <div className="space-y-1.5">
+              <div className="px-3 pb-2 text-[10px] font-mono font-black uppercase text-sky-400 tracking-wider">
+                Menu Utama
               </div>
-            </button>
 
-            {/* Antrian Request Button with Tooltip Popover */}
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
-                activeTab === 'requests'
-                  ? 'bg-gradient-to-b from-amber-400 via-orange-500 to-rose-600 text-white font-black shadow-lg shadow-orange-500/40 border border-white scale-105'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-              }`}
-              title="Antrian Request Lagu"
-              aria-label="Buka Antrian Request Lagu"
-            >
-              <Flame className="w-5 h-5 text-amber-400" />
-              <span className="text-[9px] font-extrabold tracking-tight">Antrian</span>
-              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                Antrian Request Lagu
-              </div>
-            </button>
+              {/* 1. Mixer Console */}
+              <button
+                onClick={() => setActiveTab('mixer')}
+                className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
+                  activeTab === 'mixer'
+                    ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
+                }`}
+              >
+                <Sliders className={`w-4 h-4 ${activeTab === 'mixer' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300'}`} />
+                <span className="truncate">Mixer Console</span>
+              </button>
 
-            {/* Library Button with Tooltip Popover */}
-            <button
-              onClick={() => setActiveTab('library')}
-              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
-                activeTab === 'library'
-                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-              }`}
-              title="Library Lagu Cover"
-              aria-label="Buka Library Koleksi Lagu Cover"
-            >
-              <Folder className="w-5 h-5 text-sky-400" />
-              <span className="text-[9px] font-extrabold tracking-tight">Library</span>
-              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                Library Lagu
-              </div>
-            </button>
+              {/* 2. Library & Antrian (Merged) */}
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
+                  activeTab === 'library'
+                    ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
+                }`}
+              >
+                <Folder className={`w-4 h-4 ${activeTab === 'library' ? 'text-sky-400' : 'text-slate-400 group-hover:text-sky-300'}`} />
+                <span className="truncate">Library & Antrian</span>
+              </button>
 
-            {/* Lyrics Button with Tooltip Popover */}
-            <button
-              onClick={() => setActiveTab('lyrics')}
-              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
-                activeTab === 'lyrics'
-                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-              }`}
-              title="Lirik & Chord"
-              aria-label="Buka Sinkronisasi Lirik dan Chord"
-            >
-              <FileText className="w-5 h-5 text-indigo-300" />
-              <span className="text-[9px] font-extrabold tracking-tight">Lirik</span>
-              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                Lirik & Chord
-              </div>
-            </button>
+              {/* 3. Lirik & Chord */}
+              <button
+                onClick={() => setActiveTab('lyrics')}
+                className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
+                  activeTab === 'lyrics'
+                    ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
+                }`}
+              >
+                <FileText className={`w-4 h-4 ${activeTab === 'lyrics' ? 'text-indigo-400' : 'text-slate-400 group-hover:text-indigo-300'}`} />
+                <span className="truncate">Lirik & Chord</span>
+              </button>
 
-            {/* Tilikan Button with Tooltip Popover */}
-            <button
-              onClick={() => setActiveTab('brain')}
-              className={`w-14 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition group relative ${
-                activeTab === 'brain'
-                  ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white font-black shadow-lg shadow-sky-500/40 border border-white scale-105'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-              }`}
-              title="Tilikan"
-              aria-label="Buka Analisis Aransemen Tilikan AI"
-            >
-              <Brain className="w-5 h-5 text-purple-300" />
-              <span className="text-[9px] font-extrabold tracking-tight">Tilikan</span>
-              <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#061424] text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl border border-sky-400/40 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                Tilikan AI
+              {/* 4. Tilikan AI (Producer) */}
+              <button
+                onClick={() => setActiveTab('brain')}
+                className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
+                  activeTab === 'brain'
+                    ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
+                }`}
+              >
+                <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-emerald-300'}`} />
+                <span className="truncate">Tilikan AI Produser</span>
+              </button>
+            </div>
+
+            {/* Middle: Active Track Mini Card */}
+            {currentSong && (
+              <div className="my-3 p-2.5 rounded-xl bg-sky-950/40 border border-sky-400/20 text-xs">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
+                  <span className="text-[10px] font-mono font-bold text-sky-300 uppercase truncate">
+                    Sedang Diputar
+                  </span>
+                </div>
+                <p className="font-extrabold text-white truncate">{currentSong.title}</p>
+                <p className="text-[11px] text-slate-400 truncate">{currentSong.artist}</p>
+                <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-cyan-300">
+                  <span>{currentSong.bpm} BPM</span>
+                  <span className="px-1.5 py-0.2 rounded-md bg-cyan-950/80 border border-cyan-500/40 font-bold">
+                    Key: {currentSong.originalKey}
+                  </span>
+                </div>
               </div>
-            </button>
+            )}
+
+            {/* Bottom: Band Brand Badge */}
+            <div className="pt-2 border-t border-sky-400/20 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-xs border border-white/40">
+                FP
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-black text-white block truncate">The Flannels</span>
+                <span className="text-[9px] font-mono text-slate-400 block truncate">Pocket Studio v2.6</span>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -726,8 +754,12 @@ export function App() {
                   setRequestToFulfill(null);
                   setShowAdminUploadModal(true);
                 }}
-                onNavigateToRequests={() => setActiveTab('requests')}
+                onNavigateToRequests={() => setActiveTab('library')}
                 onUnlockAdmin={handleToggleAdmin}
+                onFulfillRequest={(req) => {
+                  setRequestToFulfill(req);
+                  setShowAdminUploadModal(true);
+                }}
               />
             )
           )}
@@ -753,8 +785,12 @@ export function App() {
                 setRequestToFulfill(null);
                 setShowAdminUploadModal(true);
               }}
-              onNavigateToRequests={() => setActiveTab('requests')}
+              onNavigateToRequests={() => setActiveTab('library')}
               onUnlockAdmin={handleToggleAdmin}
+              onFulfillRequest={(req) => {
+                setRequestToFulfill(req);
+                setShowAdminUploadModal(true);
+              }}
             />
           )}
 
@@ -846,7 +882,7 @@ export function App() {
       <nav className="fixed bottom-0 left-0 right-0 h-14 bg-[#08182b]/95 backdrop-blur-3xl border-t border-sky-400/30 flex items-center justify-around z-50 md:hidden px-2 shadow-2xl">
         <button
           onClick={() => setActiveTab('mixer')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
             activeTab === 'mixer' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Mixer"
@@ -855,28 +891,18 @@ export function App() {
           <span className="text-[10px]">Mixer</span>
         </button>
         <button
-          onClick={() => setActiveTab('requests')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
-            activeTab === 'requests' ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-white'
-          }`}
-          aria-label="Buka Antrian Request"
-        >
-          <Flame className="w-4 h-4" />
-          <span className="text-[10px]">Antrian</span>
-        </button>
-        <button
           onClick={() => setActiveTab('library')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
-            activeTab === 'library' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
+            activeTab === 'library' || activeTab === 'requests' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
-          aria-label="Buka Library"
+          aria-label="Buka Library & Antrian"
         >
           <Folder className="w-4 h-4" />
           <span className="text-[10px]">Library</span>
         </button>
         <button
           onClick={() => setActiveTab('lyrics')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
             activeTab === 'lyrics' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Lirik"
@@ -886,7 +912,7 @@ export function App() {
         </button>
         <button
           onClick={() => setActiveTab('brain')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
             activeTab === 'brain' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Tilikan"

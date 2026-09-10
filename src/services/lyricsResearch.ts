@@ -44,24 +44,23 @@ export async function researchLyricsAndChords(
     ? sources.map((source, index) => `${index + 1}. ${source.title}\nURL: ${source.url}\nSnippet: ${source.snippet}`).join('\n\n')
     : 'Tidak ada hasil web yang dapat diverifikasi. Jangan mengarang sumber atau lirik.';
 
-  const prompt = `Anda editor chord sheet untuk latihan band.
+  const prompt = `Anda adalah formatter dan editor chord sheet untuk latihan band.
+PENTING & WAJIB:
+- Anda DILARANG KERAS mengarang, membuat, atau menebak lirik dari imajinasi/halusinasi.
+- Ambil HANYA lirik dan chord nyata yang tertera pada kutipan hasil pencarian web di bawah ini.
+- Tugas Anda semata-mata MENYUSUN dan MERAPIKAN susunan format agar rapi dan siap dimainkan musisi.
+
 Judul: "${title}"
 Artis: "${artist}"
 
-Hasil pencarian web:
+Kutipan Hasil Pencarian Web:
 ${sourceContext}
 
-Tugas:
-1. Gunakan hanya fakta yang ada pada hasil pencarian.
-2. Prioritaskan tabs.ultimate-guitar.com, lalu Chordify atau Songsterr.
-3. Susun bagian lagu dan chord yang ditemukan dalam format teks sederhana:
-[Intro]
-[C] [G] [Am] [F]
-[Verse]
-[Chord] teks yang tersedia
-4. Jangan mengarang lirik penuh. Jika snippet tidak cukup, tulis [Lirik tidak tersedia dari hasil pencarian] dan pertahankan chord yang ditemukan.
-5. Jangan membuat URL, BPM, chord, atau lirik yang tidak didukung sumber.
-6. Keluarkan hanya chord sheet, tanpa disclaimer panjang.`;
+Aturan Penataan Format:
+1. Susun chord dan lirik yang ditemukan ke dalam struktur standar: [Intro], [Verse], [Chorus], [Bridge], [Outro].
+2. Letakkan nama akord di dalam kurung siku tepat di atas atau di depan kata lirik yang bersangkutan, misal: [C] [G] [Am] [F].
+3. Jika lirik pada bagian tertentu tidak ditemukan dalam kutipan web, tulis secara jujur: [Lirik belum tersedia dari pencarian web]. JANGAN mengarang kata-kata pengganti!
+4. Jangan menambahkan disclaimer panjang, catatan pembuka, atau basa-basi. Keluarkan HANYA hasil format chord sheet.`;
 
   const text = await generateLyricsAndChordsWithAI(title, artist, prompt);
   return { text: text || '', sources, query };

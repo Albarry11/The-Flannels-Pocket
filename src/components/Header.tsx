@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Music,
   Loader2,
+  Plus,
 } from 'lucide-react';
 import { searchMusicSuggestions } from '../services/musicSearch';
 
@@ -123,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-              placeholder="Cari lagu nasional & internasional..."
+              placeholder="aku penggiat lagu..."
               className="w-full bg-transparent text-xs font-semibold focus:outline-none placeholder:text-slate-400"
             />
             {isSearching && <Loader2 className="w-3 h-3 text-sky-500 animate-spin flex-shrink-0" />}
@@ -139,19 +140,31 @@ export const Header: React.FC<HeaderProps> = ({
                 <div
                   key={idx}
                   onClick={() => handlePick(item)}
-                  className="flex items-center gap-2 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left"
+                  className="flex items-center justify-between gap-2 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left group"
                 >
-                  {item.artworkUrl ? (
-                    <img src={item.artworkUrl} alt={item.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
-                      <Music className="w-4 h-4" />
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {item.artworkUrl ? (
+                      <img src={item.artworkUrl} alt={item.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
+                        <Music className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-[#0f2942] truncate block">{item.title}</span>
+                      <span className="text-[10px] text-slate-500 truncate block">{item.artist} {item.album ? `• ${item.album}` : ''}</span>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold text-[#0f2942] truncate block">{item.title}</span>
-                    <span className="text-[10px] text-slate-500 truncate block">{item.artist} {item.album ? `• ${item.album}` : ''}</span>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePick(item);
+                    }}
+                    className="w-7 h-7 rounded-full bg-gradient-to-b from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition active:scale-95 flex-shrink-0"
+                    title="Request lagu ini"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -177,19 +190,20 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Video Background Toggle */}
+        {/* Artistic Frutiger Aero Video Background Toggle */}
         {onToggleVideo && (
           <button
             onClick={onToggleVideo}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition flex items-center gap-1 shadow-2xs ${
+            className={`px-3 py-1 rounded-full text-[10px] font-black border transition-all flex items-center gap-1.5 shadow-xs relative overflow-hidden active:scale-95 ${
               isVideoActive
-                ? 'bg-sky-500/20 text-sky-950 border-sky-400'
-                : 'bg-white/60 text-slate-600 border-slate-300'
+                ? 'bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 text-white border-cyan-200 shadow-[0_0_12px_rgba(14,165,233,0.5)]'
+                : 'bg-white/50 hover:bg-white/80 text-slate-700 border-sky-200/90'
             }`}
             title={isVideoActive ? 'Matikan video background (hemat GPU/baterai)' : 'Nyalakan video background Aero'}
           >
-            {isVideoActive ? <Video className="w-3 h-3 text-sky-600" /> : <VideoOff className="w-3 h-3 text-slate-500" />}
-            <span className="hidden sm:inline">{isVideoActive ? 'Aero Video: ON' : 'Aero Video: OFF'}</span>
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
+            {isVideoActive ? <Video className="w-3.5 h-3.5 text-cyan-100" /> : <VideoOff className="w-3.5 h-3.5 text-slate-500" />}
+            <span className="hidden sm:inline font-extrabold">{isVideoActive ? 'Aero Video: ON' : 'Aero Video: OFF'}</span>
           </button>
         )}
 

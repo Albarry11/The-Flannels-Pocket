@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import type { StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from '../services/audioEngine';
-import { Mic, Guitar, Disc, Sliders, Music, RotateCcw } from 'lucide-react';
+import { Mic, Guitar, Disc, Sliders, Music, RotateCcw, Sparkles } from 'lucide-react';
 
 interface VerticalStemMixerProps {
   stems: StemTrack[];
@@ -20,63 +20,71 @@ interface VerticalStemMixerProps {
 
 const ROLE_CONFIG: Record<
   StemRole,
-  { label: string; personil: string; color: string; borderAccent: string; icon: React.ReactNode }
+  { label: string; personil: string; color: string; borderAccent: string; icon: React.ReactNode; tapeLabel: string }
 > = {
   vocal: {
     label: 'Vocal',
     personil: 'Vokalis',
     color: '#f43f5e',
     borderAccent: 'border-rose-400',
-    icon: <Mic className="w-4 h-4 text-rose-600" />,
+    icon: <Mic className="w-3.5 h-3.5 text-rose-400" />,
+    tapeLabel: 'CH 1 • VOCAL',
   },
   guitar: {
     label: 'Guitar',
     personil: 'Gitaris',
     color: '#f59e0b',
     borderAccent: 'border-amber-400',
-    icon: <Guitar className="w-4 h-4 text-amber-600" />,
+    icon: <Guitar className="w-3.5 h-3.5 text-amber-400" />,
+    tapeLabel: 'CH 2 • GUITAR',
   },
   lead: {
     label: 'Lead',
     personil: 'Lead Guitar',
     color: '#f59e0b',
     borderAccent: 'border-amber-400',
-    icon: <Guitar className="w-4 h-4 text-amber-600" />,
+    icon: <Guitar className="w-3.5 h-3.5 text-amber-400" />,
+    tapeLabel: 'CH 2A • LEAD',
   },
   rhythm: {
     label: 'Rhythm',
     personil: 'Rhythm Guitar',
     color: '#10b981',
     borderAccent: 'border-emerald-400',
-    icon: <Music className="w-4 h-4 text-emerald-600" />,
+    icon: <Music className="w-3.5 h-3.5 text-emerald-400" />,
+    tapeLabel: 'CH 2B • RHYTHM',
   },
   bass: {
     label: 'Bass',
     personil: 'Bassist',
     color: '#06b6d4',
     borderAccent: 'border-cyan-400',
-    icon: <Disc className="w-4 h-4 text-sky-600" />,
+    icon: <Disc className="w-3.5 h-3.5 text-cyan-400" />,
+    tapeLabel: 'CH 3 • BASS',
   },
   drums: {
     label: 'Drums',
     personil: 'Drummer',
     color: '#8b5cf6',
     borderAccent: 'border-indigo-400',
-    icon: <Sliders className="w-4 h-4 text-indigo-600" />,
+    icon: <Sliders className="w-3.5 h-3.5 text-indigo-400" />,
+    tapeLabel: 'CH 4 • DRUMS',
   },
   piano: {
     label: 'Keys',
     personil: 'Keyboard / Piano',
     color: '#3b82f6',
     borderAccent: 'border-blue-400',
-    icon: <Music className="w-4 h-4 text-blue-600" />,
+    icon: <Music className="w-3.5 h-3.5 text-blue-400" />,
+    tapeLabel: 'CH 5 • KEYS',
   },
   other: {
     label: 'Backing',
     personil: 'Synths / Other',
     color: '#64748b',
     borderAccent: 'border-slate-400',
-    icon: <Music className="w-4 h-4 text-slate-600" />,
+    icon: <Music className="w-3.5 h-3.5 text-slate-400" />,
+    tapeLabel: 'CH 6 • TRACK',
   },
 };
 
@@ -94,13 +102,11 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   getEqPresetLabel,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
-  // Show discrete band instruments (filter out 'other' by default unless it's a specific track)
   const visibleStems = stems.filter((s) => s.role !== 'other');
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const visibleStemIds = visibleStems.map((s) => s.id).join('|');
 
-  // Direct DOM VU Meter Animation (Decoupled from React State -> 0 Main-Thread Lag & 0 Glitches)
-  // Re-run only when the set of visible stem IDs changes, not on every volume/pan tweak
+  // Direct DOM VU Meter Animation (Decoupled from React State with 0 transition lag to prevent GPU crash)
   useEffect(() => {
     let animId: number;
     const stemIds = visibleStemIds.split('|');
@@ -114,7 +120,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
             const heightPct = Math.min(100, Math.round(level * 100));
             el.style.height = `${heightPct}%`;
             el.style.backgroundColor = level > 0.85 ? '#ef4444' : level > 0.6 ? '#f59e0b' : '#10b981';
-            el.style.boxShadow = level > 0.1 ? `0 0 8px ${level > 0.85 ? '#ef4444' : '#10b981'}` : 'none';
+            el.style.boxShadow = level > 0.1 ? `0 0 6px ${level > 0.85 ? '#ef4444' : '#10b981'}` : 'none';
           }
         });
       } else {
@@ -131,52 +137,56 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
     animId = requestAnimationFrame(updateMeters);
     return () => cancelAnimationFrame(animId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleStemIds]);
 
   return (
-    <div className="flex flex-col gap-2.5 h-[calc(100vh-230px)] min-h-[380px] max-h-[520px] max-w-5xl mx-auto w-full overflow-hidden select-none">
-      {/* Top Bar: Quick Access Shortcuts (Point 6) */}
-      <div className="flex items-center justify-between px-4 py-2 rounded-full bg-white/80 border border-sky-200/90 backdrop-blur-md shadow-xs flex-wrap gap-2 flex-shrink-0">
+    <div className="flex flex-col gap-2.5 h-[calc(100vh-230px)] min-h-[390px] max-h-[530px] max-w-5xl mx-auto w-full overflow-hidden select-none">
+      {/* Top Bar: Authentic Frutiger Aero Aqua Gel Quick Access Buttons (Item 10) */}
+      <div className="flex items-center justify-between px-4 py-2 rounded-2xl bg-white/40 border border-white/60 backdrop-blur-md shadow-[0_4px_16px_rgba(2,132,199,0.1)] flex-wrap gap-2 flex-shrink-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-black uppercase tracking-wider text-sky-950">
-            Quick Access:
+          <span className="text-[11px] font-black uppercase tracking-wider text-sky-950 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+            <span>Quick Kulik:</span>
           </span>
+
+          {/* Aqua Gel Pill Buttons */}
           <button
             onClick={onSoloVocalOnly}
-            className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 text-xs font-bold transition active:scale-95 shadow-2xs"
+            className="px-3 py-1 rounded-full text-xs font-black text-rose-950 bg-gradient-to-b from-rose-200 via-rose-300 to-rose-400 border border-rose-200 shadow-[0_2px_6px_rgba(244,63,94,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:translate-y-0.5 transition"
           >
             🎤 Vokal Solo
           </button>
           <button
             onClick={onSoloGuitarOnly}
-            className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 text-xs font-bold transition active:scale-95 shadow-2xs"
+            className="px-3 py-1 rounded-full text-xs font-black text-amber-950 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 border border-amber-200 shadow-[0_2px_6px_rgba(245,158,11,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:translate-y-0.5 transition"
           >
             🎸 Gitar Solo
           </button>
           <button
             onClick={onSoloRhythmSection}
-            className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-300 hover:bg-sky-200 text-xs font-bold transition active:scale-95 shadow-2xs"
+            className="px-3 py-1 rounded-full text-xs font-black text-cyan-950 bg-gradient-to-b from-cyan-200 via-sky-300 to-cyan-400 border border-cyan-200 shadow-[0_2px_6px_rgba(6,182,212,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:translate-y-0.5 transition"
           >
             🥁 Bass + Drums
           </button>
           <button
             onClick={onResetAllStems}
-            className="px-3 py-1 rounded-full bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold transition flex items-center gap-1 border border-slate-300 active:scale-95 shadow-2xs"
+            className="px-3 py-1 rounded-full text-xs font-black text-slate-800 bg-gradient-to-b from-slate-100 via-white to-slate-200 border border-slate-300 shadow-[0_2px_6px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:translate-y-0.5 transition flex items-center gap-1"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3 h-3 text-slate-600" />
             <span>Unmute All</span>
           </button>
         </div>
 
-        <span className="text-[11px] text-sky-800 font-medium hidden md:inline">
-          Console Mixer (Satu Baris • Bebas Scroll)
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono font-bold text-sky-900 hidden md:inline px-2 py-0.5 rounded-md bg-white/50 border border-sky-200">
+            SSL 4000 E-Series Emulation • 4 Discrete Stems
+          </span>
+        </div>
       </div>
 
-      {/* Point 5: 1 Single Row Grid (No scrolling) - 4 Core Channels (Vocal | Guitar | Bass | Drums) */}
+      {/* Realistic DAW Mixing Console Strip Grid (Item 7) */}
       <div
-        className={`grid gap-3 sm:gap-4 flex-1 h-full min-h-0 ${
+        className={`grid gap-2.5 sm:gap-3.5 flex-1 h-full min-h-0 ${
           visibleStems.length <= 4 ? 'grid-cols-4' : 'grid-cols-5'
         }`}
       >
@@ -187,63 +197,91 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
           return (
             <div
               key={stem.id}
-              className={`rounded-3xl p-3 transition-all flex flex-col justify-between items-center border relative shadow-md overflow-hidden ${
+              className={`rounded-2xl p-2.5 transition-all flex flex-col justify-between items-center border relative shadow-xl overflow-hidden ${
                 stem.solo
-                  ? 'bg-gradient-to-b from-amber-100/95 to-amber-50/95 border-amber-400 shadow-[0_8px_24px_rgba(245,158,11,0.25)] ring-2 ring-amber-400/60'
+                  ? 'bg-gradient-to-b from-[#18283a] via-[#102030] to-[#0c1824] border-amber-400/90 shadow-[0_0_20px_rgba(245,158,11,0.25)] ring-2 ring-amber-400/50'
                   : stem.muted
-                  ? 'bg-rose-50/60 border-rose-200 opacity-60'
+                  ? 'bg-gradient-to-b from-[#141b24] via-[#0e141c] to-[#080d13] border-rose-500/40 opacity-70'
                   : isSilenced
-                  ? 'bg-white/40 border-sky-100 opacity-40'
-                  : 'bg-white/80 hover:bg-white/95 border-white/90 shadow-[0_8px_20px_rgba(2,132,199,0.08)]'
+                  ? 'bg-gradient-to-b from-[#121922] via-[#0d131a] to-[#070b10] border-slate-700/60 opacity-50'
+                  : 'bg-gradient-to-b from-[#1b2b3d] via-[#121f2d] to-[#091522] border-sky-400/40 hover:border-sky-300 shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
               }`}
             >
-              {/* Specular top highlight */}
-              <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
+              {/* Corner Metallic Screws / Rivets */}
+              <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-slate-400 to-slate-700 border border-slate-900 shadow-inner pointer-events-none" />
+              <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-slate-400 to-slate-700 border border-slate-900 shadow-inner pointer-events-none" />
+              <div className="absolute bottom-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-slate-400 to-slate-700 border border-slate-900 shadow-inner pointer-events-none" />
+              <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-slate-400 to-slate-700 border border-slate-900 shadow-inner pointer-events-none" />
 
-              {/* 1. Header: Icon & Channel Name */}
-              <div className="flex flex-col items-center gap-0.5 w-full text-center flex-shrink-0">
-                <div className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-xs relative overflow-hidden bg-sky-100/80 border border-sky-300/60">
-                  {roleInfo.icon}
+              {/* Console Top Specular Reflection */}
+              <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
+
+              {/* 1. Header: Colored Console Channel Badge & LED Dot */}
+              <div className="flex flex-col items-center gap-0.5 w-full text-center flex-shrink-0 pt-0.5">
+                <div
+                  className="w-full py-0.5 px-1.5 rounded-lg flex items-center justify-between shadow-inner border"
+                  style={{
+                    backgroundColor: `${roleInfo.color}15`,
+                    borderColor: `${roleInfo.color}40`,
+                  }}
+                >
+                  <div className="flex items-center gap-1">
+                    {roleInfo.icon}
+                    <span className="text-[11px] font-black tracking-tight text-white uppercase">
+                      {roleInfo.label}
+                    </span>
+                  </div>
+                  {/* Signal Active LED Indicator */}
+                  <div
+                    className="w-1.5 h-1.5 rounded-full animate-pulse shadow-sm"
+                    style={{
+                      backgroundColor: isSilenced ? '#64748b' : roleInfo.color,
+                      boxShadow: isSilenced ? 'none' : `0 0 6px ${roleInfo.color}`,
+                    }}
+                  />
                 </div>
-                <span className="text-xs sm:text-sm font-black text-[#0f2942] truncate max-w-full tracking-tight">
-                  {roleInfo.label}
-                </span>
-                <span className="text-[10px] text-sky-800 font-semibold truncate max-w-full">
+                <span className="text-[9px] text-slate-400 font-semibold truncate max-w-full">
                   {roleInfo.personil}
                 </span>
               </div>
 
-              {/* 2. Mute (M) & Solo (S) Buttons */}
-              <div className="flex items-center gap-1.5 my-1 w-full justify-center flex-shrink-0">
+              {/* 2. Hardware Console Mute & Solo Push Buttons */}
+              <div className="flex items-center gap-1.5 w-full justify-center my-1 flex-shrink-0">
                 <button
                   onClick={() => onToggleMute(stem.id)}
-                  className={`flex-1 min-h-[34px] max-w-[46px] rounded-2xl font-black text-xs transition shadow flex items-center justify-center active:scale-90 ${
+                  className={`flex-1 py-1 rounded-md text-[10px] font-black border transition-all shadow-xs flex items-center justify-center active:scale-95 ${
                     stem.muted
-                      ? 'bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-md shadow-rose-500/40 border border-rose-300'
-                      : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200'
+                      ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.6)]'
+                      : 'bg-gradient-to-b from-slate-800 to-slate-900 text-slate-400 border-slate-700 hover:border-rose-400 hover:text-white'
                   }`}
-                  title={stem.muted ? 'Unmute' : 'Mute Track'}
+                  title={stem.muted ? 'Nyalakan Stem (Unmute)' : 'Matikan Suara Stem (Mute)'}
                 >
-                  M
+                  MUTE
                 </button>
                 <button
                   onClick={() => onToggleSolo(stem.id)}
-                  className={`flex-1 min-h-[34px] max-w-[46px] rounded-2xl font-black text-xs transition shadow flex items-center justify-center active:scale-90 ${
+                  className={`flex-1 py-1 rounded-md text-[10px] font-black border transition-all shadow-xs flex items-center justify-center active:scale-95 ${
                     stem.solo
-                      ? 'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-md shadow-amber-500/40 border border-amber-200'
-                      : 'bg-white hover:bg-amber-50 text-amber-800 border border-amber-200'
+                      ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.7)]'
+                      : 'bg-gradient-to-b from-slate-800 to-slate-900 text-slate-400 border-slate-700 hover:border-amber-400 hover:text-white'
                   }`}
                   title={stem.solo ? 'Matikan Solo' : 'Solo Track'}
                 >
-                  S
+                  SOLO
                 </button>
               </div>
 
-              {/* 3. Stereo Pan Knob / Slider */}
+              {/* 3. Realistic Rotary Stereo Pan Knob */}
               <div className="flex flex-col items-center w-full px-1 mb-1 flex-shrink-0">
-                <div className="flex justify-between w-full text-[9px] font-mono text-sky-800 font-bold">
+                <div className="flex justify-between w-full text-[8px] font-mono text-slate-400 font-bold mb-0.5">
                   <span>L</span>
-                  <span>{stem.pan === 0 ? 'C' : stem.pan < 0 ? `L${Math.round(Math.abs(stem.pan) * 50)}` : `R${Math.round(stem.pan * 50)}`}</span>
+                  <span className="text-cyan-400">
+                    {stem.pan === 0
+                      ? 'PAN C'
+                      : stem.pan < 0
+                      ? `L${Math.round(Math.abs(stem.pan) * 50)}`
+                      : `R${Math.round(stem.pan * 50)}`}
+                  </span>
                   <span>R</span>
                 </div>
                 <input
@@ -251,75 +289,85 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   min="-1"
                   max="1"
                   step="0.05"
-                  value={stem.pan}
+                  defaultValue={stem.pan}
+                  onInput={(e) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    globalAudioEngine.setStemPan(stem.id, val);
+                  }}
                   onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                  className="w-full h-1"
+                  className="w-full h-1 accent-cyan-400 cursor-pointer"
                   title={`Pan: ${stem.pan}`}
                 />
               </div>
 
-              {/* 4. Center: Vertical Fader + LED VU Meter (Height adjusted to fit screen with 0 scroll) */}
+              {/* 4. Center: Console Long-Throw Fader + Multi-Segment LED VU Meter */}
               <div className="flex items-center justify-center gap-2 flex-1 w-full my-0.5 relative py-0.5 overflow-hidden">
-                {/* dB Scale Markings */}
-                <div className="flex flex-col justify-between h-28 text-[7px] font-mono text-sky-800 select-none text-right pr-0.5 font-bold">
-                  <span>+6</span>
+                {/* dB Scale Markings on Metal Faceplate */}
+                <div className="flex flex-col justify-between h-28 text-[7px] font-mono text-slate-400 select-none text-right pr-0.5 font-bold">
+                  <span className="text-rose-400">+6</span>
                   <span>0</span>
                   <span>-6</span>
                   <span>-18</span>
                   <span>-∞</span>
                 </div>
 
-                {/* Vertical Slider Track */}
-                <div className="h-28 flex items-center justify-center relative">
+                {/* Vertical Slider Track with Metallic Bevel */}
+                <div className="h-28 flex items-center justify-center relative bg-black/50 rounded-full px-1 border border-slate-700/60 shadow-inner">
                   <input
                     type="range"
                     min="0"
                     max="1"
                     step="0.01"
-                    value={stem.volume}
+                    defaultValue={stem.volume}
+                    onInput={(e) => {
+                      const val = parseFloat((e.target as HTMLInputElement).value);
+                      globalAudioEngine.setStemVolume(stem.id, val);
+                    }}
                     onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                    className="w-28 h-2.5 -rotate-90 origin-center cursor-pointer"
+                    className="w-28 h-3 -rotate-90 origin-center cursor-pointer accent-sky-400"
                     title={`Volume: ${Math.round(stem.volume * 100)}%`}
                   />
                 </div>
 
-                {/* Vertical LED VU Meter (Direct DOM Ref Animate) */}
-                <div className="w-2 h-28 bg-sky-950/80 rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-sky-300 shadow-inner">
+                {/* Vertical LED VU Meter with 0 transition lag */}
+                <div className="w-2.5 h-28 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner">
                   <div
                     ref={(el) => {
                       meterRefs.current[stem.id] = el;
                     }}
-                    className="w-full rounded-full transition-all duration-75"
+                    className="w-full rounded-full"
                     style={{
                       height: '0%',
                       backgroundColor: '#10b981',
+                      transition: 'none',
                     }}
                   />
                 </div>
               </div>
 
-              {/* 5. Bottom: Volume readout, Status & Tone Preset */}
-              <div className="w-full text-center pt-1 border-t border-sky-100 flex-shrink-0 flex flex-col items-center gap-1">
-                <div className="flex items-center justify-between w-full px-1">
-                  <span className="text-xs font-mono font-black text-[#0f2942]">
+              {/* 5. Bottom: Realistic Console Channel Tape Label & Tone Preset */}
+              <div className="w-full text-center pt-1 border-t border-slate-800 flex-shrink-0 flex flex-col items-center gap-1">
+                {/* Console Masking Tape Strip */}
+                <div className="w-full bg-[#f6ecd2] border border-amber-300/80 px-1 py-0.5 shadow-sm rounded-xs flex items-center justify-between rotate-[-0.5deg]">
+                  <span className="text-[8px] font-mono font-black text-slate-800 tracking-tighter uppercase truncate">
+                    {roleInfo.tapeLabel}
+                  </span>
+                  <span className="text-[9px] font-mono font-black text-slate-950">
                     {Math.round(stem.volume * 100)}%
                   </span>
-                  <span className="text-[9px] font-mono font-extrabold text-sky-700 truncate">
-                    {stem.muted ? 'MUTED' : isSilenced ? 'SILENCED' : 'ON'}
-                  </span>
                 </div>
+
                 {/* Tone Preset Pill */}
                 <button
                   onClick={() => onCycleEqPreset(stem.id)}
-                  className="w-full py-0.5 px-1 rounded-lg text-[9px] font-bold bg-sky-100/90 hover:bg-sky-200 text-sky-950 border border-sky-300 transition truncate active:scale-95 shadow-2xs flex items-center justify-center gap-1"
+                  className="w-full py-0.5 px-1 rounded-md text-[9px] font-extrabold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-sky-400/30 transition truncate active:scale-95 shadow-xs flex items-center justify-center gap-1"
                   title="Klik untuk ganti karakter tone EQ (Flat, Vokal Jernih, Gitar Tajam, Bass Tebal, Drum Ringan)"
                   aria-label="Ubah preset EQ stem"
                 >
-                  <Music className="w-2.5 h-2.5 text-sky-600 flex-shrink-0" />
+                  <Music className="w-2.5 h-2.5 text-cyan-400 flex-shrink-0" />
                   <span className="truncate">{getEqPresetLabel(stem.id)}</span>
                 </button>
               </div>
-
             </div>
           );
         })}

@@ -16,10 +16,6 @@ import {
   Clock,
   Trash2,
   Loader2,
-  Sliders,
-  Disc,
-  Mic,
-  Guitar,
   Music,
   ChevronRight,
 } from 'lucide-react';
@@ -52,7 +48,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
   const [reqArtwork, setReqArtwork] = useState<string | undefined>(undefined);
   const [reqPreviewUrl, setReqPreviewUrl] = useState<string | undefined>(undefined);
   const [requesterName, setRequesterName] = useState('');
-  const [requesterRole, setRequesterRole] = useState<SongRequest['requesterRole']>('vocal');
+  const [requesterRole] = useState<SongRequest['requesterRole']>('vocal');
   const [reqNotes, setReqNotes] = useState('');
 
   const clientId = getClientId();
@@ -138,14 +134,6 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
       const updated = await deleteSongRequest(requestId);
       setRequests(updated);
     }
-  };
-
-  const roleLabels: Record<SongRequest['requesterRole'], { label: string; icon: React.ReactNode }> = {
-    vocal: { label: 'Vokal', icon: <Mic className="w-3 h-3 text-rose-500" /> },
-    guitar: { label: 'Gitar', icon: <Guitar className="w-3 h-3 text-amber-500" /> },
-    bass: { label: 'Bass', icon: <Disc className="w-3 h-3 text-sky-500" /> },
-    drums: { label: 'Drums', icon: <Sliders className="w-3 h-3 text-indigo-500" /> },
-    other: { label: 'Lainnya', icon: <Music className="w-3 h-3 text-slate-500" /> },
   };
 
   return (
@@ -257,7 +245,6 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
         ) : (
           requests.map((req, index) => {
             const hasUpvoted = req.upvotedBy.includes(clientId);
-            const role = roleLabels[req.requesterRole] || roleLabels.vocal;
             const isFulfilled = req.status === 'fulfilled';
 
             return (
@@ -307,9 +294,8 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                   </p>
 
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[11px] font-medium text-slate-600">
-                    <span className="flex items-center gap-1">
-                      {role.icon}
-                      <span>{req.requesterName} ({role.label})</span>
+                    <span className="flex items-center gap-1 font-bold text-sky-900">
+                      <span>Diajukan oleh: {req.requesterName}</span>
                     </span>
                     {req.notes && (
                       <span className="italic text-slate-500 truncate max-w-xs">
@@ -408,28 +394,15 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">Nama Peminta & Instrumen</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={requesterName}
-                    onChange={(e) => setRequesterName(e.target.value)}
-                    placeholder="Nama kamu..."
-                    className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-sky-500"
-                  />
-                  <select
-                    value={requesterRole}
-                    onChange={(e) => setRequesterRole(e.target.value as any)}
-                    className="bg-sky-50/70 border border-sky-200 rounded-xl px-2 py-2 text-xs font-semibold focus:outline-none focus:border-sky-500 cursor-pointer"
-                  >
-                    <option value="vocal">Vokal</option>
-                    <option value="guitar">Gitar</option>
-                    <option value="bass">Bass</option>
-                    <option value="drums">Drums</option>
-                    <option value="other">Lainnya</option>
-                  </select>
-                </div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Nama Peminta</label>
+                <input
+                  type="text"
+                  required
+                  value={requesterName}
+                  onChange={(e) => setRequesterName(e.target.value)}
+                  placeholder="Nama kamu..."
+                  className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-sky-500"
+                />
               </div>
 
               <div>

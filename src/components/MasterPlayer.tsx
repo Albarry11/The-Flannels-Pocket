@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Play,
   Pause,
@@ -8,7 +8,6 @@ import {
   Repeat,
   Gauge,
   Music2,
-  ShieldCheck,
   Timer,
   Radio,
   Plus,
@@ -17,9 +16,12 @@ import {
   Music,
   Disc,
   Loader2,
+  RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { formatSecondsToTime, transposeChord } from '../services/lyricsManager';
 import { globalMetronome } from '../services/metronomeEngine';
+import { globalAudioEngine } from '../services/audioEngine';
 import type { MetronomeSound } from '../services/metronomeEngine';
 import type { LoopRegion, Song } from '../types';
 
@@ -112,14 +114,28 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
   const replayGainDb = currentSong?.replayGain?.recommendedGainDb ?? 0;
 
+  // Sync local beatsPerBar whenever song changes (Item 20)
+  useEffect(() => {
+    if (currentSong) {
+      const beats = currentSong.timeSignature?.startsWith('6/8')
+        ? 6
+        : Number(currentSong.timeSignature?.split('/')[0]) || 4;
+      setBeatsPerBar(beats);
+      globalMetronome.setBeatsPerBar(beats);
+      globalAudioEngine.setMetronomeBeatsPerBar(beats);
+    }
+  }, [currentSong?.id, currentSong?.timeSignature]);
+
   const handleBeatsChange = (b: number) => {
     setBeatsPerBar(b);
     globalMetronome.setBeatsPerBar(b);
+    globalAudioEngine.setMetronomeBeatsPerBar(b);
   };
 
   const handleSoundChange = (s: MetronomeSound) => {
     setSound(s);
     globalMetronome.setSound(s);
+    globalAudioEngine.setMetronomeSound(s);
   };
 
   const handleTap = () => {
@@ -128,7 +144,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   };
 
   return (
-    <div className="fixed bottom-14 md:bottom-0 left-0 right-0 w-full z-40 bg-white/80 backdrop-blur-3xl border-t border-white/90 shadow-[0_-8px_32px_rgba(2,132,199,0.14)] px-3 sm:px-6 py-2 transition-all">
+    <div className="fixed bottom-14 md:bottom-0 left-0 right-0 w-full z-40 bg-white/45 backdrop-blur-md border-t border-white/60 shadow-[0_-8px_32px_rgba(2,132,199,0.14)] px-3 sm:px-6 py-2 transition-all">
       {/* Top Ripple Water Droplet Refractions (Point 6) */}
       <div className="absolute top-0 left-8 w-24 h-1 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-xs pointer-events-none" />
       <div className="absolute top-0 right-8 w-24 h-1 bg-gradient-to-r from-transparent via-sky-400/40 to-transparent blur-xs pointer-events-none" />
@@ -471,6 +487,17 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     {currentKeyTransposed}
                   </span>
                 )}
+                {pitchSemitones !== 0 && (
+                  <button
+                    onClick={() => onPitchChange(0)}
+                    className="px-1.5 py-0.5 rounded-full bg-amber-200/90 hover:bg-amber-300 text-amber-950 font-black text-[9px] flex items-center gap-0.5 border border-amber-400 shadow-2xs transition active:scale-95 ml-0.5"
+                    title="Reset pitch ke nada dasar original lagu"
+                    aria-label="Reset pitch ke nada dasar original lagu"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    <span>Reset</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -489,7 +516,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Speed, ReplayGain, Volume */}
+        {/* RIGHT COLUMN: Speed, Clear Sound (ReplayGain), Volume */}
         <div className="flex items-center gap-2 min-w-[200px] justify-end flex-shrink-0">
           {/* Speed */}
           <div className="flex items-center gap-1 bg-white/80 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs text-xs">
@@ -510,22 +537,23 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </select>
           </div>
 
-          {/* ReplayGain */}
+          {/* Artistic Frutiger Aero Clear Sound (ReplayGain) Badge */}
           <button
             onClick={onToggleReplayGain}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-bold transition active:scale-95 shadow-xs ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group ${
               replayGainEnabled
-                ? 'bg-emerald-500 text-white border-emerald-400 shadow-xs'
-                : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
+                ? 'bg-gradient-to-b from-cyan-300 via-teal-400 to-emerald-500 text-slate-950 border-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
+                : 'bg-white/70 hover:bg-white/95 text-slate-700 border-sky-200'
             }`}
-            title={`Normalisasi kenyaringan ReplayGain (-14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
-            aria-label="Aktifkan normalisasi kenyaringan suara ReplayGain"
+            title={`Clear Sound (Normalisasi ReplayGain -14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
+            aria-label="Aktifkan Clear Sound ReplayGain"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>RG</span>
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
+            <Sparkles className={`w-3.5 h-3.5 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
+            <span className="tracking-tight">Clear Sound</span>
             {replayGainEnabled && replayGainDb !== 0 && (
-              <span className="text-[10px] font-mono font-bold">
-                ({replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB)
+              <span className="text-[10px] font-mono font-black bg-black/20 text-slate-900 px-1.5 py-0.2 rounded-full">
+                {replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB
               </span>
             )}
           </button>

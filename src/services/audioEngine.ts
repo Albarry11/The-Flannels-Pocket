@@ -1,4 +1,5 @@
 import type { Song, StemRole, LoopRegion } from '../types';
+import type { MetronomeSound } from './metronomeEngine';
 
 export interface AudioProgressPayload {
   percent: number;
@@ -82,6 +83,64 @@ async function fetchWithByteProgress(
   return all.buffer;
 }
 
+async function resolveAllPartUrls(initialUrl: string): Promise<string[]> {
+  const match = initialUrl.match(/^(.*_part)1(\.[a-zA-Z0-9]+)$/);
+  if (!match) return [initialUrl];
+  const prefix = match[1];
+  const ext = match[2];
+  const urls: string[] = [initialUrl];
+  let part = 2;
+  while (part <= 10) {
+    const candidate = `${prefix}${part}${ext}`;
+    try {
+      const res = await fetch(candidate, { method: 'HEAD' });
+      if (res.ok) {
+        urls.push(candidate);
+        part++;
+      } else {
+        break;
+      }
+    } catch {
+      break;
+    }
+  }
+  return urls;
+}
+
+async function decodeAudioDataWithTimeout(
+  ctx: AudioContext,
+  buffer: ArrayBuffer,
+  timeoutMs = 30000
+): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error('Audio decoder timeout: format berkas tidak valid atau terlalu besar'));
+      }
+    }, timeoutMs);
+
+    ctx.decodeAudioData(
+      buffer,
+      (decoded) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(decoded);
+        }
+      },
+      (err) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(err || new Error('Gagal mendekode audio Web Audio API'));
+        }
+      }
+    );
+  });
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private currentSong: Song | null = null;
@@ -102,6 +161,7 @@ export class AudioEngine {
   private metronomeSyncEnabled: boolean = false;
   private metronomeVolume: number = 0.7;
   private metronomeBeatsPerBar: number = 4;
+  private metronomeSound: MetronomeSound = 'woodblock';
   private metronomeSchedulerId: number | null = null;
   private nextClickTime: number = 0;
   private nextClickBeat: number = 0;
@@ -161,7 +221,7 @@ export class AudioEngine {
         report(basePct + (100 / totalStems) * 0.3, `Mendekode ${stem.name} (${i + 1}/${totalStems})...`, 'Memori RAM');
         try {
           const ab = await stem.blob.arrayBuffer();
-          stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, ab.slice(0));
           report(nextPct, `Stem ${stem.name} siap`, `${i + 1}/${totalStems}`);
           continue;
         } catch (e) {
@@ -176,7 +236,7 @@ export class AudioEngine {
         if (cachedBlob) {
           report(basePct + (100 / totalStems) * 0.4, `Memuat ${stem.name} dari cache lokal...`, `${i + 1}/${totalStems}`);
           const ab = await cachedBlob.arrayBuffer();
-          stem.audioBuffer = await ctx.decodeAudioData(ab.slice(0));
+          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, ab.slice(0));
           stem.blob = cachedBlob;
           report(nextPct, `Stem ${stem.name} siap`, 'Cache lokal');
           continue;
@@ -184,12 +244,19 @@ export class AudioEngine {
       } catch (_) {}
 
       // 3. Download from cloud (supports single file or chunked parts)
-      const urlsToFetch =
+      let urlsToFetch =
         stem.audioUrls && stem.audioUrls.length > 0
           ? stem.audioUrls
           : stem.audioUrl
           ? [stem.audioUrl]
           : [];
+
+      if (urlsToFetch.length === 1 && urlsToFetch[0].includes('_part1.')) {
+        report(basePct + 1, `Memeriksa part pecahan berkas ${stem.name}...`, 'Cloud Auto-Stitch');
+        try {
+          urlsToFetch = await resolveAllPartUrls(urlsToFetch[0]);
+        } catch (_) {}
+      }
 
       if (urlsToFetch.length > 0) {
         report(basePct + 2, `Menghubungi cloud untuk stem ${stem.name}...`, `${i + 1}/${totalStems}`);
@@ -242,7 +309,7 @@ export class AudioEngine {
           }
 
           report(basePct + (100 / totalStems) * 0.9, `Mendekode audio ${stem.name}...`, 'Web Audio Engine');
-          stem.audioBuffer = await ctx.decodeAudioData(mergedBuffer.slice(0));
+          stem.audioBuffer = await decodeAudioDataWithTimeout(ctx, mergedBuffer.slice(0));
           stem.blob = new Blob([mergedBuffer], { type: 'audio/wav' });
 
           // Save to local IndexedDB cache
@@ -513,6 +580,10 @@ export class AudioEngine {
     });
   }
 
+  public setPitchSemitones(semitones: number) {
+    this.setPitch(semitones);
+  }
+
   public setMasterVolume(vol: number) {
     if (this.masterGainNode && this.ctx) {
       this.masterGainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, vol)), this.ctx.currentTime, 0.02);
@@ -690,6 +761,10 @@ export class AudioEngine {
     this.metronomeVolume = Math.max(0, Math.min(1, volume));
   }
 
+  public setMetronomeSound(sound: MetronomeSound) {
+    this.metronomeSound = sound;
+  }
+
   public setMetronomeBeatsPerBar(beatsPerBar: number) {
     this.metronomeBeatsPerBar = Math.max(1, Math.min(12, Math.round(beatsPerBar)));
     if (this.metronomeSyncEnabled && this.isPlaying) {
@@ -774,22 +849,92 @@ export class AudioEngine {
 
   private playMetronomeTick(time: number, isDownbeat: boolean) {
     if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
 
-    osc.type = 'triangle';
-    const freq = isDownbeat ? 1400 : 900;
-    osc.frequency.setValueAtTime(freq, time);
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + 0.035);
+    if (this.metronomeSound === 'woodblock') {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const freq = isDownbeat ? 2200 : 1500;
+      osc.frequency.setValueAtTime(freq, time);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.35, time + 0.025);
+      const vol = (isDownbeat ? 1.0 : 0.65) * this.metronomeVolume;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.04);
+    } else if (this.metronomeSound === 'beep') {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const freq = isDownbeat ? 1760 : 880;
+      osc.frequency.setValueAtTime(freq, time);
+      const vol = (isDownbeat ? 0.9 : 0.55) * this.metronomeVolume;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.045);
+    } else if (this.metronomeSound === 'rimshot') {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(isDownbeat ? 3600 : 2800, time);
+      osc.frequency.exponentialRampToValueAtTime(150, time + 0.02);
+      const vol = (isDownbeat ? 1.0 : 0.7) * this.metronomeVolume;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.03);
+    } else if (this.metronomeSound === 'cowbell') {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const gain = this.ctx.createGain();
 
-    const vol = (isDownbeat ? 1.0 : 0.6) * this.metronomeVolume;
-    gain.gain.setValueAtTime(vol, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
+      osc1.type = 'square';
+      osc2.type = 'square';
+      const root = isDownbeat ? 840 : 560;
+      osc1.frequency.setValueAtTime(root, time);
+      osc2.frequency.setValueAtTime(root * 1.48, time);
 
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.05);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(root * 1.2, time);
+      filter.Q.setValueAtTime(2.5, time);
+
+      const vol = (isDownbeat ? 0.8 : 0.5) * this.metronomeVolume;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start(time);
+      osc2.start(time);
+      osc1.stop(time + 0.085);
+      osc2.stop(time + 0.085);
+    } else {
+      // Classic default
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      const freq = isDownbeat ? 1400 : 900;
+      osc.frequency.setValueAtTime(freq, time);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + 0.035);
+      const vol = (isDownbeat ? 1.0 : 0.6) * this.metronomeVolume;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.05);
+    }
   }
 
   public onTimeUpdate(cb: (time: number) => void) {

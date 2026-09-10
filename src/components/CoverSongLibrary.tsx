@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import type { Song, StemTrack, StemRole } from '../types';
+import type { Song, StemTrack, StemRole, SongRequest } from '../types';
+import { SongRequestLeaderboard } from './SongRequestLeaderboard';
 import {
   deleteSongFromStorage,
   updateSongMetadata,
@@ -39,6 +40,7 @@ interface CoverSongLibraryProps {
   onOpenAdminUpload: () => void;
   onNavigateToRequests: () => void;
   onUnlockAdmin: () => void;
+  onFulfillRequest?: (req: SongRequest) => void;
 }
 
 export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
@@ -50,7 +52,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   onOpenAdminUpload,
   onNavigateToRequests,
   onUnlockAdmin,
+  onFulfillRequest,
 }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'songs' | 'requests'>('songs');
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
 
   // Stem CRUD Operations State (Admin only)
@@ -223,7 +227,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             </button>
           ) : (
             <button
-              onClick={onNavigateToRequests}
+              onClick={() => setActiveSubTab('requests')}
               className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-orange-500/20 active:scale-95"
             >
               <Flame className="w-3.5 h-3.5" />
@@ -233,8 +237,50 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         </div>
       </div>
 
-      {/* Main Song List with generous bottom padding */}
-      <div className="flex-1 overflow-y-auto pr-1 pb-24">
+      {/* Sub-tab Navigation: Koleksi Lagu Cover & Antrian Request Lagu (Item 16) */}
+      <div className="flex items-center gap-2 mb-4 p-1.5 rounded-2xl bg-white/40 border border-white/60 shadow-xs backdrop-blur-md flex-shrink-0">
+        <button
+          onClick={() => setActiveSubTab('songs')}
+          className={`flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
+            activeSubTab === 'songs'
+              ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-md border border-white/60'
+              : 'text-sky-950 hover:bg-white/40'
+          }`}
+        >
+          <Folder className="w-4 h-4" />
+          <span>Koleksi Lagu Cover ({songs.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveSubTab('requests')}
+          className={`flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 active:scale-95 ${
+            activeSubTab === 'requests'
+              ? 'bg-gradient-to-b from-amber-400 via-orange-500 to-rose-600 text-white shadow-md border border-white/60'
+              : 'text-sky-950 hover:bg-white/40'
+          }`}
+        >
+          <Flame className="w-4 h-4" />
+          <span>Antrian Request Lagu</span>
+        </button>
+      </div>
+
+      {activeSubTab === 'requests' ? (
+        <div className="flex-1 overflow-y-auto pb-24">
+          <SongRequestLeaderboard
+            isAdmin={isAdmin}
+            onFulfillRequest={(req) => onFulfillRequest?.(req)}
+            onSongSelectedFromLibrary={(title) => {
+              const matched = songs.find((s) => s.title.toLowerCase().includes(title.toLowerCase()));
+              if (matched) {
+                onSelectSong(matched);
+                setActiveSubTab('songs');
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Main Song List with generous bottom padding */}
+          <div className="flex-1 overflow-y-auto pr-1 pb-24">
         {songs.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16 px-6 sm:px-8 rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-4 max-w-lg mx-auto shadow-2xl text-white">
@@ -662,6 +708,8 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
