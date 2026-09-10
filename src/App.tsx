@@ -30,9 +30,9 @@ export function App() {
   const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
 
   // Admin & Song Request Modal State
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('flannels_is_admin') === 'true';
-  });
+  // Admin tidak persist: setiap reload mulai sebagai user biasa.
+  // Satu-satunya jalan masuk admin = sequence window controls + PIN (di bawah).
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [showAdminUploadModal, setShowAdminUploadModal] = useState<boolean>(false);
   const [requestToFulfill, setRequestToFulfill] = useState<SongRequest | null>(null);
 
@@ -82,14 +82,14 @@ export function App() {
       sequence = [];
       if (isAdmin) {
         setIsAdmin(false);
-        localStorage.setItem('flannels_is_admin', 'false');
+        localStorage.removeItem('flannels_is_admin');
         return;
       }
 
       const pin = prompt('Masukkan Password Admin:');
       if (pin === 'lempiz') {
         setIsAdmin(true);
-        localStorage.setItem('flannels_is_admin', 'true');
+        // session-only: sengaja tidak disimpan ke localStorage
       }
     };
 
@@ -100,7 +100,7 @@ export function App() {
   const handleToggleAdmin = () => {
     if (!isAdmin) return;
     setIsAdmin(false);
-    localStorage.setItem('flannels_is_admin', 'false');
+    localStorage.removeItem('flannels_is_admin');
   };
 
   // Video Background GPU Saver Toggle (Point 12) - Default OFF for maximum responsiveness (Item 17)

@@ -260,8 +260,8 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
         )}
       </div>
 
-      {/* Leaderboard List (Horizontal Cards Rail) */}
-      <div className="flex-1 min-h-0 flex flex-row overflow-x-auto overflow-y-hidden gap-4 py-2 px-1 items-stretch scrollbar-thin">
+      {/* Leaderboard List (Horizontal Cards Rail; tinggi kartu = konten, scroll vertikal hanya jika viewport pendek) */}
+      <div className="flex-1 min-h-0 flex flex-row overflow-x-auto overflow-y-auto gap-4 py-2 px-1 items-start scrollbar-thin">
         {isLoading ? (
           <div className="w-full flex flex-col items-center justify-center text-sky-800 space-y-2">
             <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto" />
@@ -285,7 +285,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             return (
               <div
                 key={req.id}
-                className={`w-[290px] sm:w-[320px] flex-shrink-0 p-4 rounded-3xl border transition-all flex flex-col justify-between shadow-sm relative overflow-hidden h-full ${
+                className={`w-[290px] sm:w-[320px] flex-shrink-0 p-4 rounded-3xl border transition-all flex flex-col justify-between shadow-sm relative overflow-visible ${
                   isFulfilled
                     ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
                     : 'bg-white/90 border-sky-200/90 hover:bg-white hover:border-sky-300'
