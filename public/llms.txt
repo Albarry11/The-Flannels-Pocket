@@ -16,4 +16,4 @@ The Flannels is a four-piece band (vocals, drums, guitar, bass). The Flannels Po
 
 This is a client-side web application. Content is rendered in the browser; audio features require a modern browser with Web Audio API support.
 
-Site: https://theflannels-pocket.vercel.app/
+Site: https://the-flannels-pocket.vercel.app/
