@@ -157,6 +157,7 @@ export class AudioEngine {
   private replayGainNode: GainNode | null = null;
   private masterLimiterNode: DynamicsCompressorNode | null = null;
   private masterAnalyserNode: AnalyserNode | null = null;
+  private metronomeGainNode: GainNode | null = null;
 
   private isPlaying: boolean = false;
   private startTime: number = 0;
@@ -395,6 +396,11 @@ export class AudioEngine {
     this.masterGainNode.connect(this.masterLimiterNode);
     this.masterLimiterNode.connect(this.masterAnalyserNode);
     this.masterAnalyserNode.connect(ctx.destination);
+
+    // Metronome click bus: bypasses master gain (independent volume) but still passes the limiter
+    this.metronomeGainNode = ctx.createGain();
+    this.metronomeGainNode.gain.value = 1.0;
+    this.metronomeGainNode.connect(this.masterLimiterNode);
 
     // Create channel strips for each stem
     this.currentSong.stems.forEach((stem) => {
@@ -865,6 +871,7 @@ export class AudioEngine {
 
   private playMetronomeTick(time: number, isDownbeat: boolean) {
     if (!this.ctx) return;
+    const clickDestination = this.metronomeGainNode ?? this.ctx.destination;
 
     if (this.metronomeSound === 'woodblock') {
       const osc = this.ctx.createOscillator();
@@ -877,7 +884,7 @@ export class AudioEngine {
       gain.gain.setValueAtTime(vol, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(clickDestination);
       osc.start(time);
       osc.stop(time + 0.04);
     } else if (this.metronomeSound === 'beep') {
@@ -890,7 +897,7 @@ export class AudioEngine {
       gain.gain.setValueAtTime(vol, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(clickDestination);
       osc.start(time);
       osc.stop(time + 0.045);
     } else if (this.metronomeSound === 'rimshot') {
@@ -903,7 +910,7 @@ export class AudioEngine {
       gain.gain.setValueAtTime(vol, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(clickDestination);
       osc.start(time);
       osc.stop(time + 0.03);
     } else if (this.metronomeSound === 'cowbell') {
@@ -929,7 +936,7 @@ export class AudioEngine {
       osc1.connect(filter);
       osc2.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(clickDestination);
 
       osc1.start(time);
       osc2.start(time);
@@ -947,7 +954,7 @@ export class AudioEngine {
       gain.gain.setValueAtTime(vol, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(clickDestination);
       osc.start(time);
       osc.stop(time + 0.05);
     }
