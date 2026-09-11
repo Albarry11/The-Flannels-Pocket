@@ -1,0 +1,19 @@
+# The Flannels Pocket
+
+> Band rehearsal companion web app for The Flannels: stems isolation, rehearsal DAW, audio analyzer, lyrics & chords, and a song request leaderboard.
+
+The Flannels is a four-piece band (vocals, drums, guitar, bass). The Flannels Pocket is the official web app used for rehearsal and setlist management.
+
+## Key features
+
+- Stems isolation: practice vocals, drums, guitar, or bass individually with quick mute/solo controls
+- Rehearsal DAW: browser-based multi-track playback without restarting audio
+- Audio analyzer: BPM and key information curated by the band
+- Lyrics & chords: reference material per song
+- Song request leaderboard: audience song requests with voting-style ranking
+
+## Usage notes
+
+This is a client-side web application. Content is rendered in the browser; audio features require a modern browser with Web Audio API support.
+
+Site: https://theflannels-pocket.vercel.app/
