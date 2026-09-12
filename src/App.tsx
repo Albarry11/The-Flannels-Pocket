@@ -540,17 +540,18 @@ export function App() {
       <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#7ec5f9] via-[#4fa3e3] to-[#256ea8] text-[#0a233c] select-none p-4">
         {/* Background authentic aero asset elements */}
         <img
-          src="/aero-assets/horizon-glow.png"
+          src="/aero-assets/horizon-glow.webp"
           alt=""
+          fetchPriority="high"
           className="absolute bottom-0 w-full object-cover opacity-60 pointer-events-none"
         />
         <img
-          src="/aero-assets/bubble-cluster.png"
+          src="/aero-assets/bubble-cluster.webp"
           alt=""
           className="absolute -top-10 -right-10 w-72 sm:w-96 opacity-40 pointer-events-none animate-pulse"
         />
         <img
-          src="/aero-assets/flare-glint.png"
+          src="/aero-assets/flare-glint.webp"
           alt=""
           className="absolute top-1/4 left-1/4 w-40 opacity-70 pointer-events-none"
         />
