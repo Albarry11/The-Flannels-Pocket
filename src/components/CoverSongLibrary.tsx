@@ -41,6 +41,7 @@ interface CoverSongLibraryProps {
   onNavigateToRequests: () => void;
   onUnlockAdmin: () => void;
   onFulfillRequest?: (req: SongRequest) => void;
+  currentPlayingSongTitle?: string | null;
 }
 
 export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
@@ -53,6 +54,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   onNavigateToRequests,
   onUnlockAdmin,
   onFulfillRequest,
+  currentPlayingSongTitle = null,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'songs' | 'requests'>('songs');
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
@@ -272,6 +274,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           <SongRequestLeaderboard
             isAdmin={isAdmin}
             onFulfillRequest={(req) => onFulfillRequest?.(req)}
+            currentPlayingSongTitle={currentPlayingSongTitle}
             onSongSelectedFromLibrary={(title) => {
               const matched = songs.find((s) => s.title.toLowerCase().includes(title.toLowerCase()));
               if (matched) {

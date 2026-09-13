@@ -24,11 +24,13 @@ interface SongRequestLeaderboardProps {
   isAdmin: boolean;
   onFulfillRequest: (req: SongRequest) => void;
   onSongSelectedFromLibrary?: (title: string, artist: string) => void;
+  currentPlayingSongTitle?: string | null;
 }
 
 export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
   isAdmin,
   onFulfillRequest,
+  currentPlayingSongTitle = null,
 }) => {
   const [requests, setRequests] = useState<SongRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -229,7 +231,10 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
               <div
                 key={idx}
                 onClick={() => handleSelectSuggestion(item)}
-                className="flex items-center gap-3 p-2.5 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 transition"
+                className="flex items-center gap-3 p-2.5 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 transition focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:outline-none"
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectSuggestion(item); }}
               >
                 {item.artworkUrl ? (
                   <img
@@ -250,10 +255,10 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                     {item.artist} {item.album ? `• ${item.album}` : ''} {item.releaseYear ? `(${item.releaseYear})` : ''}
                   </span>
                 </div>
-                <div className="text-sky-600 text-xs font-bold flex items-center gap-1 flex-shrink-0">
-                  <span>Pilih</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
+                    <div className="text-sky-600 text-xs font-bold flex items-center gap-1 flex-shrink-0">
+                      <span className="hidden sm:inline">Pilih</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
               </div>
             ))}
           </div>
@@ -281,16 +286,29 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
           requests.map((req, index) => {
             const hasUpvoted = req.upvotedBy.includes(clientId);
             const isFulfilled = req.status === 'fulfilled';
+            const isNowPlaying = !isFulfilled && !!currentPlayingSongTitle &&
+              req.title.trim().toLowerCase() === currentPlayingSongTitle!.trim().toLowerCase();
 
             return (
               <div
                 key={req.id}
                 className={`w-[290px] sm:w-[320px] flex-shrink-0 p-4 rounded-3xl border transition-all flex flex-col justify-between shadow-sm relative overflow-visible ${
-                  isFulfilled
+                  isNowPlaying
+                    ? 'bg-white border-orange-400 ring-2 ring-orange-400/70 shadow-orange-500/25'
+                    : isFulfilled
                     ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
-                    : 'bg-white/90 border-sky-200/90 hover:bg-white hover:border-sky-300'
+                    : 'bg-white border-sky-200/90 hover:border-sky-300'
                 }`}
               >
+                {isNowPlaying && (
+                  <span className="absolute -top-2.5 left-4 z-10 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-orange-600 text-white border border-orange-300 shadow-md shadow-orange-500/40 flex items-center gap-1">
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                      <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-white" />
+                    </span>
+                    ▶ Sedang Diputar
+                  </span>
+                )}
                 {/* Top Section */}
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -326,7 +344,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                       <p className="text-xs text-sky-800 font-semibold truncate" title={req.artist}>
                         {req.artist}
                       </p>
-                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                      <p className="text-[10px] text-slate-600 truncate mt-0.5">
                         {req.album || 'Single'}
                       </p>
                     </div>
@@ -349,7 +367,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                   <button
                     onClick={() => handleUpvote(req.id)}
                     disabled={isFulfilled}
-                    className={`px-3 py-1.5 rounded-2xl flex items-center gap-1.5 transition border active:scale-95 ${
+                    className={`px-3 py-1.5 rounded-2xl flex items-center gap-1.5 transition border active:scale-95 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
                       hasUpvoted
                         ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white border-orange-300 shadow-md shadow-orange-500/30 font-black'
                         : 'bg-white text-slate-700 hover:text-orange-600 border-sky-200 hover:bg-orange-50 font-bold'
@@ -425,14 +443,17 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                 {/* Modal Suggestions Dropdown */}
                 {modalSuggestions.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-2xl border border-sky-300 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-48 overflow-y-auto">
-                    <div className="p-1.5 text-[9px] font-bold uppercase text-slate-400 border-b border-sky-100">
+                    <div className="p-1.5 text-[9px] font-bold uppercase text-slate-600 border-b border-sky-100">
                       Pilih lagu untuk auto-fill:
                     </div>
                     {modalSuggestions.map((item, idx) => (
                       <div
                         key={idx}
                         onClick={() => handleSelectModalSuggestion(item)}
-                        className="flex items-center gap-2.5 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left transition"
+                        className="flex items-center gap-2.5 p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 text-left transition focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:outline-none"
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectModalSuggestion(item); }}
                       >
                         {item.artworkUrl ? (
                           <img src={item.artworkUrl} alt={item.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />

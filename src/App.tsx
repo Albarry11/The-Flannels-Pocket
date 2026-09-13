@@ -785,6 +785,7 @@ export function App() {
                 setRequestToFulfill(req);
                 setShowAdminUploadModal(true);
               }}
+              currentPlayingSongTitle={currentSong?.title ?? null}
             />
           )}
 
@@ -805,6 +806,7 @@ export function App() {
                 setRequestToFulfill(req);
                 setShowAdminUploadModal(true);
               }}
+              currentPlayingSongTitle={currentSong?.title ?? null}
             />
           )}
 

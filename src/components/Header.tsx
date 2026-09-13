@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="aero-window-header w-full px-3 sm:px-6 py-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs">
+    <header className="aero-window-header w-full px-3 sm:px-6 py-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs relative">
       {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title, Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4">
         {onToggleNav && (
@@ -229,15 +229,15 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Solo Active Alert */}
+        {/* Solo Active Alert - baris kedua, absolute di bawah header */}
         {activeSoloNames.length > 0 && (
-          <div className="flex items-center gap-2 bg-amber-100/95 border border-amber-400/80 px-3 py-0.5 rounded-full text-xs shadow-xs">
+          <div className="absolute top-full right-3 sm:right-6 mt-1 z-40 flex items-center gap-2 bg-amber-100/95 border border-amber-400/80 px-3 py-0.5 rounded-full text-xs shadow-md">
             <span className="text-amber-950 font-extrabold text-[11px]">
               Solo Aktif: {activeSoloNames.join(', ')}
             </span>
             <button
               onClick={onClearAllSolos}
-              className="text-[10px] bg-amber-500 hover:bg-amber-400 text-black px-2 py-0.2 rounded-full font-black transition shadow-xs"
+              className="text-[10px] bg-amber-500 hover:bg-amber-400 text-black px-2 py-0.2 rounded-full font-black transition shadow-xs focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:outline-none"
             >
               Clear
             </button>
