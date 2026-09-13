@@ -19,9 +19,9 @@ export async function searchMusicSuggestions(query: string): Promise<MusicSugges
     if (!data.results || !Array.isArray(data.results)) return [];
 
     const suggestions: MusicSuggestion[] = data.results.map((item: any) => {
-      // Upscale artwork from 100x100 to 300x300 for crisp Frutiger Aero display
+      // Upscale artwork from 100x100 to 600x600 for crisp Frutiger Aero display
       const artwork = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb.jpg', '300x300bb.jpg')
+        ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.webp')
         : undefined;
 
       const year = item.releaseDate ? new Date(item.releaseDate).getFullYear().toString() : undefined;
