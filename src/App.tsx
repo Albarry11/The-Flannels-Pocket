@@ -12,13 +12,12 @@ import { VerticalStemMixer } from './components/VerticalStemMixer';
 import { CoverSongLibrary } from './components/CoverSongLibrary';
 import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
-import { SongRequestLeaderboard } from './components/SongRequestLeaderboard';
 import { AdminStemUploadModal } from './components/AdminStemUploadModal';
 import { AudioLoadingModal } from './components/AudioLoadingModal';
 import { Sliders, Folder, FileText, Brain } from 'lucide-react';
 import type { SongRequest } from './types';
 
-export type ActiveNavTab = 'mixer' | 'requests' | 'library' | 'lyrics' | 'brain';
+export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
 export function App() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -26,7 +25,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingProgress, setLoadingProgress] = useState<number>(15);
   const [loadingStatusText, setLoadingStatusText] = useState<string>('Menyiapkan Web Audio Engine...');
-  const [activeTab, setActiveTab] = useState<ActiveNavTab>('requests');
+  const [activeTab, setActiveTab] = useState<ActiveNavTab>('library');
   const [isNavOpen, setIsNavOpen] = useState<boolean>(true);
 
   // Admin & Song Request Modal State
@@ -59,10 +58,6 @@ export function App() {
   const [masterVolume, setMasterVolume] = useState<number>(0.9);
   const [replayGainEnabled, setReplayGainEnabled] = useState<boolean>(false);
   const [loopRegion, setLoopRegion] = useState<LoopRegion>({ enabled: false, start: 0, end: 0 });
-
-  // 1-Bar Count-In state
-  const [countInActive, setCountInActive] = useState<boolean>(false);
-  const [countInBeat, setCountInBeat] = useState<number>(1);
 
   // Integrated Metronome State in Master Player
   const [metronomeClickActive, setMetronomeClickActive] = useState<boolean>(false);
@@ -268,27 +263,6 @@ export function App() {
     }
   };
 
-  const handlePlayWithCountIn = async () => {
-    if (!currentSong || isPlaying) return;
-    try {
-      setIsAudioLoading(true);
-      await globalAudioEngine.prepareSongAudio(currentSong);
-      setIsAudioLoading(false);
-      setCountInActive(true);
-      setCountInBeat(1);
-      globalAudioEngine.playWithCountIn(
-        (beat) => setCountInBeat(beat),
-        () => {
-          setCountInActive(false);
-          setIsPlaying(true);
-        }
-      );
-    } catch (err: any) {
-      setIsAudioLoading(false);
-      alert(err?.message || 'Tidak dapat memuat audio.');
-    }
-  };
-
   const handlePause = () => {
     globalAudioEngine.pause();
     setIsPlaying(false);
@@ -298,7 +272,6 @@ export function App() {
     globalAudioEngine.stop();
     setIsPlaying(false);
     setCurrentTime(0);
-    setCountInActive(false);
   };
 
   const handleSeek = (time: number) => {
@@ -635,7 +608,7 @@ export function App() {
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
         onSelectSuggestion={() => {
-          setActiveTab('requests');
+          setActiveTab('library');
         }}
       />
 
@@ -707,26 +680,6 @@ export function App() {
               </button>
             </div>
 
-            {/* Middle: Active Track Mini Card */}
-            {currentSong && (
-              <div className="my-3 p-2.5 rounded-xl bg-sky-950/40 border border-sky-400/20 text-xs">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
-                  <span className="text-[10px] font-mono font-bold text-sky-300 uppercase truncate">
-                    Sedang Diputar
-                  </span>
-                </div>
-                <p className="font-extrabold text-white truncate">{currentSong.title}</p>
-                <p className="text-[11px] text-slate-400 truncate">{currentSong.artist}</p>
-                <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-cyan-300">
-                  <span>{currentSong.bpm} BPM</span>
-                  <span className="px-1.5 py-0.2 rounded-md bg-cyan-950/80 border border-cyan-500/40 font-bold">
-                    Key: {currentSong.originalKey}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Bottom: Band Brand Badge */}
             <div className="pt-2 border-t border-sky-400/20 flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-xs border border-white/40">
@@ -776,17 +729,6 @@ export function App() {
                 }}
               />
             )
-          )}
-
-          {activeTab === 'requests' && (
-            <SongRequestLeaderboard
-              isAdmin={isAdmin}
-              onFulfillRequest={(req) => {
-                setRequestToFulfill(req);
-                setShowAdminUploadModal(true);
-              }}
-              currentPlayingSongTitle={currentSong?.title ?? null}
-            />
           )}
 
           {activeTab === 'library' && (
@@ -872,8 +814,6 @@ export function App() {
         loopRegion={loopRegion}
         replayGainEnabled={replayGainEnabled}
         currentSong={currentSong}
-        countInActive={countInActive}
-        countInBeat={countInBeat}
         metronomeClickActive={metronomeClickActive}
         metronomeBpm={metronomeBpm}
         metronomeBeatsPerBar={metronomeBeatsPerBar}
@@ -883,7 +823,6 @@ export function App() {
         onMetronomeBeatsChange={handleMetronomeBeatsChange}
         onMetronomeVolumeChange={handleMetronomeVolumeChange}
         onPlay={handlePlay}
-        onPlayWithCountIn={handlePlayWithCountIn}
         onPause={handlePause}
         onStop={handleStop}
         onSeek={handleSeek}
@@ -914,7 +853,7 @@ export function App() {
         <button
           onClick={() => setActiveTab('library')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
-            activeTab === 'library' || activeTab === 'requests' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+            activeTab === 'library' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
           }`}
           aria-label="Buka Library & Antrian"
         >

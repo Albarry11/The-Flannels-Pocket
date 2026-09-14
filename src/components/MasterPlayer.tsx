@@ -8,7 +8,6 @@ import {
   Repeat,
   Gauge,
   Music2,
-  Timer,
   Radio,
   Plus,
   Minus,
@@ -35,8 +34,6 @@ interface MasterPlayerProps {
   loopRegion: LoopRegion;
   replayGainEnabled: boolean;
   currentSong: Song | null;
-  countInActive: boolean;
-  countInBeat: number;
   metronomeClickActive: boolean;
   metronomeBpm: number;
   metronomeBeatsPerBar: number;
@@ -46,7 +43,6 @@ interface MasterPlayerProps {
   onMetronomeBeatsChange: (beats: number) => void;
   onMetronomeVolumeChange: (volume: number) => void;
   onPlay: () => void;
-  onPlayWithCountIn: () => void;
   onPause: () => void;
   onStop: () => void;
   onSeek: (time: number) => void;
@@ -72,8 +68,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   loopRegion,
   replayGainEnabled,
   currentSong,
-  countInActive,
-  countInBeat,
   metronomeClickActive,
   metronomeBpm,
   metronomeBeatsPerBar,
@@ -83,7 +77,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   onMetronomeBeatsChange,
   onMetronomeVolumeChange,
   onPlay,
-  onPlayWithCountIn,
   onPause,
   onStop,
   onSeek,
@@ -339,7 +332,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             {/* Play/Pause Spotify Green Glossy Aero Orb Button (Point 5) */}
             <button
               onClick={isPlaying ? onPause : onPlay}
-              disabled={countInActive || isAudioLoading}
+              disabled={isAudioLoading}
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-full aero-play-orb text-white flex items-center justify-center hover:scale-105 active:scale-90 transition relative overflow-hidden flex-shrink-0"
               title={isPlaying ? 'Pause' : isAudioLoading ? 'Mengunduh audio stem...' : 'Play'}
               aria-label={isPlaying ? 'Jeda pemutaran musik' : 'Mulai putar musik'}
@@ -352,22 +345,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               ) : (
                 <Play className="w-5 h-5 fill-current ml-0.5 relative z-10" />
               )}
-            </button>
-
-            {/* Count-In */}
-            <button
-              onClick={onPlayWithCountIn}
-              disabled={isPlaying || countInActive}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1 border shadow-xs active:scale-95 ${
-                countInActive
-                  ? 'bg-amber-400 text-black border-amber-500 animate-bounce'
-                  : 'bg-white/80 text-sky-900 border-sky-200 hover:bg-sky-50'
-              }`}
-              title="Hitungan masuk 4 ketukan"
-              aria-label="Mulai pemutaran dengan hitungan masuk 4 ketukan"
-            >
-              <Timer className="w-3.5 h-3.5 text-amber-600" />
-              <span>{countInActive ? `Count: ${countInBeat}` : 'Count-In (4)'}</span>
             </button>
 
             {/* A-B Looper */}

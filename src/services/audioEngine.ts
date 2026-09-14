@@ -554,32 +554,6 @@ export class AudioEngine {
     }
   }
 
-  /**
-   * Play with 1-bar (4-beat) count-in for rehearsals
-   */
-  public playWithCountIn(onCountBeat: (beat: number) => void, onComplete: () => void) {
-    if (this.isPlaying) return;
-    const ctx = this.getContext();
-    const bpm = (this.currentSong?.bpm || 120) * this.speed;
-    const beatInterval = 60 / bpm;
-
-    let beat = 1;
-    onCountBeat(beat);
-    this.playMetronomeTick(ctx.currentTime, true);
-
-    const intervalId = setInterval(() => {
-      beat++;
-      if (beat <= 4) {
-        onCountBeat(beat);
-        this.playMetronomeTick(ctx.currentTime, false);
-      } else {
-        clearInterval(intervalId);
-        onComplete();
-        this.play();
-      }
-    }, beatInterval * 1000);
-  }
-
   public setSpeed(speed: number) {
     this.speed = speed;
     if (this.isPlaying && this.ctx) {
@@ -590,6 +564,10 @@ export class AudioEngine {
           nodes.source.playbackRate.value = speed;
         }
       });
+      // Metronome beat grid is song-time-based; re-align it to the new playback rate
+      if (this.metronomeSyncEnabled && this.metronomeSchedulerId !== null) {
+        this.restartMetronomeScheduler();
+      }
     }
   }
 
@@ -802,9 +780,10 @@ export class AudioEngine {
     const beatSec = 60 / songBpm;
     const currentPos = this.getCurrentTime();
 
-    // Calculate first click: align to the next beat boundary from current playback position
-    this.nextClickBeat = Math.floor(currentPos / beatSec) + 1;
-    this.nextClickTime = this.ctx.currentTime + ((this.nextClickBeat * beatSec) - currentPos);
+    // Calculate first click: align to the next beat boundary from current playback position.
+    // currentPos is song-time; beat grid is in song-time, so no speed division needed.
+    this.nextClickBeat = Math.floor((currentPos + 0.02) / beatSec) + 1;
+    this.nextClickTime = this.ctx.currentTime + (this.nextClickBeat * beatSec - currentPos);
 
     this.scheduleClicks();
   }
