@@ -1,8 +1,8 @@
 # The Flannels Pocket 🎸🥁🎤
 
-**The Flannels Pocket** adalah platform pemutar multi-track, isolasi stem audio, dan workstation latihan band web yang dirancang khusus untuk personil band **The Flannels** (Vokalis, Drummer, Gitaris Lead, Gitaris Rhythm, dan Bassist).
+**The Flannels Pocket** adalah platform pemutar multi-track, isolasi stem audio, dan workstation latihan band web yang dirancang khusus untuk personil band **The Flannels** (Vokalis, Drummer, Gitaris Lead & Rhythm, dan Bassist).
 
-Aplikasi ini dapat dijalankan langsung di browser desktop maupun mobile (iPhone/Android) tanpa perlu login/register, dan siap dideploy secara gratis di Vercel, Netlify, Cloudflare Pages, atau GitHub Pages.
+Aplikasi ini dapat dijalankan langsung di browser desktop maupun mobile (iPhone/Android) tanpa perlu login/register, dan telah dideploy melalui Vercel, Netlify, Cloudflare Pages, atau GitHub Pages.
 
 ---
 
