@@ -17,12 +17,7 @@ import { AudioLoadingModal } from './components/AudioLoadingModal';
 import { LandscapeGuard } from './components/LandscapeGuard';
 import { Sliders, Folder, FileText, Brain } from 'lucide-react';
 import type { SongRequest } from './types';
-
-const VISTA_WALLPAPERS = [
-  { id: 'aurora', name: 'Vista Aurora', url: '/aero-assets/vista-default.webp' },
-  { id: 'grass', name: 'Vista Meadow', url: '/aero-assets/vista-grass.webp' },
-  { id: 'flow', name: 'Vista Lightstream', url: '/aero-assets/vista-flow.webp' },
-];
+import { VISTA_WALLPAPERS } from './constants/wallpapers';
 
 export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
@@ -117,6 +112,35 @@ export function App() {
 
   const handleCycleWallpaper = () => {
     setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
+  };
+
+  // Side navbar auto-hide: 3s after cursor leaves, but delayed until user first interacts with it
+  const [hasInteractedWithNav, setHasInteractedWithNav] = useState<boolean>(false);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNavMouseEnter = () => {
+    setHasInteractedWithNav(true);
+    if (navTimerRef.current) {
+      clearTimeout(navTimerRef.current);
+      navTimerRef.current = null;
+    }
+  };
+
+  const handleNavMouseLeave = () => {
+    if (!hasInteractedWithNav) return;
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => {
+      setIsNavOpen(false);
+    }, 3000);
+  };
+
+  const handleSelectNavTab = (tab: ActiveNavTab) => {
+    setActiveTab(tab);
+    setHasInteractedWithNav(true);
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => {
+      setIsNavOpen(false);
+    }, 3000);
   };
 
   // Load song library on mount - Cloud-First automatic fetch
@@ -520,27 +544,19 @@ export function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#7ec5f9] via-[#4fa3e3] to-[#256ea8] text-[#0a233c] select-none p-4">
-        {/* Background authentic aero asset elements */}
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-[#0a233c] select-none p-4">
+        {/* Background authentic 2.webp from C:\ALBARRY\wallpaper\2.jpg */}
         <img
-          src="/aero-assets/horizon-glow.webp"
+          src="/wallpapers/2.webp"
           alt=""
           fetchPriority="high"
-          className="absolute bottom-0 w-full object-cover opacity-60 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
         />
-        <img
-          src="/aero-assets/bubble-cluster.webp"
-          alt=""
-          className="absolute -top-10 -right-10 w-72 sm:w-96 opacity-40 pointer-events-none animate-pulse"
-        />
-        <img
-          src="/aero-assets/flare-glint.webp"
-          alt=""
-          className="absolute top-1/4 left-1/4 w-40 opacity-70 pointer-events-none"
-        />
+        {/* Soft authentic Aero sky tint overlay */}
+        <div className="absolute inset-0 bg-sky-950/25 backdrop-blur-[1.5px]" />
 
         {/* Windows Vista / 7 Style Glass Dialog Box */}
-        <div className="w-full max-w-sm rounded-3xl p-6 bg-white/65 backdrop-blur-2xl border border-white/80 shadow-[0_16px_40px_rgba(0,40,90,0.3)] relative z-10 flex flex-col items-center gap-4 text-center">
+        <div className="w-full max-w-sm rounded-3xl p-6 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_16px_40px_rgba(0,40,90,0.35)] relative z-10 flex flex-col items-center gap-4 text-center">
           <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-3xl" />
 
           {/* Glowing Orb Logo */}
@@ -551,7 +567,7 @@ export function App() {
 
           <div>
             <h2 className="text-xl font-black text-[#071f38] tracking-tight">The Flannels pocket</h2>
-            <p className="text-xs font-bold text-sky-900 mt-0.5">Windows Aero Music Workstation</p>
+            <p className="text-xs font-black text-sky-900 mt-0.5 tracking-wide">This is the future we were promised</p>
           </div>
 
           {/* Authentic Vista Candy Progress Bar */}
@@ -574,21 +590,17 @@ export function App() {
 
   return (
     <div className="h-screen max-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-hidden">
-      {/* Mobile Landscape Orientation Guard */}
+      {/* Mobile Landscape Orientation Guard (Non-blocking) */}
       <LandscapeGuard />
 
-      {/* Grand Background - Iconic Windows Vista Aurora Pack Transition */}
+      {/* Grand Background - Iconic Windows Vista Pack Transition */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {VISTA_WALLPAPERS.map((wp, idx) => (
-          <img
-            key={wp.id}
-            src={wp.url}
-            alt={wp.name}
-            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${
-              idx === wallpaperIndex ? 'opacity-90' : 'opacity-0'
-            }`}
-          />
-        ))}
+        <img
+          key={VISTA_WALLPAPERS[wallpaperIndex]?.id || 'wp'}
+          src={VISTA_WALLPAPERS[wallpaperIndex]?.url}
+          alt={VISTA_WALLPAPERS[wallpaperIndex]?.name}
+          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 opacity-90 animate-in fade-in"
+        />
         {/* Soft authentic Aero sky tint overlay */}
         <div className="absolute inset-0 bg-sky-950/15" />
 
@@ -614,8 +626,11 @@ export function App() {
         activeSoloNames={activeSoloNames}
         onClearAllSolos={handleClearAllSolos}
         isNavOpen={isNavOpen}
-        onToggleNav={() => setIsNavOpen(!isNavOpen)}
-        wallpaperName={VISTA_WALLPAPERS[wallpaperIndex].name}
+        onToggleNav={() => {
+          setHasInteractedWithNav(true);
+          setIsNavOpen(!isNavOpen);
+        }}
+        wallpaperName={VISTA_WALLPAPERS[wallpaperIndex]?.name}
         onCycleWallpaper={handleCycleWallpaper}
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
@@ -626,9 +641,11 @@ export function App() {
 
       {/* 2. Below Header: Workspace Layout with Spotify-Style Aero Sidebar (Item 6) */}
       <div className="flex-1 min-h-0 flex relative w-full overflow-hidden">
-        {/* Spotify-style Sturdy Aero Sidebar (Desktop only, non-scrollable) */}
+        {/* Spotify-style Sturdy Aero Sidebar (Desktop only, auto-hides 3s after interaction) */}
         <aside
-          className={`hidden md:flex flex-shrink-0 transition-all duration-200 ${
+          onMouseEnter={handleNavMouseEnter}
+          onMouseLeave={handleNavMouseLeave}
+          className={`hidden md:flex flex-shrink-0 transition-all duration-300 ${
             isNavOpen ? 'w-56 lg:w-60' : 'w-0 overflow-hidden pointer-events-none'
           }`}
         >
@@ -641,7 +658,7 @@ export function App() {
 
               {/* 1. Mixer Console */}
               <button
-                onClick={() => setActiveTab('mixer')}
+                onClick={() => handleSelectNavTab('mixer')}
                 className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
                   activeTab === 'mixer'
                     ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
@@ -654,7 +671,7 @@ export function App() {
 
               {/* 2. Library & Antrian (Merged) */}
               <button
-                onClick={() => setActiveTab('library')}
+                onClick={() => handleSelectNavTab('library')}
                 className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
                   activeTab === 'library'
                     ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
@@ -667,7 +684,7 @@ export function App() {
 
               {/* 3. Lirik & Chord */}
               <button
-                onClick={() => setActiveTab('lyrics')}
+                onClick={() => handleSelectNavTab('lyrics')}
                 className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
                   activeTab === 'lyrics'
                     ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
@@ -680,7 +697,7 @@ export function App() {
 
               {/* 4. Tilikan AI (Producer) */}
               <button
-                onClick={() => setActiveTab('brain')}
+                onClick={() => handleSelectNavTab('brain')}
                 className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold text-xs text-left group ${
                   activeTab === 'brain'
                     ? 'bg-gradient-to-r from-sky-500/30 via-sky-500/15 to-transparent text-white border-l-4 border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-black'
@@ -706,7 +723,8 @@ export function App() {
         </aside>
 
         {/* Main View: Padded at bottom so player dock never obstructs it */}
-        <main className="flex-1 min-h-0 p-2 sm:p-4 pb-24 sm:pb-28 overflow-hidden flex flex-col">
+        {/* Main Workspace Area - Responsive bottom spacing */}
+        <main className="flex-1 min-h-0 p-1.5 sm:p-3 lg:p-4 pb-36 md:pb-16 overflow-hidden flex flex-col">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
@@ -849,46 +867,54 @@ export function App() {
         onMetronomeBpmChange={handleMetronomeBpmChange}
       />
 
-      {/* 4. Mobile Bottom Navigation Bar (< md, Point 7) */}
-      <nav className="fixed bottom-0 left-0 right-0 h-14 bg-[#08182b]/95 backdrop-blur-3xl border-t border-sky-400/30 flex items-center justify-around z-50 md:hidden px-2 shadow-2xl">
+      {/* 4. Mobile Bottom Navigation Bar (< md) - Frutiger Aero Light Glass */}
+      <nav className="fixed bottom-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-2xl border-t border-white/90 flex items-center justify-around z-50 md:hidden px-2 shadow-[0_-4px_20px_rgba(2,132,199,0.15)] pb-safe">
         <button
           onClick={() => setActiveTab('mixer')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
-            activeTab === 'mixer' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+            activeTab === 'mixer'
+              ? 'text-sky-950 font-black bg-sky-200/60 shadow-inner'
+              : 'text-slate-600 hover:text-slate-950 font-bold'
           }`}
           aria-label="Buka Mixer"
         >
-          <Sliders className="w-4 h-4" />
+          <Sliders className={`w-4 h-4 ${activeTab === 'mixer' ? 'text-cyan-600' : 'text-slate-500'}`} />
           <span className="text-[10px]">Mixer</span>
         </button>
         <button
           onClick={() => setActiveTab('library')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
-            activeTab === 'library' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+            activeTab === 'library'
+              ? 'text-sky-950 font-black bg-sky-200/60 shadow-inner'
+              : 'text-slate-600 hover:text-slate-950 font-bold'
           }`}
           aria-label="Buka Library & Antrian"
         >
-          <Folder className="w-4 h-4" />
+          <Folder className={`w-4 h-4 ${activeTab === 'library' ? 'text-sky-600' : 'text-slate-500'}`} />
           <span className="text-[10px]">Library</span>
         </button>
         <button
           onClick={() => setActiveTab('lyrics')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
-            activeTab === 'lyrics' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+            activeTab === 'lyrics'
+              ? 'text-sky-950 font-black bg-sky-200/60 shadow-inner'
+              : 'text-slate-600 hover:text-slate-950 font-bold'
           }`}
           aria-label="Buka Lirik"
         >
-          <FileText className="w-4 h-4" />
+          <FileText className={`w-4 h-4 ${activeTab === 'lyrics' ? 'text-indigo-600' : 'text-slate-500'}`} />
           <span className="text-[10px]">Lirik</span>
         </button>
         <button
           onClick={() => setActiveTab('brain')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${
-            activeTab === 'brain' ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-white'
+            activeTab === 'brain'
+              ? 'text-sky-950 font-black bg-sky-200/60 shadow-inner'
+              : 'text-slate-600 hover:text-slate-950 font-bold'
           }`}
           aria-label="Buka Tilikan"
         >
-          <Brain className="w-4 h-4" />
+          <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-purple-600' : 'text-slate-500'}`} />
           <span className="text-[10px]">Tilikan</span>
         </button>
       </nav>
