@@ -24,13 +24,11 @@ interface SongRequestLeaderboardProps {
   isAdmin: boolean;
   onFulfillRequest: (req: SongRequest) => void;
   onSongSelectedFromLibrary?: (title: string, artist: string) => void;
-  currentPlayingSongTitle?: string | null;
 }
 
 export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
   isAdmin,
   onFulfillRequest,
-  currentPlayingSongTitle = null,
 }) => {
   const [requests, setRequests] = useState<SongRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,19 +172,19 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-6xl mx-auto w-full aero-glass rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+    <div className="flex flex-col w-full h-full min-h-0 relative">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-sky-200/60 pb-3 mb-3 flex-wrap gap-2 flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 flex items-center justify-center shadow-md shadow-orange-500/30 text-white">
-            <Flame className="w-5 h-5" />
+      <div className="flex items-center justify-between border-b border-sky-200/60 pb-2.5 mb-2.5 flex-wrap gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 flex items-center justify-center shadow-md shadow-orange-500/30 text-white flex-shrink-0">
+            <Flame className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-[#0f2942] tracking-tight">
+            <h3 className="text-sm sm:text-base font-black text-[#0f2942] tracking-tight">
               Antrian Request Lagu Band
-            </h2>
-            <p className="text-xs text-sky-800 font-medium">
-              Leaderboard Kulik Lagu • Vote & Rekomendasikan Cover Berikutnya
+            </h3>
+            <p className="text-[11px] text-sky-800 font-medium">
+              Vote & rekomendasikan cover lagu berikutnya
             </p>
           </div>
         </div>
@@ -199,16 +197,16 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             setReqArtwork(undefined);
             setShowRequestModal(true);
           }}
-          className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-orange-500/20 active:scale-95"
+          className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-orange-500/20 active:scale-95"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Request Lagu Baru</span>
         </button>
       </div>
 
       {/* Live Auto-Suggestion Search Bar */}
       <div className="relative mb-3 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-white/90 border border-sky-300/80 rounded-2xl px-4 py-2 shadow-xs focus-within:ring-2 focus-within:ring-sky-400">
+        <div className="flex items-center gap-2 bg-white/90 border border-sky-300/80 rounded-2xl px-3.5 py-1.5 shadow-xs focus-within:ring-2 focus-within:ring-sky-400">
           <Search className="w-4 h-4 text-sky-600 flex-shrink-0" />
           <input
             type="text"
@@ -265,10 +263,10 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
         )}
       </div>
 
-      {/* Leaderboard List (Horizontal Cards Rail; tinggi kartu = konten, scroll vertikal hanya jika viewport pendek) */}
-      <div className="flex-1 min-h-0 flex flex-row overflow-x-auto overflow-y-auto gap-4 py-2 px-1 items-start scrollbar-thin">
+      {/* Leaderboard List (Clean Responsive Grid, unconstrained card heights, smooth vertical scroll) */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-4 scrollbar-thin">
         {isLoading ? (
-          <div className="w-full flex flex-col items-center justify-center text-sky-800 space-y-2">
+          <div className="w-full py-12 flex flex-col items-center justify-center text-sky-800 space-y-2">
             <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto" />
             <p className="text-xs font-semibold">Memuat antrian request...</p>
           </div>
@@ -283,100 +281,88 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             </p>
           </div>
         ) : (
-          requests.map((req, index) => {
-            const hasUpvoted = req.upvotedBy.includes(clientId);
-            const isFulfilled = req.status === 'fulfilled';
-            const isNowPlaying = !isFulfilled && !!currentPlayingSongTitle &&
-              req.title.trim().toLowerCase() === currentPlayingSongTitle!.trim().toLowerCase();
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+            {requests.map((req, index) => {
+              const hasUpvoted = req.upvotedBy.includes(clientId);
+              const isFulfilled = req.status === 'fulfilled';
 
-            return (
-              <div
-                key={req.id}
-                className={`w-[290px] sm:w-[320px] flex-shrink-0 p-4 rounded-3xl border transition-all flex flex-col justify-between shadow-sm relative overflow-visible ${
-                  isNowPlaying
-                    ? 'bg-white border-orange-400 ring-2 ring-orange-400/70 shadow-orange-500/25'
-                    : isFulfilled
-                    ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
-                    : 'bg-white border-sky-200/90 hover:border-sky-300'
-                }`}
-              >
-                {isNowPlaying && (
-                  <span className="absolute -top-2.5 left-4 z-10 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-orange-600 text-white border border-orange-300 shadow-md shadow-orange-500/40 flex items-center gap-1">
-                    <span className="relative flex w-1.5 h-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                      <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-white" />
-                    </span>
-                    ▶ Sedang Diputar
-                  </span>
-                )}
-                {/* Top Section */}
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="font-mono font-black text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                      #{index + 1}
-                    </span>
-                    {isFulfilled ? (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Siap
+              return (
+                <div
+                  key={req.id}
+                  className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
+                    isFulfilled
+                      ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
+                      : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
+                  }`}
+                >
+                  {/* Top Section */}
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-mono font-black text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                        #{index + 1}
                       </span>
-                    ) : (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-600" /> Antrian
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
-                      {req.artworkUrl ? (
-                        <img src={req.artworkUrl} alt={req.title} className="w-full h-full object-cover" />
+                      {isFulfilled ? (
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Siap
+                        </span>
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-sky-600">
-                          <Music className="w-6 h-6" />
-                        </div>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-600" /> Antrian
+                        </span>
                       )}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-extrabold text-[#0f2942] truncate tracking-tight" title={req.title}>
-                        {req.title}
-                      </h4>
-                      <p className="text-xs text-sky-800 font-semibold truncate" title={req.artist}>
-                        {req.artist}
-                      </p>
-                      <p className="text-[10px] text-slate-600 truncate mt-0.5">
-                        {req.album || 'Single'}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
+                        {req.artworkUrl ? (
+                          <img src={req.artworkUrl} alt={req.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-sky-600">
+                            <Music className="w-6 h-6" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-extrabold text-[#0f2942] truncate tracking-tight" title={req.title}>
+                          {req.title}
+                        </h4>
+                        <p className="text-xs text-sky-800 font-semibold truncate" title={req.artist}>
+                          {req.artist}
+                        </p>
+                        <p className="text-[10px] text-slate-600 truncate mt-0.5">
+                          {req.album || 'Single'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 p-2 rounded-xl bg-sky-50/70 border border-sky-100 text-[11px] text-slate-600 space-y-0.5">
+                      <div className="font-bold text-sky-950 text-[11px] truncate">
+                        Oleh: {req.requesterName}
+                      </div>
+                      {req.notes && (
+                        <p className="italic text-slate-500 text-[10px] truncate" title={req.notes}>
+                          "{req.notes}"
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-3 p-2 rounded-2xl bg-sky-50/70 border border-sky-100 text-[11px] text-slate-600 space-y-0.5">
-                    <div className="font-bold text-sky-950 text-[11px] truncate">
-                      Oleh: {req.requesterName}
-                    </div>
-                    {req.notes && (
-                      <p className="italic text-slate-500 text-[10px] truncate" title={req.notes}>
-                        "{req.notes}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Bottom Action Section */}
-                <div className="pt-2.5 border-t border-sky-100 flex items-center justify-between gap-2 mt-2">
-                  <button
-                    onClick={() => handleUpvote(req.id)}
-                    disabled={isFulfilled}
-                    className={`px-3 py-1.5 rounded-2xl flex items-center gap-1.5 transition border active:scale-95 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
-                      hasUpvoted
-                        ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white border-orange-300 shadow-md shadow-orange-500/30 font-black'
-                        : 'bg-white text-slate-700 hover:text-orange-600 border-sky-200 hover:bg-orange-50 font-bold'
-                    }`}
-                    title={hasUpvoted ? 'Batalkan Upvote' : 'Vote lagu ini agar cepat dikulik'}
-                  >
-                    <Flame className={`w-3.5 h-3.5 ${hasUpvoted ? 'fill-current' : ''}`} />
-                    <span className="text-xs font-mono">{req.upvotes} Vote</span>
-                  </button>
+                  {/* Bottom Action Section */}
+                  <div className="pt-2.5 border-t border-sky-100 flex items-center justify-between gap-2 mt-2">
+                    <button
+                      onClick={() => handleUpvote(req.id)}
+                      disabled={isFulfilled}
+                      className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border active:scale-95 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
+                        hasUpvoted
+                          ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white border-orange-300 shadow-md shadow-orange-500/30 font-black'
+                          : 'bg-white text-slate-700 hover:text-orange-600 border-sky-200 hover:bg-orange-50 font-bold'
+                      }`}
+                      title={hasUpvoted ? 'Batalkan Upvote' : 'Vote lagu ini agar cepat dikulik'}
+                    >
+                      <Flame className={`w-3.5 h-3.5 ${hasUpvoted ? 'fill-current' : ''}`} />
+                      <span className="text-xs font-mono">{req.upvotes} Vote</span>
+                    </button>
 
                   {isAdmin && (
                     <div className="flex items-center gap-1">
@@ -401,7 +387,8 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                 </div>
               </div>
             );
-          })
+          })}
+          </div>
         )}
       </div>
 

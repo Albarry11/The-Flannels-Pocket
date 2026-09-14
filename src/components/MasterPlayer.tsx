@@ -16,7 +16,6 @@ import {
   Disc,
   Loader2,
   RotateCcw,
-  Sparkles,
 } from 'lucide-react';
 import { formatSecondsToTime, transposeChord } from '../services/lyricsManager';
 import { globalMetronome } from '../services/metronomeEngine';
@@ -32,7 +31,7 @@ interface MasterPlayerProps {
   pitchSemitones: number;
   masterVolume: number;
   loopRegion: LoopRegion;
-  replayGainEnabled: boolean;
+  replayGainEnabled?: boolean;
   currentSong: Song | null;
   metronomeClickActive: boolean;
   metronomeBpm: number;
@@ -41,7 +40,7 @@ interface MasterPlayerProps {
   isAudioLoading?: boolean;
   audioLoadingText?: string;
   onMetronomeBeatsChange: (beats: number) => void;
-  onMetronomeVolumeChange: (volume: number) => void;
+  onMetronomeVolumeChange: (vol: number) => void;
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
@@ -53,7 +52,7 @@ interface MasterPlayerProps {
   onSetLoopStart: () => void;
   onSetLoopEnd: () => void;
   onClearLoop: () => void;
-  onToggleReplayGain: () => void;
+  onToggleReplayGain?: () => void;
   onToggleMetronomeClick: () => void;
   onMetronomeBpmChange: (bpm: number) => void;
 }
@@ -66,7 +65,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   pitchSemitones,
   masterVolume,
   loopRegion,
-  replayGainEnabled,
   currentSong,
   metronomeClickActive,
   metronomeBpm,
@@ -87,7 +85,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   onSetLoopStart,
   onSetLoopEnd,
   onClearLoop,
-  onToggleReplayGain,
   onToggleMetronomeClick,
   onMetronomeBpmChange,
 }) => {
@@ -104,8 +101,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   const currentKeyTransposed = currentSong
     ? transposeChord(currentSong.originalKey, pitchSemitones)
     : '';
-
-  const replayGainDb = currentSong?.replayGain?.recommendedGainDb ?? 0;
 
   // Sync local beatsPerBar whenever song changes (Item 20)
   useEffect(() => {
@@ -513,27 +508,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <option value={1.5}>1.5x</option>
             </select>
           </div>
-
-          {/* Artistic Frutiger Aero Clear Sound (ReplayGain) Badge */}
-          <button
-            onClick={onToggleReplayGain}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group ${
-              replayGainEnabled
-                ? 'bg-gradient-to-b from-cyan-300 via-teal-400 to-emerald-500 text-slate-950 border-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
-                : 'bg-white/70 hover:bg-white/95 text-slate-700 border-sky-200'
-            }`}
-            title={`Clear Sound (Normalisasi ReplayGain -14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
-            aria-label="Aktifkan Clear Sound ReplayGain"
-          >
-            <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
-            <Sparkles className={`w-3.5 h-3.5 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
-            <span className="tracking-tight">Clear Sound</span>
-            {replayGainEnabled && replayGainDb !== 0 && (
-              <span className="text-[10px] font-mono font-black bg-black/20 text-slate-900 px-1.5 py-0.2 rounded-full">
-                {replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB
-              </span>
-            )}
-          </button>
 
           {/* Volume */}
           <div className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs">

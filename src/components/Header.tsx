@@ -6,8 +6,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Video,
-  VideoOff,
+  Sparkles,
   Shield,
   ShieldCheck,
   Music,
@@ -23,8 +22,8 @@ interface HeaderProps {
   onClearAllSolos: () => void;
   isNavOpen?: boolean;
   onToggleNav?: () => void;
-  isVideoActive?: boolean;
-  onToggleVideo?: () => void;
+  wallpaperName?: string;
+  onCycleWallpaper?: () => void;
   isAdmin?: boolean;
   onToggleAdmin?: () => void;
   onSelectSuggestion?: (title: string, artist: string, album?: string, artwork?: string) => void;
@@ -35,8 +34,8 @@ export const Header: React.FC<HeaderProps> = ({
   onClearAllSolos,
   isNavOpen = true,
   onToggleNav,
-  isVideoActive = true,
-  onToggleVideo,
+  wallpaperName,
+  onCycleWallpaper,
   isAdmin = false,
   onToggleAdmin,
   onSelectSuggestion,
@@ -212,20 +211,16 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Artistic Frutiger Aero Video Background Toggle */}
-        {onToggleVideo && (
+        {/* Artistic Frutiger Aero Wallpaper Transition Selector */}
+        {onCycleWallpaper && (
           <button
-            onClick={onToggleVideo}
-            className={`px-3 py-1 rounded-full text-[10px] font-black border transition-all flex items-center gap-1.5 shadow-xs relative overflow-hidden active:scale-95 ${
-              isVideoActive
-                ? 'bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 text-white border-cyan-200 shadow-[0_0_12px_rgba(14,165,233,0.5)]'
-                : 'bg-white/50 hover:bg-white/80 text-slate-700 border-sky-200/90'
-            }`}
-            title={isVideoActive ? 'Matikan video background (hemat GPU/baterai)' : 'Nyalakan video background Aero'}
+            onClick={onCycleWallpaper}
+            className="px-3 py-1 rounded-full text-[10px] font-black border transition-all flex items-center gap-1.5 shadow-xs relative overflow-hidden active:scale-95 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 text-white border-cyan-200 shadow-[0_0_12px_rgba(14,165,233,0.5)]"
+            title="Klik untuk ganti wallpaper iconic Windows Vista"
           >
             <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
-            {isVideoActive ? <Video className="w-3.5 h-3.5 text-cyan-100" /> : <VideoOff className="w-3.5 h-3.5 text-slate-500" />}
-            <span className="hidden sm:inline font-extrabold">{isVideoActive ? 'Aero Video: ON' : 'Aero Video: OFF'}</span>
+            <Sparkles className="w-3.5 h-3.5 text-cyan-100 animate-pulse" />
+            <span className="hidden sm:inline font-extrabold">{wallpaperName || 'Tema Vista'}</span>
           </button>
         )}
 

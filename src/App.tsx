@@ -14,8 +14,15 @@ import { LyricsManager } from './components/LyricsManager';
 import { AIBrainAndAnalyzer } from './components/AIBrainAndAnalyzer';
 import { AdminStemUploadModal } from './components/AdminStemUploadModal';
 import { AudioLoadingModal } from './components/AudioLoadingModal';
+import { LandscapeGuard } from './components/LandscapeGuard';
 import { Sliders, Folder, FileText, Brain } from 'lucide-react';
 import type { SongRequest } from './types';
+
+const VISTA_WALLPAPERS = [
+  { id: 'aurora', name: 'Vista Aurora', url: '/aero-assets/vista-default.webp' },
+  { id: 'grass', name: 'Vista Meadow', url: '/aero-assets/vista-grass.webp' },
+  { id: 'flow', name: 'Vista Lightstream', url: '/aero-assets/vista-flow.webp' },
+];
 
 export type ActiveNavTab = 'mixer' | 'library' | 'lyrics' | 'brain';
 
@@ -98,15 +105,18 @@ export function App() {
     localStorage.removeItem('flannels_is_admin');
   };
 
-  // Video Background GPU Saver Toggle (Point 12) - Default OFF for maximum responsiveness (Item 17)
-  const [isVideoBgActive, setIsVideoBgActive] = useState<boolean>(() => {
-    return localStorage.getItem('flannels_video_bg') === 'true';
-  });
+  // Iconic Windows Vista Aero Wallpaper Transition Pack
+  const [wallpaperIndex, setWallpaperIndex] = useState<number>(0);
 
-  const handleToggleVideo = () => {
-    const next = !isVideoBgActive;
-    setIsVideoBgActive(next);
-    localStorage.setItem('flannels_video_bg', String(next));
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
+    }, 25000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCycleWallpaper = () => {
+    setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
   };
 
   // Load song library on mount - Cloud-First automatic fetch
@@ -564,28 +574,30 @@ export function App() {
 
   return (
     <div className="h-screen max-h-screen flex flex-col text-[#0b2238] font-sans selection:bg-emerald-400 selection:text-black relative overflow-hidden">
-      {/* Grand Background - Seamless full viewport glass backdrop */}
+      {/* Mobile Landscape Orientation Guard */}
+      <LandscapeGuard />
+
+      {/* Grand Background - Iconic Windows Vista Aurora Pack Transition */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {isVideoBgActive ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="./aero-bg-poster.jpg"
-            className="w-full h-full object-cover object-center"
-          >
-            <source src="./aero-bg.mp4" type="video/mp4" />
-          </video>
-        ) : (
+        {VISTA_WALLPAPERS.map((wp, idx) => (
           <img
-            src="./aero-bg-poster.jpg"
-            alt="Aero Background"
-            className="w-full h-full object-cover object-center opacity-85"
+            key={wp.id}
+            src={wp.url}
+            alt={wp.name}
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${
+              idx === wallpaperIndex ? 'opacity-90' : 'opacity-0'
+            }`}
           />
-        )}
-        {/* Soft Aero sky tint overlay without heavy blur */}
+        ))}
+        {/* Soft authentic Aero sky tint overlay */}
         <div className="absolute inset-0 bg-sky-950/15" />
+
+        {/* Grassy Meadow Foreground from Frutiger Aero Archive */}
+        <img
+          src="/aero-assets/grassy-foreground.webp"
+          alt=""
+          className="absolute -bottom-6 left-0 right-0 w-full object-cover opacity-60 pointer-events-none z-0 select-none max-h-36 sm:max-h-48"
+        />
       </div>
 
       {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass */}
@@ -603,8 +615,8 @@ export function App() {
         onClearAllSolos={handleClearAllSolos}
         isNavOpen={isNavOpen}
         onToggleNav={() => setIsNavOpen(!isNavOpen)}
-        isVideoActive={isVideoBgActive}
-        onToggleVideo={handleToggleVideo}
+        wallpaperName={VISTA_WALLPAPERS[wallpaperIndex].name}
+        onCycleWallpaper={handleCycleWallpaper}
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
         onSelectSuggestion={() => {
@@ -748,7 +760,6 @@ export function App() {
                 setRequestToFulfill(req);
                 setShowAdminUploadModal(true);
               }}
-              currentPlayingSongTitle={currentSong?.title ?? null}
             />
           )}
 
