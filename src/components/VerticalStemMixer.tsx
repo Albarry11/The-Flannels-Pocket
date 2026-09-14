@@ -144,7 +144,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   return (
     <div className="flex flex-col gap-2 flex-1 h-full min-h-0 max-w-6xl mx-auto w-full select-none pb-1">
       {/* Top Bar: Authentic Frutiger Aero Aqua Gel Quick Access Buttons */}
-      <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 rounded-2xl bg-white/50 border border-white/70 backdrop-blur-md shadow-[0_4px_16px_rgba(2,132,199,0.12)] gap-2 flex-shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 rounded-2xl bg-white/35 border border-white/75 backdrop-blur-2xl saturate-[190%] shadow-[0_8px_32px_rgba(2,132,199,0.1),inset_0_1.5px_0_rgba(255,255,255,0.95)] gap-2 flex-shrink-0">
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
           <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-sky-950 flex items-center gap-1 flex-shrink-0">
             <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
@@ -153,25 +153,25 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
           <button
             onClick={onSoloVocalOnly}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-rose-950 bg-gradient-to-b from-rose-200 via-rose-300 to-rose-400 border border-rose-200 shadow-[0_2px_6px_rgba(244,63,94,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-rose-950 bg-gradient-to-b from-rose-200/80 via-rose-300/75 to-rose-400/85 backdrop-blur-md border border-rose-200/90 shadow-[0_2px_8px_rgba(244,63,94,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
             🎤 Vokal Solo
           </button>
           <button
             onClick={onSoloGuitarOnly}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-amber-950 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 border border-amber-200 shadow-[0_2px_6px_rgba(245,158,11,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-amber-950 bg-gradient-to-b from-amber-200/80 via-amber-300/75 to-amber-400/85 backdrop-blur-md border border-amber-200/90 shadow-[0_2px_8px_rgba(245,158,11,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
             🎸 Gitar Solo
           </button>
           <button
             onClick={onSoloRhythmSection}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-cyan-950 bg-gradient-to-b from-cyan-200 via-sky-300 to-cyan-400 border border-cyan-200 shadow-[0_2px_6px_rgba(6,182,212,0.3),inset_0_1px_0_rgba(255,255,255,0.8)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-cyan-950 bg-gradient-to-b from-cyan-200/80 via-sky-300/75 to-cyan-400/85 backdrop-blur-md border border-cyan-200/90 shadow-[0_2px_8px_rgba(6,182,212,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
             🥁 Bass + Drums
           </button>
           <button
             onClick={onResetAllStems}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-slate-800 bg-gradient-to-b from-slate-100 via-white to-slate-200 border border-slate-300 shadow-[0_2px_6px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex items-center gap-1 flex-shrink-0"
+            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-slate-800 bg-gradient-to-b from-white/80 via-white/60 to-slate-200/75 backdrop-blur-md border border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] hover:brightness-105 active:scale-95 transition flex items-center gap-1 flex-shrink-0"
           >
             <RotateCcw className="w-3 h-3 text-slate-600" />
             <span>Unmute All</span>
@@ -179,7 +179,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
         </div>
 
         <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-          <span className="text-[10px] font-mono font-bold text-sky-900 px-2 py-0.5 rounded-md bg-white/60 border border-sky-200">
+          <span className="text-[10px] font-mono font-bold text-sky-900 px-2 py-0.5 rounded-md bg-white/60 backdrop-blur-md border border-sky-200/80">
             SSL 4000 E-Series Emulation • 4 Discrete Stems
           </span>
         </div>
@@ -199,14 +199,14 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
           return (
             <div
               key={stem.id}
-              className={`rounded-2xl p-2.5 transition-all flex flex-col justify-between items-center border relative shadow-xl overflow-hidden h-full ${
+              className={`rounded-2xl p-2.5 transition-all flex flex-col justify-between items-center border relative shadow-xl overflow-hidden h-full backdrop-blur-2xl saturate-[190%] ${
                 stem.solo
-                  ? 'bg-gradient-to-b from-[#18283a] via-[#102030] to-[#0c1824] border-amber-400/90 shadow-[0_0_20px_rgba(245,158,11,0.25)] ring-2 ring-amber-400/50'
+                  ? 'bg-gradient-to-b from-[#24354a]/55 via-[#18283a]/45 to-[#0c1824]/50 border-amber-400/90 shadow-[0_0_24px_rgba(245,158,11,0.25),inset_0_1.5px_0_rgba(255,255,255,0.5)] ring-2 ring-amber-400/50'
                   : stem.muted
-                  ? 'bg-gradient-to-b from-[#141b24] via-[#0e141c] to-[#080d13] border-rose-500/40 opacity-70'
+                  ? 'bg-gradient-to-b from-[#141b24]/35 via-[#0e141c]/30 to-[#080d13]/35 border-rose-500/35 opacity-70 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.2)]'
                   : isSilenced
-                  ? 'bg-gradient-to-b from-[#121922] via-[#0d131a] to-[#070b10] border-slate-700/60 opacity-50'
-                  : 'bg-gradient-to-b from-[#1b2b3d] via-[#121f2d] to-[#091522] border-sky-400/40 hover:border-sky-300 shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
+                  ? 'bg-gradient-to-b from-[#121922]/30 via-[#0d131a]/25 to-[#070b10]/30 border-slate-700/35 opacity-50 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.15)]'
+                  : 'bg-gradient-to-b from-[#1b2b3d]/45 via-[#121f2d]/38 to-[#091522]/48 border-sky-400/40 hover:border-sky-300/70 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1.5px_0_rgba(255,255,255,0.35)]'
               }`}
             >
               {/* Corner Metallic Screws */}
@@ -382,14 +382,14 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
           return (
             <div
               key={`m-${stem.id}`}
-              className={`rounded-2xl p-2 transition-all flex flex-col justify-between border relative shadow-lg overflow-hidden ${
+              className={`rounded-2xl p-2 transition-all flex flex-col justify-between border relative shadow-lg overflow-hidden backdrop-blur-2xl saturate-[190%] ${
                 stem.solo
-                  ? 'bg-gradient-to-b from-[#18283a] via-[#102030] to-[#0c1824] border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.3)] ring-1 ring-amber-400'
+                  ? 'bg-gradient-to-b from-[#24354a]/55 via-[#18283a]/45 to-[#0c1824]/50 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25),inset_0_1.5px_0_rgba(255,255,255,0.5)] ring-1 ring-amber-400'
                   : stem.muted
-                  ? 'bg-gradient-to-b from-[#141b24] via-[#0e141c] to-[#080d13] border-rose-500/40 opacity-70'
+                  ? 'bg-gradient-to-b from-[#141b24]/35 via-[#0e141c]/30 to-[#080d13]/35 border-rose-500/35 opacity-70'
                   : isSilenced
-                  ? 'bg-gradient-to-b from-[#121922] via-[#0d131a] to-[#070b10] border-slate-700/60 opacity-50'
-                  : 'bg-gradient-to-b from-[#1a2838] via-[#111e2b] to-[#091522] border-sky-400/40 shadow-md'
+                  ? 'bg-gradient-to-b from-[#121922]/30 via-[#0d131a]/25 to-[#070b10]/30 border-slate-700/35 opacity-50'
+                  : 'bg-gradient-to-b from-[#1b2b3d]/45 via-[#121f2d]/38 to-[#091522]/48 border-sky-400/40 shadow-md'
               }`}
             >
               {/* Metallic corner dots */}

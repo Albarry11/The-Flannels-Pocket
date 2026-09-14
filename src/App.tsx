@@ -115,10 +115,18 @@ export function App() {
   };
 
   // Side navbar flow:
-  // - If opened via button: LOCKED open (never auto-hides)
+  // - On initial launch: starts open, then smoothly auto-hides after 3.2s so user discovers auto-hide!
   // - If opened via left-edge hover: peek mode (auto-closes 2.5s after cursor leaves)
-  const [isNavLocked, setIsNavLocked] = useState<boolean>(true);
+  // - If opened via button: LOCKED open (never auto-hides)
+  const [isNavLocked, setIsNavLocked] = useState<boolean>(false);
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const openingTimer = setTimeout(() => {
+      setIsNavOpen(false);
+    }, 3200);
+    return () => clearTimeout(openingTimer);
+  }, []);
 
   const handleToggleNavButton = () => {
     if (isNavOpen) {
@@ -578,19 +586,19 @@ export function App() {
         {/* Soft authentic Aero sky tint overlay */}
         <div className="absolute inset-0 bg-sky-950/25 backdrop-blur-[1.5px]" />
 
-        {/* Windows Vista / 7 Style Glass Dialog Box */}
-        <div className="w-full max-w-sm rounded-3xl p-6 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_16px_40px_rgba(0,40,90,0.35)] relative z-10 flex flex-col items-center gap-4 text-center">
-          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-3xl" />
+        {/* Modern iOS Liquid Glass Loading Dialog Box */}
+        <div className="w-full max-w-sm rounded-3xl p-6 bg-white/40 backdrop-blur-3xl saturate-[190%] border border-white/75 shadow-[0_20px_60px_rgba(0,35,80,0.22),inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_-1px_0_rgba(255,255,255,0.3)] relative z-10 flex flex-col items-center gap-4 text-center">
+          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-t-3xl" />
 
           {/* Glowing Orb Logo */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_24px_rgba(14,165,233,0.6)] border border-white flex items-center justify-center relative">
-            <div className="absolute top-1 inset-x-2 h-6 bg-white/60 rounded-full blur-[1px]" />
-            <Sliders className="w-8 h-8 text-white relative z-10" />
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_28px_rgba(14,165,233,0.7)] border border-white/90 flex items-center justify-center relative">
+            <div className="absolute top-1 inset-x-2 h-6 bg-white/70 rounded-full blur-[1px]" />
+            <Sliders className="w-8 h-8 text-white relative z-10 drop-shadow-sm" />
           </div>
 
           <div>
             <h2 className="text-xl font-black text-[#071f38] tracking-tight">The Flannels pocket</h2>
-            <p className="text-xs font-black text-sky-900 mt-0.5 tracking-wide">This is the future we were promised</p>
+            <p className="text-xs font-black text-sky-950 mt-0.5 tracking-wide">This is the future we were promised</p>
           </div>
 
           {/* Authentic Vista Candy Progress Bar */}
@@ -656,12 +664,12 @@ export function App() {
 
       {/* 2. Below Header: Workspace Layout with Spotify-Style Aero Sidebar (Item 6) */}
       <div className="flex-1 min-h-0 flex relative w-full overflow-hidden">
-        {/* Spotify-style Sturdy Aero Sidebar (Desktop only, auto-hides 3s after interaction) */}
+        {/* Spotify-style Sturdy Aero Sidebar (Auto-hides 2.5s after interaction in peek mode) */}
         <aside
           onMouseEnter={handleNavMouseEnter}
           onMouseLeave={handleNavMouseLeave}
-          className={`hidden md:flex flex-shrink-0 transition-all duration-300 ${
-            isNavOpen ? 'w-56 lg:w-60' : 'w-0 overflow-hidden pointer-events-none'
+          className={`hidden sm:flex flex-shrink-0 transition-all duration-300 z-30 ${
+            isNavOpen ? 'w-52 lg:w-60' : 'w-0 overflow-hidden pointer-events-none'
           }`}
         >
           <div className="w-full h-full bg-[#071628]/92 backdrop-blur-2xl border-r border-sky-400/25 flex flex-col justify-between py-4 px-3 select-none overflow-hidden">
@@ -722,17 +730,6 @@ export function App() {
                 <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-emerald-300'}`} />
                 <span className="truncate">Tilikan AI Produser</span>
               </button>
-            </div>
-
-            {/* Bottom: Band Brand Badge */}
-            <div className="pt-2 border-t border-sky-400/20 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-xs border border-white/40">
-                FP
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-black text-white block truncate">The Flannels</span>
-                <span className="text-[9px] font-mono text-slate-400 block truncate">Pocket Studio v2.6</span>
-              </div>
             </div>
           </div>
         </aside>
@@ -881,8 +878,8 @@ export function App() {
         onMetronomeBpmChange={handleMetronomeBpmChange}
       />
 
-      {/* 4. Mobile Bottom Navigation Bar (< md) - Modern iOS Liquid Glass */}
-      <nav className="relative flex-shrink-0 w-full h-14 bg-white/60 backdrop-blur-2xl border-t border-white/85 flex items-center justify-around z-30 md:hidden px-2 shadow-[0_-4px_20px_rgba(2,132,199,0.12)] pb-safe">
+      {/* 4. Mobile Bottom Navigation Bar (Narrow screen fallback only) */}
+      <nav className="relative flex-shrink-0 w-full h-12 bg-white/60 backdrop-blur-2xl border-t border-white/85 flex items-center justify-around z-30 sm:hidden px-2 shadow-[0_-4px_20px_rgba(2,132,199,0.12)] pb-safe">
         <button
           onClick={() => setActiveTab('mixer')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${

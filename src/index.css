@@ -140,6 +140,25 @@
     0 0 20px rgba(74, 222, 128, 0.6);
 }
 
+/* WMP 11 / WMPotify Iconic Aero Blue Play Orb */
+.wmp-play-orb {
+  background: radial-gradient(circle at 50% 25%, #7dd3fc 0%, #0284c7 50%, #0369a1 85%, #075985 100%);
+  box-shadow: 
+    inset 0 2px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(0, 40, 80, 0.45),
+    0 4px 16px rgba(2, 132, 199, 0.45),
+    0 0 14px rgba(56, 189, 248, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+.wmp-play-orb:hover {
+  background: radial-gradient(circle at 50% 25%, #bae6fd 0%, #0ea5e9 50%, #0284c7 85%, #0369a1 100%);
+  box-shadow: 
+    inset 0 2px 3px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(0, 40, 80, 0.35),
+    0 6px 22px rgba(2, 132, 199, 0.65),
+    0 0 20px rgba(56, 189, 248, 0.75);
+}
+
 /* Slider styling */
 input[type=range] {
   @apply cursor-pointer bg-sky-200/80 rounded-full h-2 appearance-none;
