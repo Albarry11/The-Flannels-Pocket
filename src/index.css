@@ -173,9 +173,9 @@
 
 .wmp-control-pod {
   position: relative;
-  width: 404px;
+  width: 280px;
   height: 49px;
-  background-image: url('/wmp-assets/bg_large.png');
+  background-image: url('/wmp-assets/bg_small.png');
   background-repeat: no-repeat;
   background-size: 100% 100%;
   display: flex;
@@ -183,10 +183,10 @@
   justify-content: center;
 }
 
-@media (max-width: 640px) {
+@media (min-width: 1080px) {
   .wmp-control-pod {
-    width: 268px;
-    background-image: url('/wmp-assets/bg_small.png');
+    width: 404px;
+    background-image: url('/wmp-assets/bg_large.png');
   }
 }
 

@@ -507,6 +507,9 @@ export class AudioEngine {
       source.start(0, offset);
     });
 
+    // Enforce initial mute & solo states on all sources immediately
+    this.applyMuteSoloInternal();
+
     this.startProgressLoop();
   }
 
@@ -586,7 +589,10 @@ export class AudioEngine {
 
   public setMasterVolume(vol: number) {
     if (this.masterGainNode && this.ctx) {
-      this.masterGainNode.gain.setTargetAtTime(Math.max(0, Math.min(1, vol)), this.ctx.currentTime, 0.02);
+      const clamped = Math.max(0, Math.min(1, vol));
+      // Calibrated perceptual logarithmic audio taper (power 2.4): prevents loud boom at low percentages
+      const calibratedGain = clamped === 0 ? 0 : Math.pow(clamped, 2.4);
+      this.masterGainNode.gain.setTargetAtTime(calibratedGain, this.ctx.currentTime, 0.02);
     }
   }
 
@@ -600,9 +606,7 @@ export class AudioEngine {
   public setStemVolume(stemId: string, vol: number) {
     const stem = this.currentSong?.stems.find((s) => s.id === stemId);
     if (stem) stem.volume = vol;
-    const nodes = this.stemNodes.get(stemId);
-    if (nodes && this.ctx) {
-      nodes.gainNode.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.02);
+    if (this.ctx) {
       this.applyMuteSoloInternal();
     }
   }
@@ -684,14 +688,18 @@ export class AudioEngine {
       if (!nodes) return;
 
       let effectiveVol = stem.volume * headroomScale;
-      if (stem.muted) {
-        effectiveVol = 0;
-      } else if (anySolo && !stem.solo) {
+      if (stem.muted || (anySolo && !stem.solo)) {
         effectiveVol = 0;
       }
 
-      // Smooth gain transition to eliminate audio clicks
-      nodes.gainNode.gain.setTargetAtTime(effectiveVol, this.ctx!.currentTime, 0.015);
+      // Hard clamp to 0 on mute to prevent any stem bleed / leakage
+      if (effectiveVol === 0) {
+        nodes.gainNode.gain.cancelScheduledValues(this.ctx!.currentTime);
+        nodes.gainNode.gain.setValueAtTime(0, this.ctx!.currentTime);
+      } else {
+        nodes.gainNode.gain.cancelScheduledValues(this.ctx!.currentTime);
+        nodes.gainNode.gain.setTargetAtTime(effectiveVol, this.ctx!.currentTime, 0.015);
+      }
     });
   }
 

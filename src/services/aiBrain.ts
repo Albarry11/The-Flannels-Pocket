@@ -85,8 +85,7 @@ async function call9RouterChat(prompt: string): Promise<string> {
 }
 
 /**
- * Pemanggilan Google Gemini generateContent API langsung tanpa 9router.
- * Fallback langsung ke aturan musik lokal jika Google API gagal/timeout/503.
+ * Pemanggilan Google Gemini generateContent API (Proxy serverless first, fallback direct).
  */
 async function callGeminiGenerateContent(prompt: string): Promise<string> {
   const config = getAIBrainConfig();
@@ -100,8 +99,30 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
     throw new Error('API Key Google Gemini belum terkonfigurasi.');
   }
 
-  const targetUrl = `${GEMINI_BASE_URL}?key=${encodeURIComponent(apiKey)}`;
+  // 1. Try internal Vercel serverless proxy first (bypasses browser CORS & mobile tracking filters)
+  try {
+    const proxyRes = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1 },
+      }),
+    });
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      if (rawText) return rawText;
+    }
+  } catch {
+    // Continue to direct Google API call
+  }
 
+  // 2. Direct Google Generative Language call
+  const targetUrl = `${GEMINI_BASE_URL}?key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(targetUrl, {
     method: 'POST',
     headers: {
@@ -124,6 +145,10 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
   });
 
   if (!res.ok) {
+    // Auto-recovery: if stored key expired/rejected, reset to default working key
+    if (res.status === 400 || res.status === 403) {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+    }
     const errText = await res.text();
     throw new Error(`Gemini API error (${res.status}): ${errText.slice(0, 150)}`);
   }
@@ -135,16 +160,23 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
 
 /**
  * AI Gateway orchestrator:
- * 1. Coba 9Router (ag/gemini-3.8-flash-high)
- * 2. Fallback ke Google Gemini API Direct
+ * 1. Coba 9Router HANYA jika di localhost (menghindari Mixed Content error pada Vercel HTTPS & HP)
+ * 2. Fallback ke Google Gemini API Direct / Proxy
  */
 async function callAIGateway(prompt: string): Promise<string> {
-  try {
-    const text = await call9RouterChat(prompt);
-    if (text) return text;
-  } catch (e) {
-    // 9Router offline/failover, lanjut ke direct Gemini
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  if (isLocalhost) {
+    try {
+      const text = await call9RouterChat(prompt);
+      if (text) return text;
+    } catch {
+      // 9Router offline di localhost, lanjut ke Gemini
+    }
   }
+
   return await callGeminiGenerateContent(prompt);
 }
 

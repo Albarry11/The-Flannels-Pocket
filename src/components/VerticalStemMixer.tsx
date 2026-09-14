@@ -102,7 +102,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   getEqPresetLabel,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
-  const visibleStems = stems.filter((s) => s.role !== 'other');
+  // Show ALL stems (including backing / other) so no phantom tracks leak audio in the background!
+  const visibleStems = stems;
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const mobileMeterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const visibleStemIds = visibleStems.map((s) => s.id).join('|');
@@ -301,48 +302,124 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 />
               </div>
 
-              {/* 4. Center: Console Long-Throw Vertical Fader + LED VU Meter (Dynamic Stretch) */}
-              <div className="flex items-center justify-center gap-2 flex-1 w-full my-1 relative py-1 overflow-hidden min-h-[160px]">
-                {/* dB Scale */}
-                <div className="flex flex-col justify-between h-44 sm:h-52 md:h-60 text-[8px] font-mono text-slate-400 select-none text-right pr-0.5 font-bold flex-shrink-0">
-                  <span className="text-rose-400">+6</span>
-                  <span>0</span>
-                  <span>-6</span>
-                  <span>-18</span>
-                  <span>-∞</span>
+              {/* 4. Center: Rotary Potentiometer (Compact / Mobile Landscape) & Long-Throw Fader (Tall Desktop) */}
+              <div className="flex items-center justify-center gap-2 flex-1 w-full my-0.5 relative py-0.5 overflow-hidden">
+                {/* Hardware Rotary Potentiometer Dial (Mobile Landscape & Compact Heights) */}
+                <div className="flex xl:hidden flex-col items-center justify-center relative my-0.5">
+                  <div className="flex items-center gap-2">
+                    {/* Rotary Potentiometer Dial */}
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
+                      <svg className="w-14 h-14 sm:w-16 sm:h-16 -rotate-90 pointer-events-none" viewBox="0 0 48 48">
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="19"
+                          className="stroke-slate-800/80 fill-none"
+                          strokeWidth="3.5"
+                          strokeDasharray="89.5 120"
+                          strokeLinecap="round"
+                        />
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="19"
+                          className="stroke-cyan-400 fill-none transition-all duration-75"
+                          strokeWidth="3.5"
+                          strokeDasharray={`${stem.volume * 89.5} 120`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+
+                      {/* Rotary Dial Knob with Needle Notch */}
+                      <div
+                        className="absolute w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border border-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] flex items-center justify-center pointer-events-none transition-transform duration-75"
+                        style={{ transform: `rotate(${(stem.volume * 270) - 135}deg)` }}
+                      >
+                        <div className="absolute top-1 w-1 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                      </div>
+
+                      {/* Clear Center Percentage Display */}
+                      <span className="absolute font-mono font-black text-[11px] sm:text-xs text-white pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                        {Math.round(stem.volume * 100)}%
+                      </span>
+
+                      {/* Interactive Slider Overlay */}
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        defaultValue={stem.volume}
+                        onInput={(e) => {
+                          const val = parseFloat((e.target as HTMLInputElement).value);
+                          globalAudioEngine.setStemVolume(stem.id, val);
+                        }}
+                        onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        title={`Volume: ${Math.round(stem.volume * 100)}%`}
+                      />
+                    </div>
+
+                    {/* Vertical Mini LED VU Meter */}
+                    <div className="w-2 h-14 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
+                      <div
+                        ref={(el) => {
+                          mobileMeterRefs.current[stem.id] = el;
+                        }}
+                        className="w-full rounded-full"
+                        style={{
+                          height: '0%',
+                          backgroundColor: '#10b981',
+                          transition: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Vertical Slider Track with Metallic Bevel */}
-                <div className="h-44 sm:h-52 md:h-60 w-8 flex items-center justify-center relative bg-black/60 rounded-full px-1 border border-slate-700/80 shadow-inner">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    defaultValue={stem.volume}
-                    onInput={(e) => {
-                      const val = parseFloat((e.target as HTMLInputElement).value);
-                      globalAudioEngine.setStemVolume(stem.id, val);
-                    }}
-                    onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                    className="w-44 sm:w-52 md:w-60 h-3 -rotate-90 origin-center cursor-pointer accent-sky-400"
-                    title={`Volume: ${Math.round(stem.volume * 100)}%`}
-                  />
-                </div>
+                {/* Long-Throw Vertical Fader (Large Screens with Plenty of Height) */}
+                <div className="hidden xl:flex items-center justify-center gap-2 flex-1 w-full h-full min-h-[140px] max-h-[220px]">
+                  {/* dB Scale */}
+                  <div className="flex flex-col justify-between h-36 sm:h-44 text-[8px] font-mono text-slate-400 select-none text-right pr-0.5 font-bold flex-shrink-0">
+                    <span className="text-rose-400">+6</span>
+                    <span>0</span>
+                    <span>-6</span>
+                    <span>-18</span>
+                    <span>-∞</span>
+                  </div>
 
-                {/* Vertical LED VU Meter */}
-                <div className="w-2.5 h-44 sm:h-52 md:h-60 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
-                  <div
-                    ref={(el) => {
-                      meterRefs.current[stem.id] = el;
-                    }}
-                    className="w-full rounded-full"
-                    style={{
-                      height: '0%',
-                      backgroundColor: '#10b981',
-                      transition: 'none',
-                    }}
-                  />
+                  {/* Vertical Slider Track with Metallic Bevel */}
+                  <div className="h-36 sm:h-44 w-8 flex items-center justify-center relative bg-black/60 rounded-full px-1 border border-slate-700/80 shadow-inner">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      defaultValue={stem.volume}
+                      onInput={(e) => {
+                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        globalAudioEngine.setStemVolume(stem.id, val);
+                      }}
+                      onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
+                      className="w-36 sm:w-44 h-3 -rotate-90 origin-center cursor-pointer accent-sky-400"
+                      title={`Volume: ${Math.round(stem.volume * 100)}%`}
+                    />
+                  </div>
+
+                  {/* Vertical LED VU Meter */}
+                  <div className="w-2.5 h-36 sm:h-44 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
+                    <div
+                      ref={(el) => {
+                        meterRefs.current[stem.id] = el;
+                      }}
+                      className="w-full rounded-full"
+                      style={{
+                        height: '0%',
+                        backgroundColor: '#10b981',
+                        transition: 'none',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
