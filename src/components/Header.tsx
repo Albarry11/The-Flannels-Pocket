@@ -21,6 +21,7 @@ interface HeaderProps {
   activeSoloNames: string[];
   onClearAllSolos: () => void;
   isNavOpen?: boolean;
+  isNavLocked?: boolean;
   onToggleNav?: () => void;
   wallpaperName?: string;
   onCycleWallpaper?: () => void;
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeSoloNames,
   onClearAllSolos,
   isNavOpen = true,
+  isNavLocked = false,
   onToggleNav,
   wallpaperName,
   onCycleWallpaper,
@@ -95,8 +97,18 @@ export const Header: React.FC<HeaderProps> = ({
         {onToggleNav && (
           <button
             onClick={onToggleNav}
-            className="p-1.5 rounded-full bg-white/80 hover:bg-white text-sky-900 border border-sky-200 shadow-xs transition active:scale-95"
-            title={isNavOpen ? 'Sembunyikan Sidebar' : 'Tampilkan Sidebar'}
+            className={`p-1.5 rounded-full transition active:scale-95 border ${
+              isNavOpen && isNavLocked
+                ? 'bg-cyan-500 text-white border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.4)]'
+                : 'bg-white/80 hover:bg-white text-sky-900 border-sky-200/80 shadow-xs'
+            }`}
+            title={
+              isNavOpen
+                ? isNavLocked
+                  ? 'Sidebar Terkunci (Klik untuk Tutup)'
+                  : 'Sembunyikan Sidebar'
+                : 'Buka & Kunci Sidebar'
+            }
             aria-label={isNavOpen ? 'Sembunyikan navigasi samping' : 'Tampilkan navigasi samping'}
           >
             {isNavOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}

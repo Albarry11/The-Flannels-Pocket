@@ -114,12 +114,33 @@ export function App() {
     setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
   };
 
-  // Side navbar auto-hide: 3s after cursor leaves, but delayed until user first interacts with it
-  const [hasInteractedWithNav, setHasInteractedWithNav] = useState<boolean>(false);
+  // Side navbar flow:
+  // - If opened via button: LOCKED open (never auto-hides)
+  // - If opened via left-edge hover: peek mode (auto-closes 2.5s after cursor leaves)
+  const [isNavLocked, setIsNavLocked] = useState<boolean>(true);
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const handleToggleNavButton = () => {
+    if (isNavOpen) {
+      setIsNavOpen(false);
+      setIsNavLocked(false);
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    } else {
+      setIsNavOpen(true);
+      setIsNavLocked(true); // Button lock mode
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    }
+  };
+
+  const handleLeftEdgeHover = () => {
+    if (!isNavOpen) {
+      setIsNavOpen(true);
+      setIsNavLocked(false); // Peek mode
+    }
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+  };
+
   const handleNavMouseEnter = () => {
-    setHasInteractedWithNav(true);
     if (navTimerRef.current) {
       clearTimeout(navTimerRef.current);
       navTimerRef.current = null;
@@ -127,20 +148,22 @@ export function App() {
   };
 
   const handleNavMouseLeave = () => {
-    if (!hasInteractedWithNav) return;
+    // Only auto-hide if NOT locked
+    if (isNavLocked) return;
     if (navTimerRef.current) clearTimeout(navTimerRef.current);
     navTimerRef.current = setTimeout(() => {
       setIsNavOpen(false);
-    }, 3000);
+    }, 2500);
   };
 
   const handleSelectNavTab = (tab: ActiveNavTab) => {
     setActiveTab(tab);
-    setHasInteractedWithNav(true);
-    if (navTimerRef.current) clearTimeout(navTimerRef.current);
-    navTimerRef.current = setTimeout(() => {
-      setIsNavOpen(false);
-    }, 3000);
+    if (!isNavLocked) {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+      navTimerRef.current = setTimeout(() => {
+        setIsNavOpen(false);
+      }, 1500);
+    }
   };
 
   // Load song library on mount - Cloud-First automatic fetch
@@ -603,22 +626,16 @@ export function App() {
         />
         {/* Soft authentic Aero sky tint overlay */}
         <div className="absolute inset-0 bg-sky-950/15" />
-
-        {/* Grassy Meadow Foreground from Frutiger Aero Archive */}
-        <img
-          src="/aero-assets/grassy-foreground.webp"
-          alt=""
-          className="absolute -bottom-6 left-0 right-0 w-full object-cover opacity-60 pointer-events-none z-0 select-none max-h-36 sm:max-h-48"
-        />
       </div>
 
-      {/* Decorative Authentic Frutiger Aero Water Dew Droplets on Screen Glass */}
-      <div className="water-drop top-14 right-36" style={{ width: '22px', height: '22px' }} />
-      <div className="water-drop top-32 right-14" style={{ width: '15px', height: '15px' }} />
-      <div className="water-drop top-16 left-72" style={{ width: '18px', height: '18px' }} />
-      <div className="water-drop top-56 left-28" style={{ width: '12px', height: '12px' }} />
-      <div className="water-drop bottom-40 right-64" style={{ width: '24px', height: '24px' }} />
-      <div className="water-drop bottom-28 left-80" style={{ width: '16px', height: '16px' }} />
+      {/* Invisible Left Edge Hover Sensor to peek sidebar when hidden */}
+      {!isNavOpen && (
+        <div
+          onMouseEnter={handleLeftEdgeHover}
+          className="fixed left-0 top-12 bottom-20 w-4 z-40 cursor-e-resize hover:bg-cyan-400/20 transition-all pointer-events-auto"
+          title="Geser kursor ke sini untuk membuka menu samping"
+        />
+      )}
 
       {/* 1. Full-Width Continuous Windows Vista / Aero Header */}
       <Header
@@ -626,10 +643,8 @@ export function App() {
         activeSoloNames={activeSoloNames}
         onClearAllSolos={handleClearAllSolos}
         isNavOpen={isNavOpen}
-        onToggleNav={() => {
-          setHasInteractedWithNav(true);
-          setIsNavOpen(!isNavOpen);
-        }}
+        isNavLocked={isNavLocked}
+        onToggleNav={handleToggleNavButton}
         wallpaperName={VISTA_WALLPAPERS[wallpaperIndex]?.name}
         onCycleWallpaper={handleCycleWallpaper}
         isAdmin={isAdmin}
@@ -722,9 +737,8 @@ export function App() {
           </div>
         </aside>
 
-        {/* Main View: Padded at bottom so player dock never obstructs it */}
-        {/* Main Workspace Area - Responsive bottom spacing */}
-        <main className="flex-1 min-h-0 p-1.5 sm:p-3 lg:p-4 pb-36 md:pb-16 overflow-hidden flex flex-col">
+        {/* Main Workspace Area - Flush bottom directly above master player dock */}
+        <main className="flex-1 min-h-0 p-1.5 sm:p-3 lg:p-4 pb-1 overflow-hidden flex flex-col">
           {activeTab === 'mixer' && (
             currentSong && currentSong.stems.length > 0 ? (
               <VerticalStemMixer
@@ -867,8 +881,8 @@ export function App() {
         onMetronomeBpmChange={handleMetronomeBpmChange}
       />
 
-      {/* 4. Mobile Bottom Navigation Bar (< md) - Frutiger Aero Light Glass */}
-      <nav className="fixed bottom-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-2xl border-t border-white/90 flex items-center justify-around z-50 md:hidden px-2 shadow-[0_-4px_20px_rgba(2,132,199,0.15)] pb-safe">
+      {/* 4. Mobile Bottom Navigation Bar (< md) - Modern iOS Liquid Glass */}
+      <nav className="relative flex-shrink-0 w-full h-14 bg-white/60 backdrop-blur-2xl border-t border-white/85 flex items-center justify-around z-30 md:hidden px-2 shadow-[0_-4px_20px_rgba(2,132,199,0.12)] pb-safe">
         <button
           onClick={() => setActiveTab('mixer')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition ${

@@ -135,11 +135,9 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   };
 
   return (
-    <div className="fixed bottom-14 md:bottom-0 left-0 right-0 w-full z-40 bg-white/70 backdrop-blur-2xl border-t border-white/80 shadow-[0_-8px_32px_rgba(2,132,199,0.18)] px-2 sm:px-6 py-2 transition-all">
-      {/* Top Specular Water Highlight */}
-      <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
-      <div className="absolute top-0 left-8 w-24 h-1 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-xs pointer-events-none" />
-      <div className="absolute top-0 right-8 w-24 h-1 bg-gradient-to-r from-transparent via-sky-400/40 to-transparent blur-xs pointer-events-none" />
+    <div className="relative flex-shrink-0 w-full z-30 bg-white/55 backdrop-blur-2xl border-t border-white/85 shadow-[0_-8px_32px_rgba(2,132,199,0.12)] px-2 sm:px-6 py-1.5 sm:py-2 transition-all">
+      {/* Top Specular Liquid Edge Line */}
+      <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent pointer-events-none" />
 
       {/* Advanced Metronome Popover Panel */}
       {showAdvancedMetronome && (
