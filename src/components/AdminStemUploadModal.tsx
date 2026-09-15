@@ -42,7 +42,6 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
   const [guitarFile, setGuitarFile] = useState<File | null>(null);
   const [bassFile, setBassFile] = useState<File | null>(null);
   const [drumsFile, setDrumsFile] = useState<File | null>(null);
-  const [extraFiles, setExtraFiles] = useState<{ role: StemRole; name: string; file: File }[]>([]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressStatus, setProgressStatus] = useState('');
@@ -114,7 +113,6 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
     if (guitarFile) stemFilesList.push({ role: 'guitar', name: 'Guitar', file: guitarFile });
     if (bassFile) stemFilesList.push({ role: 'bass', name: 'Bass', file: bassFile });
     if (drumsFile) stemFilesList.push({ role: 'drums', name: 'Drums', file: drumsFile });
-    extraFiles.forEach((ef) => stemFilesList.push(ef));
 
     if (stemFilesList.length === 0) {
       alert('Masukkan minimal 1 berkas stem (Vocal, Guitar, Bass, atau Drums).');
