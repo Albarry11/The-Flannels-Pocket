@@ -688,7 +688,7 @@ export class AudioEngine {
       if (!nodes) return;
 
       let effectiveVol = stem.volume * headroomScale;
-      if (stem.muted || (anySolo && !stem.solo)) {
+      if (stem.muted || (anySolo && !stem.solo) || stem.role === 'other') {
         effectiveVol = 0;
       }
 

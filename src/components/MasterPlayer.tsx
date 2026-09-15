@@ -262,12 +262,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
       </div>
 
       {/* ================= 3-ZONE BALANCED DOCK WITH DEAD-CENTER PLAY BUTTON ================= */}
-      <div className="max-w-7xl mx-auto relative flex items-center justify-between min-h-[50px] w-full">
+      <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 min-h-[50px] w-full">
         
-        {/* ZONE 1 (Left Wing): Track Info + Metronome + Duration Display directly flanking Center Pod */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 justify-start pr-2 z-10">
+        {/* ZONE 1 (Left Wing): Track Info + Duration Display strictly flanking the Left of the Center Pod */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-between pr-1 overflow-hidden">
           {/* Track Info Plate */}
-          <div className="flex items-center gap-2 min-w-0 max-w-[180px] sm:max-w-[240px] flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[220px] sm:max-w-[280px]">
             {currentSong ? (
               <>
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,40,90,0.25)] border border-white/90 flex-shrink-0 bg-sky-100 relative group">
@@ -307,8 +307,95 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             )}
           </div>
 
-          {/* Metronome DSP Pod (Repositioned to the left of the center pod) */}
-          <div className="hidden md:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          {/* Duration Display: Exactly flanking the Left of the Center Pod! */}
+          <div className="text-[10px] sm:text-[11px] font-mono text-[#002963] font-black tracking-wider bg-white/80 px-2 py-0.5 rounded-md border border-sky-300/60 shadow-2xs flex-shrink-0 whitespace-nowrap">
+            {isAudioLoading ? (
+              <span className="text-sky-700 font-extrabold animate-pulse">
+                {audioLoadingText || 'Memuat...'}
+              </span>
+            ) : (
+              <span>
+                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ZONE 2 (Center Pod): 100% DEAD CENTER OF PAGE WITH INTEGRATED VOLUME */}
+        <div className="flex items-center justify-center flex-shrink-0 mx-auto">
+          <div className="wmp-control-pod">
+            {/* Left Wing inside Pod - Stop & Prev */}
+            <div className="flex items-center justify-end gap-1.5 flex-1 pr-1">
+              <button
+                onClick={onStop}
+                className="wmp-btn-stop"
+                title="Stop"
+                aria-label="Stop Pemutaran"
+              />
+              <button
+                onClick={() => onSeek(Math.max(0, currentTime - 10))}
+                className="wmp-btn-prev"
+                title="Mundur 10 Detik"
+                aria-label="Mundur 10 Detik"
+              />
+            </div>
+
+            {/* Center Play Orb - MATHEMATICALLY DEAD CENTER (50% of Pod & 50% of Screen) */}
+            <div className="relative flex items-center justify-center flex-shrink-0 mx-1">
+              {isAudioLoading ? (
+                <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              ) : (
+                <button
+                  onClick={isPlaying ? onPause : onPlay}
+                  className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
+                  title={isPlaying ? 'Pause' : 'Play'}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                />
+              )}
+            </div>
+
+            {/* Right Wing inside Pod - Next & Volume Control */}
+            <div className="flex items-center justify-start gap-1 flex-1 pl-1">
+              <button
+                onClick={() => onSeek(Math.min(duration, currentTime + 10))}
+                className="wmp-btn-next"
+                title="Maju 10 Detik"
+                aria-label="Maju 10 Detik"
+              />
+
+              {/* Integrated Volume Slider & Mute Toggle inside Center Pod */}
+              <div className="flex items-center gap-1 bg-white/70 px-1.5 py-0.5 rounded-full border border-sky-300/60 shadow-2xs">
+                <button
+                  onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
+                  className={`wmp-btn-vol ${volIconClass}`}
+                  title={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
+                  aria-label={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={masterVolume}
+                  onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
+                  className="w-12 sm:w-14 h-1.5 cursor-pointer accent-[#1170b8]"
+                  title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
+                  aria-label="Volume audio master"
+                />
+                <span className="text-[9px] font-mono text-[#002963] font-black w-5 text-right hidden sm:inline">
+                  {Math.round(masterVolume * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ZONE 3 (Right Wing): Metronome + Pitch + Speed + A-B Loop + Clear Sound */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end pl-1 overflow-hidden">
+          {/* Metronome DSP Pod */}
+          <div className="hidden sm:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <button
               onClick={onToggleMetronomeClick}
               className={`flex items-center gap-1 px-1.5 py-0.2 rounded-full font-bold transition text-[10px] ${
@@ -345,96 +432,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <Settings2 className="w-3 h-3" />
             </button>
           </div>
-
-          {/* Duration Display: Exactly flanking the Left of the Center Pod! */}
-          <div className="text-[10px] sm:text-[11px] font-mono text-[#002963] font-black tracking-wider bg-white/80 px-2 py-0.5 rounded-md border border-sky-300/60 shadow-2xs flex-shrink-0 ml-auto">
-            {isAudioLoading ? (
-              <span className="text-sky-700 font-extrabold animate-pulse">
-                {audioLoadingText || 'Memuat...'}
-              </span>
-            ) : (
-              <span>
-                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ZONE 2 (Center Pod): 100% DEAD CENTER OF PAGE WITH INTEGRATED VOLUME */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-none">
-          <div className="pointer-events-auto">
-            <div className="wmp-control-pod">
-              {/* Left Wing inside Pod - Stop & Prev */}
-              <div className="flex items-center justify-end gap-1.5 flex-1 pr-1">
-                <button
-                  onClick={onStop}
-                  className="wmp-btn-stop"
-                  title="Stop"
-                  aria-label="Stop Pemutaran"
-                />
-                <button
-                  onClick={() => onSeek(Math.max(0, currentTime - 10))}
-                  className="wmp-btn-prev"
-                  title="Mundur 10 Detik"
-                  aria-label="Mundur 10 Detik"
-                />
-              </div>
-
-              {/* Center Play Orb - MATHEMATICALLY DEAD CENTER (50% of Pod & 50% of Screen) */}
-              <div className="relative flex items-center justify-center flex-shrink-0 mx-1">
-                {isAudioLoading ? (
-                  <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  </div>
-                ) : (
-                  <button
-                    onClick={isPlaying ? onPause : onPlay}
-                    className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
-                    title={isPlaying ? 'Pause' : 'Play'}
-                    aria-label={isPlaying ? 'Pause' : 'Play'}
-                  />
-                )}
-              </div>
-
-              {/* Right Wing inside Pod - Next & Volume Control */}
-              <div className="flex items-center justify-start gap-1 flex-1 pl-1">
-                <button
-                  onClick={() => onSeek(Math.min(duration, currentTime + 10))}
-                  className="wmp-btn-next"
-                  title="Maju 10 Detik"
-                  aria-label="Maju 10 Detik"
-                />
-
-                {/* Integrated Volume Slider & Mute Toggle inside Center Pod */}
-                <div className="flex items-center gap-1 bg-white/70 px-1.5 py-0.5 rounded-full border border-sky-300/60 shadow-2xs">
-                  <button
-                    onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
-                    className={`wmp-btn-vol ${volIconClass}`}
-                    title={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
-                    aria-label={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
-                  />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={masterVolume}
-                    onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
-                    className="w-12 sm:w-14 h-1.5 cursor-pointer accent-[#1170b8]"
-                    title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
-                    aria-label="Volume audio master"
-                  />
-                  <span className="text-[9px] font-mono text-[#002963] font-black w-5 text-right hidden sm:inline">
-                    {Math.round(masterVolume * 100)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ZONE 3 (Right Wing): Pitch + Speed + A-B Loop + Clear Sound */}
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 justify-end pl-2 z-10">
           {/* Pitch Shifter DSP Pod */}
           <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <Music2 className="w-3 h-3 text-pink-600" />

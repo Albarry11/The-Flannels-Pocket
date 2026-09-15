@@ -100,8 +100,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   onResetAllStems,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
-  // Show ALL stems (including backing / other) so no phantom tracks leak audio in the background!
-  const visibleStems = stems;
+  // Pure 4-stem band mix: Vocal, Guitar, Bass, Drums only (exclude any 'other' stem)
+  const visibleStems = stems.filter((s) => s.role !== 'other');
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const mobileMeterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const visibleStemIds = visibleStems.map((s) => s.id).join('|');
@@ -141,45 +141,45 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   }, [visibleStemIds]);
 
   return (
-    <div className="flex flex-col gap-2 flex-1 h-full min-h-0 max-w-6xl mx-auto w-full select-none pb-1">
-      {/* Top Bar: Authentic Frutiger Aero Aqua Gel Quick Access Buttons */}
-      <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 rounded-2xl bg-white/35 border border-white/75 backdrop-blur-2xl saturate-[190%] shadow-[0_8px_32px_rgba(2,132,199,0.1),inset_0_1.5px_0_rgba(255,255,255,0.95)] gap-2 flex-shrink-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
-          <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-sky-950 flex items-center gap-1 flex-shrink-0">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-            <span>Quick Kulik:</span>
+    <div className="flex flex-col gap-1.5 flex-1 h-full min-h-0 max-w-6xl mx-auto w-full select-none pb-0.5">
+      {/* Top Bar: Compact Sleek Frutiger Aero Quick Access Bar */}
+      <div className="flex items-center justify-between px-2.5 sm:px-3 py-1 rounded-xl bg-white/35 border border-white/75 backdrop-blur-2xl saturate-[190%] shadow-xs gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.2">
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-sky-950 flex items-center gap-1 flex-shrink-0">
+            <Sparkles className="w-3 h-3 text-cyan-600" />
+            <span>Quick:</span>
           </span>
 
           <button
             onClick={onSoloVocalOnly}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-rose-950 bg-gradient-to-b from-rose-200/80 via-rose-300/75 to-rose-400/85 backdrop-blur-md border border-rose-200/90 shadow-[0_2px_8px_rgba(244,63,94,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black text-rose-950 bg-gradient-to-b from-rose-200/80 via-rose-300/75 to-rose-400/85 backdrop-blur-md border border-rose-200/90 shadow-2xs hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
-            🎤 Vokal Solo
+            🎤 Vokal
           </button>
           <button
             onClick={onSoloGuitarOnly}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-amber-950 bg-gradient-to-b from-amber-200/80 via-amber-300/75 to-amber-400/85 backdrop-blur-md border border-amber-200/90 shadow-[0_2px_8px_rgba(245,158,11,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black text-amber-950 bg-gradient-to-b from-amber-200/80 via-amber-300/75 to-amber-400/85 backdrop-blur-md border border-amber-200/90 shadow-2xs hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
-            🎸 Gitar Solo
+            🎸 Gitar
           </button>
           <button
             onClick={onSoloRhythmSection}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-cyan-950 bg-gradient-to-b from-cyan-200/80 via-sky-300/75 to-cyan-400/85 backdrop-blur-md border border-cyan-200/90 shadow-[0_2px_8px_rgba(6,182,212,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-95 transition flex-shrink-0"
+            className="px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black text-cyan-950 bg-gradient-to-b from-cyan-200/80 via-sky-300/75 to-cyan-400/85 backdrop-blur-md border border-cyan-200/90 shadow-2xs hover:brightness-105 active:scale-95 transition flex-shrink-0"
           >
-            🥁 Bass + Drums
+            🥁 Bass+Drum
           </button>
           <button
             onClick={onResetAllStems}
-            className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black text-slate-800 bg-gradient-to-b from-white/80 via-white/60 to-slate-200/75 backdrop-blur-md border border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] hover:brightness-105 active:scale-95 transition flex items-center gap-1 flex-shrink-0"
+            className="px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black text-slate-800 bg-gradient-to-b from-white/80 via-white/60 to-slate-200/75 backdrop-blur-md border border-white/90 shadow-2xs hover:brightness-105 active:scale-95 transition flex items-center gap-1 flex-shrink-0"
           >
-            <RotateCcw className="w-3 h-3 text-slate-600" />
-            <span>Unmute All</span>
+            <RotateCcw className="w-2.5 h-2.5 text-slate-600" />
+            <span>Unmute</span>
           </button>
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-          <span className="text-[10px] font-mono font-bold text-sky-900 px-2 py-0.5 rounded-md bg-white/60 backdrop-blur-md border border-sky-200/80">
-            SSL 4000 E-Series Emulation • 4 Discrete Stems
+        <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[9px] font-mono font-bold text-sky-900 px-1.5 py-0.2 rounded bg-white/60 backdrop-blur-md border border-sky-200/80">
+            SSL 4000 E • 4 Discrete Stems
           </span>
         </div>
       </div>

@@ -112,12 +112,12 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-3xl p-4 sm:p-6 shadow-xl">
-      {/* Top Header Tilikan (Point 8) */}
-      <div className="flex items-center justify-between border-b border-sky-200/60 pb-3 mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/30 text-white">
-            <Brain className="w-5 h-5" />
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-2 sm:p-3.5 shadow-lg">
+      {/* Top Header Tilikan - Compact Sleek Submenu Header */}
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-2 flex-wrap gap-1.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-xs text-white">
+            <Brain className="w-3.5 h-3.5" />
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-black text-[#0f2942] tracking-tight leading-tight">
@@ -130,12 +130,12 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
         </div>
 
         {/* Tab Buttons & Refresh */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {activeTab === 'coaching' && coaching && (
             <button
               onClick={() => runCoachingAnalysis(true)}
               disabled={isLoadingCoaching}
-              className="px-3 py-1 rounded-full bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-xs font-bold transition flex items-center gap-1 shadow-xs"
+              className="px-2.5 py-0.5 rounded-full bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-[10px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
               title="Analisis ulang aransemen via Gemini"
             >
               <RefreshCw className={`w-3 h-3 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
@@ -143,10 +143,10 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
             </button>
           )}
 
-          <div className="flex bg-white/80 p-1 rounded-full border border-sky-200/80 text-xs font-bold shadow-xs">
+          <div className="flex bg-white/80 p-0.5 rounded-full border border-sky-200/80 text-[10px] sm:text-[11px] font-bold shadow-2xs">
             <button
               onClick={() => setActiveTab('coaching')}
-              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 ${
                 activeTab === 'coaching'
                   ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
                   : 'text-sky-900 hover:text-sky-600'

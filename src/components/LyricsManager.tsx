@@ -188,39 +188,39 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
   const lines = lyricsText.split('\n');
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-3xl p-4 sm:p-6 shadow-xl relative">
-      {/* 1. Header Toolbar */}
-      <div className="flex items-center justify-between border-b border-sky-200/60 pb-3 mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-700 flex items-center justify-center text-white shadow-md shadow-indigo-500/30">
-            <FileText className="w-5 h-5" />
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-2 sm:p-3.5 shadow-lg relative">
+      {/* 1. Header Toolbar - Compact Sleek Submenu Header */}
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-2 flex-wrap gap-1.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-blue-700 flex items-center justify-center text-white shadow-xs">
+            <FileText className="w-3.5 h-3.5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-[#0f2942] tracking-tight flex items-center gap-2">
+            <h2 className="text-xs sm:text-sm font-black text-[#0f2942] tracking-tight flex items-center gap-1.5 leading-tight">
               <span>Chord & Lirik Lagu</span>
               {pitchSemitones !== 0 && (
-                <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                <span className="text-[9px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded-full">
                   Transpose: {pitchSemitones > 0 ? `+${pitchSemitones}` : pitchSemitones}
                 </span>
               )}
             </h2>
-            <p className="text-xs text-sky-800 font-medium truncate max-w-xs sm:max-w-md">
-              {currentSong.title} by {currentSong.artist} • Standar Ultimate Guitar / Chord Tabs
+            <p className="text-[9px] sm:text-[10px] text-sky-800 font-medium truncate max-w-xs sm:max-w-md leading-none mt-0.5">
+              {currentSong.title} by {currentSong.artist} • Standar Chord Tabs
             </p>
           </div>
         </div>
 
         {/* View Mode Switcher & Auto-Scroll */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {viewMode === 'songbook' && (
-            <label className="hidden sm:flex items-center gap-1.5 text-xs text-sky-900 font-bold bg-white/70 px-3 py-1.5 rounded-full border border-sky-200 cursor-pointer select-none">
+            <label className="hidden sm:flex items-center gap-1 text-[10px] sm:text-[11px] text-sky-900 font-bold bg-white/70 px-2.5 py-1 rounded-full border border-sky-200 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={autoScroll}
                 onChange={(e) => setAutoScroll(e.target.checked)}
                 className="rounded text-sky-600 focus:ring-0"
               />
-              <ArrowDown className="w-3.5 h-3.5 text-sky-600" />
+              <ArrowDown className="w-3 h-3 text-sky-600" />
               <span>Auto-Scroll</span>
             </label>
           )}
