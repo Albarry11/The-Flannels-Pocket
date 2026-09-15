@@ -262,158 +262,53 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
       </div>
 
       {/* ================= 3-ZONE BALANCED DOCK WITH DEAD-CENTER PLAY BUTTON ================= */}
-      <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 min-h-[52px]">
+      <div className="max-w-7xl mx-auto relative flex items-center justify-between min-h-[50px] w-full">
         
-        {/* ZONE 1 (Left 1fr): WMP 11 Now Playing Track Plate */}
-        <div className="flex items-center gap-2.5 min-w-0 justify-self-start">
-          {currentSong ? (
-            <>
-              {/* WMP Album Art with Metallic Beveled Frame */}
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,40,90,0.25)] border border-white/90 flex-shrink-0 bg-sky-100 relative group">
-                {currentSong.artworkUrl ? (
-                  <img
-                    src={currentSong.artworkUrl}
-                    alt={currentSong.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white">
-                    <Disc className="w-5 h-5 animate-spin" />
-                  </div>
-                )}
-                <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-              </div>
-
-              {/* Title, Artist, & Badges */}
-              <div className="min-w-0 flex-1">
-                <h4 className="text-xs sm:text-sm font-black text-[#002963] truncate tracking-tight leading-tight">
-                  {currentSong.title}
-                </h4>
-                <p className="text-[10px] sm:text-xs text-sky-800 font-bold truncate">
-                  {currentSong.artist}
-                </p>
-                <div className="flex items-center gap-1 mt-0.5 text-[9px] font-mono">
-                  <span className="px-1.5 py-0.2 rounded-md bg-white/80 border border-sky-300/80 text-sky-900 font-black shadow-2xs">
-                    {currentSong.bpm} BPM
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100/90 border border-amber-300 text-amber-950 font-black shadow-2xs">
-                    {currentSong.originalKey}
-                  </span>
+        {/* ZONE 1 (Left Wing): Track Info + Metronome + Duration Display directly flanking Center Pod */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 justify-start pr-2 z-10">
+          {/* Track Info Plate */}
+          <div className="flex items-center gap-2 min-w-0 max-w-[180px] sm:max-w-[240px] flex-shrink-0">
+            {currentSong ? (
+              <>
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,40,90,0.25)] border border-white/90 flex-shrink-0 bg-sky-100 relative group">
+                  {currentSong.artworkUrl ? (
+                    <img
+                      src={currentSong.artworkUrl}
+                      alt={currentSong.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white">
+                      <Disc className="w-5 h-5 animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
                 </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-[11px] text-slate-500 font-semibold italic truncate">Belum ada lagu yang dimuat</div>
-          )}
-        </div>
 
-        {/* ZONE 2 (Center auto): Symmetrical WMP 11 Transport Capsule Pod */}
-        <div className="flex flex-col items-center justify-center justify-self-center">
-          <div className="wmp-control-pod">
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 w-full">
-              {/* Shuffle / A-B Loop Left Button */}
-              <button
-                onClick={onToggleLoop}
-                className={`wmp-btn-shuffle ${loopRegion.enabled ? 'active' : ''}`}
-                title={loopRegion.enabled ? 'Loop A-B Aktif (Klik untuk Matikan)' : 'Aktifkan Loop A-B'}
-                aria-label="Loop A-B"
-              />
-
-              {/* Stop Button */}
-              <button
-                onClick={onStop}
-                className="wmp-btn-stop"
-                title="Stop"
-                aria-label="Stop Pemutaran"
-              />
-
-              {/* Previous Track / Seek -10s Button */}
-              <button
-                onClick={() => onSeek(Math.max(0, currentTime - 10))}
-                className="wmp-btn-prev"
-                title="Mundur 10 Detik"
-                aria-label="Mundur 10 Detik"
-              />
-
-              {/* Play / Pause Blue Aero Orb Button (Dead Center) */}
-              <div className="relative flex items-center justify-center flex-shrink-0">
-                {isAudioLoading ? (
-                  <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs sm:text-sm font-black text-[#002963] truncate tracking-tight leading-tight">
+                    {currentSong.title}
+                  </h4>
+                  <p className="text-[10px] sm:text-xs text-sky-800 font-bold truncate">
+                    {currentSong.artist}
+                  </p>
+                  <div className="flex items-center gap-1 mt-0.5 text-[9px] font-mono">
+                    <span className="px-1.5 py-0.2 rounded-md bg-white/80 border border-sky-300/80 text-sky-900 font-black shadow-2xs">
+                      {currentSong.bpm} BPM
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-amber-100/90 border border-amber-300 text-amber-950 font-black shadow-2xs">
+                      {currentSong.originalKey}
+                    </span>
                   </div>
-                ) : (
-                  <button
-                    onClick={isPlaying ? onPause : onPlay}
-                    className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
-                    title={isPlaying ? 'Pause' : 'Play'}
-                    aria-label={isPlaying ? 'Pause' : 'Play'}
-                  />
-                )}
-              </div>
-
-              {/* Next Track / Seek +10s Button */}
-              <button
-                onClick={() => onSeek(Math.min(duration, currentTime + 10))}
-                className="wmp-btn-next"
-                title="Maju 10 Detik"
-                aria-label="Maju 10 Detik"
-              />
-
-              {/* Repeat Button */}
-              <button
-                onClick={onToggleLoop}
-                className={`wmp-btn-repeat ${loopRegion.enabled ? 'active' : ''}`}
-                title="Repeat Lagu"
-                aria-label="Repeat Lagu"
-              />
-            </div>
-          </div>
-
-          {/* Symmetrical Time Indicator under Pod */}
-          <div className="text-[11px] font-mono text-[#002963] font-black pt-0.5 min-h-[14px] flex items-center justify-center tracking-wider">
-            {isAudioLoading ? (
-              <span className="text-sky-700 font-extrabold animate-pulse">
-                {audioLoadingText || 'Mengunduh audio stem dari cloud...'}
-              </span>
+                </div>
+              </>
             ) : (
-              <span>
-                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ZONE 3 (Right 1fr): Unified DSP, Enhancements & Volume Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 justify-self-end">
-          {/* A-B Markers Pill */}
-          <div className="hidden xl:flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-[10px] font-mono font-black text-sky-950">
-            <button
-              onClick={onSetLoopStart}
-              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
-              title="Tandai Titik Awal (A)"
-            >
-              A
-            </button>
-            <button
-              onClick={onSetLoopEnd}
-              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
-              title="Tandai Titik Akhir (B)"
-            >
-              B
-            </button>
-            {loopRegion.enabled && (
-              <button
-                onClick={onClearLoop}
-                className="px-1 text-rose-600 hover:font-black"
-                title="Hapus loop A-B"
-              >
-                ✕
-              </button>
+              <div className="text-[11px] text-slate-500 font-semibold italic truncate">Belum ada lagu yang dimuat</div>
             )}
           </div>
 
-          {/* Metronome DSP Pod */}
-          <div className="flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+          {/* Metronome DSP Pod (Repositioned to the left of the center pod) */}
+          <div className="hidden md:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <button
               onClick={onToggleMetronomeClick}
               className={`flex items-center gap-1 px-1.5 py-0.2 rounded-full font-bold transition text-[10px] ${
@@ -426,7 +321,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <Radio className="w-3 h-3 text-amber-600" />
               <span className="font-mono text-[10px]">{metronomeBpm}</span>
             </button>
-            <div className="hidden sm:flex items-center gap-0.5 font-mono text-sky-950 font-bold border-l border-sky-300/80 pl-1">
+            <div className="flex items-center gap-0.5 font-mono text-sky-950 font-bold border-l border-sky-300/80 pl-1">
               <button
                 onClick={() => onMetronomeBpmChange(metronomeBpm - 1)}
                 className="w-4 h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
@@ -451,8 +346,97 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </button>
           </div>
 
+          {/* Duration Display: Exactly flanking the Left of the Center Pod! */}
+          <div className="text-[10px] sm:text-[11px] font-mono text-[#002963] font-black tracking-wider bg-white/80 px-2 py-0.5 rounded-md border border-sky-300/60 shadow-2xs flex-shrink-0 ml-auto">
+            {isAudioLoading ? (
+              <span className="text-sky-700 font-extrabold animate-pulse">
+                {audioLoadingText || 'Memuat...'}
+              </span>
+            ) : (
+              <span>
+                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ZONE 2 (Center Pod): 100% DEAD CENTER OF PAGE WITH INTEGRATED VOLUME */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto">
+            <div className="wmp-control-pod">
+              {/* Left Wing inside Pod - Stop & Prev */}
+              <div className="flex items-center justify-end gap-1.5 flex-1 pr-1">
+                <button
+                  onClick={onStop}
+                  className="wmp-btn-stop"
+                  title="Stop"
+                  aria-label="Stop Pemutaran"
+                />
+                <button
+                  onClick={() => onSeek(Math.max(0, currentTime - 10))}
+                  className="wmp-btn-prev"
+                  title="Mundur 10 Detik"
+                  aria-label="Mundur 10 Detik"
+                />
+              </div>
+
+              {/* Center Play Orb - MATHEMATICALLY DEAD CENTER (50% of Pod & 50% of Screen) */}
+              <div className="relative flex items-center justify-center flex-shrink-0 mx-1">
+                {isAudioLoading ? (
+                  <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={isPlaying ? onPause : onPlay}
+                    className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
+                    title={isPlaying ? 'Pause' : 'Play'}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  />
+                )}
+              </div>
+
+              {/* Right Wing inside Pod - Next & Volume Control */}
+              <div className="flex items-center justify-start gap-1 flex-1 pl-1">
+                <button
+                  onClick={() => onSeek(Math.min(duration, currentTime + 10))}
+                  className="wmp-btn-next"
+                  title="Maju 10 Detik"
+                  aria-label="Maju 10 Detik"
+                />
+
+                {/* Integrated Volume Slider & Mute Toggle inside Center Pod */}
+                <div className="flex items-center gap-1 bg-white/70 px-1.5 py-0.5 rounded-full border border-sky-300/60 shadow-2xs">
+                  <button
+                    onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
+                    className={`wmp-btn-vol ${volIconClass}`}
+                    title={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
+                    aria-label={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={masterVolume}
+                    onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
+                    className="w-12 sm:w-14 h-1.5 cursor-pointer accent-[#1170b8]"
+                    title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
+                    aria-label="Volume audio master"
+                  />
+                  <span className="text-[9px] font-mono text-[#002963] font-black w-5 text-right hidden sm:inline">
+                    {Math.round(masterVolume * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ZONE 3 (Right Wing): Pitch + Speed + A-B Loop + Clear Sound */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 justify-end pl-2 z-10">
           {/* Pitch Shifter DSP Pod */}
-          <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+          <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <Music2 className="w-3 h-3 text-pink-600" />
             <button
               onClick={() => onPitchChange(pitchSemitones - 1)}
@@ -488,7 +472,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Play Speed Capsule */}
-          <div className="hidden md:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+          <div className="hidden sm:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <Gauge className="w-3 h-3 text-sky-600" />
             <select
               value={speed}
@@ -500,6 +484,41 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <option value={1.0}>1.0x</option>
               <option value={1.25}>1.25x</option>
             </select>
+          </div>
+
+          {/* Repeat / A-B Loop Combined Capsule */}
+          <div className="flex items-center gap-0.5 bg-white/85 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+            <button
+              onClick={onToggleLoop}
+              className={`wmp-btn-repeat ${loopRegion.enabled ? 'active' : ''}`}
+              title="Repeat Lagu"
+              aria-label="Repeat Lagu"
+            />
+            <div className="hidden sm:flex items-center gap-0.5 border-l border-sky-300/80 pl-1 text-[9px] font-mono font-black text-sky-950">
+              <button
+                onClick={onSetLoopStart}
+                className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+                title="Tandai Titik Awal (A)"
+              >
+                A
+              </button>
+              <button
+                onClick={onSetLoopEnd}
+                className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+                title="Tandai Titik Akhir (B)"
+              >
+                B
+              </button>
+              {loopRegion.enabled && (
+                <button
+                  onClick={onClearLoop}
+                  className="px-1 text-rose-600 hover:font-black"
+                  title="Hapus loop A-B"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           {/* WMP 11 SRS WOW / Clear Sound Badge */}
@@ -523,30 +542,6 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               )}
             </button>
           )}
-
-          {/* WMP 11 Volume Fader & Mute */}
-          <div className="flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs flex-shrink-0">
-            <button
-              onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
-              className={`wmp-btn-vol ${volIconClass}`}
-              title={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
-              aria-label={masterVolume === 0 ? 'Unmute Volume' : 'Mute Volume'}
-            />
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={masterVolume}
-              onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
-              className="w-14 sm:w-18 h-1.5 cursor-pointer accent-[#1170b8]"
-              title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
-              aria-label="Volume audio master"
-            />
-            <span className="text-[10px] font-mono text-[#002963] font-black w-6 text-right">
-              {Math.round(masterVolume * 100)}%
-            </span>
-          </div>
         </div>
 
       </div>

@@ -281,7 +281,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5 pt-1">
             {requests.map((req, index) => {
               const hasUpvoted = req.upvotedBy.includes(clientId);
               const isFulfilled = req.status === 'fulfilled';
@@ -289,7 +289,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
               return (
                 <div
                   key={req.id}
-                  className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
+                  className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
                     isFulfilled
                       ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
                       : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
@@ -297,8 +297,8 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                 >
                   {/* Top Section */}
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="font-mono font-black text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="font-mono font-black text-[11px] sm:text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
                         #{index + 1}
                       </span>
                       {isFulfilled ? (
@@ -312,36 +312,36 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
                         {req.artworkUrl ? (
                           <img src={req.artworkUrl} alt={req.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-sky-600">
-                            <Music className="w-6 h-6" />
+                            <Music className="w-5 h-5 sm:w-6 sm:h-6" />
                           </div>
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-extrabold text-[#0f2942] truncate tracking-tight" title={req.title}>
+                        <h4 className="text-xs sm:text-sm font-extrabold text-[#0f2942] truncate tracking-tight leading-tight" title={req.title}>
                           {req.title}
                         </h4>
-                        <p className="text-xs text-sky-800 font-semibold truncate" title={req.artist}>
+                        <p className="text-[11px] sm:text-xs text-sky-800 font-semibold truncate" title={req.artist}>
                           {req.artist}
                         </p>
-                        <p className="text-[10px] text-slate-600 truncate mt-0.5">
+                        <p className="text-[9px] sm:text-[10px] text-slate-600 truncate mt-0.5">
                           {req.album || 'Single'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 p-2 rounded-xl bg-sky-50/70 border border-sky-100 text-[11px] text-slate-600 space-y-0.5">
-                      <div className="font-bold text-sky-950 text-[11px] truncate">
+                    <div className="mt-2 p-1.5 rounded-lg sm:rounded-xl bg-sky-50/70 border border-sky-100 text-[10px] sm:text-[11px] text-slate-600 space-y-0.5">
+                      <div className="font-bold text-sky-950 text-[10px] sm:text-[11px] truncate">
                         Oleh: {req.requesterName}
                       </div>
                       {req.notes && (
-                        <p className="italic text-slate-500 text-[10px] truncate" title={req.notes}>
+                        <p className="italic text-slate-500 text-[9px] sm:text-[10px] truncate" title={req.notes}>
                           "{req.notes}"
                         </p>
                       )}

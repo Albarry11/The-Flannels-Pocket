@@ -14,8 +14,8 @@ interface VerticalStemMixerProps {
   onSoloGuitarOnly: () => void;
   onSoloRhythmSection: () => void;
   onResetAllStems: () => void;
-  onCycleEqPreset: (stemId: string) => void;
-  getEqPresetLabel: (stemId: string) => string;
+  onCycleEqPreset?: (stemId: string) => void;
+  getEqPresetLabel?: (stemId: string) => string;
 }
 
 const ROLE_CONFIG: Record<
@@ -98,8 +98,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
   onSoloGuitarOnly,
   onSoloRhythmSection,
   onResetAllStems,
-  onCycleEqPreset,
-  getEqPresetLabel,
 }) => {
   const anySoloActive = stems.some((s) => s.solo);
   // Show ALL stems (including backing / other) so no phantom tracks leak audio in the background!
@@ -423,8 +421,8 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </div>
               </div>
 
-              {/* 5. Bottom: Console Masking Tape Strip & EQ Preset Pill */}
-              <div className="w-full text-center pt-1 border-t border-slate-800 flex-shrink-0 flex flex-col items-center gap-1">
+              {/* 5. Bottom: Console Masking Tape Strip */}
+              <div className="w-full text-center pt-1 border-t border-slate-800/80 flex-shrink-0 flex flex-col items-center">
                 <div className="w-full bg-[#f6ecd2] border border-amber-300/80 px-1.5 py-0.5 shadow-sm rounded-xs flex items-center justify-between rotate-[-0.5deg]">
                   <span className="text-[8px] font-mono font-black text-slate-800 tracking-tighter uppercase truncate">
                     {roleInfo.tapeLabel}
@@ -433,16 +431,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                     {Math.round(stem.volume * 100)}%
                   </span>
                 </div>
-
-                <button
-                  onClick={() => onCycleEqPreset(stem.id)}
-                  className="w-full py-1 px-1 rounded-md text-[9px] font-extrabold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-sky-400/30 transition truncate active:scale-95 shadow-xs flex items-center justify-center gap-1"
-                  title="Ganti karakter EQ preset"
-                  aria-label="Ubah preset EQ stem"
-                >
-                  <Music className="w-2.5 h-2.5 text-cyan-400 flex-shrink-0" />
-                  <span className="truncate">{getEqPresetLabel(stem.id)}</span>
-                </button>
               </div>
             </div>
           );
@@ -490,11 +478,11 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 />
               </div>
 
-              {/* 2. Hardware Mute & Solo Push Buttons (Touch friendly 34px height) */}
-              <div className="grid grid-cols-2 gap-1 my-1.5 w-full">
+              {/* 2. Hardware Mute & Solo Push Buttons (Touch friendly 30px height) */}
+              <div className="grid grid-cols-2 gap-1 my-1 w-full">
                 <button
                   onClick={() => onToggleMute(stem.id)}
-                  className={`h-8 rounded-lg text-[10px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                  className={`h-7 rounded-lg text-[10px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
                     stem.muted
                       ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
                       : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -504,7 +492,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </button>
                 <button
                   onClick={() => onToggleSolo(stem.id)}
-                  className={`h-8 rounded-lg text-[10px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                  className={`h-7 rounded-lg text-[10px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
                     stem.solo
                       ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.7)]'
                       : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -515,9 +503,9 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
               </div>
 
               {/* 3. Center: Volume Slider with Live Vertical VU Meter */}
-              <div className="flex items-center gap-2 w-full py-1">
+              <div className="flex items-center gap-2 w-full py-0.5">
                 {/* Vertical LED VU Meter for this channel */}
-                <div className="w-2 h-16 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
+                <div className="w-2 h-14 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
                   <div
                     ref={(el) => {
                       mobileMeterRefs.current[stem.id] = el;
@@ -569,15 +557,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* 4. Bottom Preset Pill */}
-              <button
-                onClick={() => onCycleEqPreset(stem.id)}
-                className="w-full py-1 px-1 mt-1 rounded-md text-[9px] font-bold bg-slate-800 text-cyan-300 border border-sky-400/30 truncate active:scale-95 text-center flex items-center justify-center gap-1"
-              >
-                <Music className="w-2.5 h-2.5 text-cyan-400" />
-                <span className="truncate">{getEqPresetLabel(stem.id)}</span>
-              </button>
             </div>
           );
         })}
