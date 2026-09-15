@@ -102,17 +102,21 @@ export function App() {
 
   // Iconic Windows Vista Aero Wallpaper Transition Pack
   const [wallpaperIndex, setWallpaperIndex] = useState<number>(0);
+  const [prevWallpaperIndex, setPrevWallpaperIndex] = useState<number>(0);
+
+  const cycleWallpaper = () => {
+    setWallpaperIndex((prev) => {
+      setPrevWallpaperIndex(prev);
+      return (prev + 1) % VISTA_WALLPAPERS.length;
+    });
+  };
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
-    }, 25000);
+    const timer = setInterval(cycleWallpaper, 25000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleCycleWallpaper = () => {
-    setWallpaperIndex((prev) => (prev + 1) % VISTA_WALLPAPERS.length);
-  };
+  const handleCycleWallpaper = cycleWallpaper;
 
   // Side navbar flow:
   // - On initial launch: starts open, then smoothly auto-hides after 3.2s so user discovers auto-hide!
@@ -624,10 +628,17 @@ export function App() {
       {/* Mobile Landscape Orientation Guard (Non-blocking) */}
       <LandscapeGuard />
 
-      {/* Grand Background - Iconic Windows Vista Pack Transition */}
+      {/* Grand Background - Windows 7 style cross-fade transition */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Base layer: previous wallpaper stays put while the next fades in over it */}
         <img
-          key={VISTA_WALLPAPERS[wallpaperIndex]?.id || 'wp'}
+          src={VISTA_WALLPAPERS[prevWallpaperIndex]?.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-90"
+        />
+        {/* Top layer: current wallpaper fades in (Windows 7 fade) */}
+        <img
+          key={`wp-${VISTA_WALLPAPERS[wallpaperIndex]?.id}`}
           src={VISTA_WALLPAPERS[wallpaperIndex]?.url}
           alt={VISTA_WALLPAPERS[wallpaperIndex]?.name}
           className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 opacity-90 animate-in fade-in"
