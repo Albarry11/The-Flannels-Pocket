@@ -101,9 +101,8 @@ export const AdminStemUploadModal: React.FC<AdminStemUploadModalProps> = ({
         setBassFile(file);
       } else if (name.includes('drum') || name.includes('beat')) {
         setDrumsFile(file);
-      } else {
-        setExtraFiles((prev) => [...prev, { role: 'other', name: file.name.replace(/\.[^/.]+$/, ''), file }]);
       }
+      // ponytail: unknown stems (synths/backing bleed) are dropped to keep the pure 4-member band mix.
     }
   };
 

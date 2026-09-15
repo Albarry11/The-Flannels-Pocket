@@ -641,7 +641,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                   required
                   value={newStemName}
                   onChange={(e) => setNewStemName(e.target.value)}
-                  placeholder="Contoh: Lead Solo 2, Backing Vocals, Keyboard"
+                  placeholder="Contoh: Lead Solo 2, Keyboard"
                   className="w-full bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-sky-500"
                 />
               </div>
@@ -662,7 +662,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                   <option value="bass">Bass</option>
                   <option value="drums">Drums</option>
                   <option value="piano">Keyboard / Piano</option>
-                  <option value="other">Other / Backing</option>
                 </select>
               </div>
 
