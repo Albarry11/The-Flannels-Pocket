@@ -395,7 +395,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
         {/* ZONE 3 (Right Wing): Metronome + Pitch + Speed + A-B Loop + Clear Sound */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end pl-1 overflow-hidden">
           {/* Metronome DSP Pod */}
-          <div className="hidden sm:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <button
               onClick={onToggleMetronomeClick}
               className={`flex items-center gap-1 px-1.5 py-0.2 rounded-full font-bold transition text-[10px] ${
@@ -469,7 +469,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Play Speed Capsule */}
-          <div className="hidden sm:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
             <Gauge className="w-3 h-3 text-sky-600" />
             <select
               value={speed}
@@ -491,7 +491,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               title="Repeat Lagu"
               aria-label="Repeat Lagu"
             />
-            <div className="hidden sm:flex items-center gap-0.5 border-l border-sky-300/80 pl-1 text-[9px] font-mono font-black text-sky-950">
+            <div className="hidden lg:flex items-center gap-0.5 border-l border-sky-300/80 pl-1 text-[9px] font-mono font-black text-sky-950">
               <button
                 onClick={onSetLoopStart}
                 className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
@@ -531,7 +531,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               aria-label="Aktifkan Clear Sound ReplayGain"
             >
               <Sparkles className={`w-3 h-3 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
-              <span className="tracking-tight hidden sm:inline">Clear</span>
+              <span className="tracking-tight hidden lg:inline">Clear</span>
               {replayGainEnabled && replayGainDb !== 0 && (
                 <span className="text-[9px] font-mono font-black bg-black/20 text-slate-900 px-1 py-0.2 rounded-full">
                   {replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB
