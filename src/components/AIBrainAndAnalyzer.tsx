@@ -120,11 +120,11 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
             <Brain className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-[#0f2942] tracking-tight">
-              Tilikan
+            <h2 className="text-xs sm:text-sm font-black text-[#0f2942] tracking-tight leading-tight">
+              Tilikan Musisi (with AI)
             </h2>
-            <p className="text-xs text-sky-700 font-medium">
-              Analisis Aransemen Band • Kualitas Audio SpotiFLAC
+            <p className="text-[9px] sm:text-[10px] text-sky-700 font-medium leading-none mt-0.5">
+              Analisis Aransemen Musik / Kualitas Audio
             </p>
           </div>
         </div>

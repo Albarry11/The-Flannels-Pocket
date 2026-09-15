@@ -739,7 +739,7 @@ export function App() {
                 }`}
               >
                 <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-emerald-300'}`} />
-                <span className="truncate">Tilikan AI Produser</span>
+                <span className="truncate">Tilikan Musisi (with AI)</span>
               </button>
             </div>
           </div>
@@ -937,7 +937,7 @@ export function App() {
           aria-label="Buka Tilikan"
         >
           <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-purple-600' : 'text-slate-500'}`} />
-          <span className="text-[10px]">Tilikan</span>
+          <span className="text-[10px]">Tilikan Musisi</span>
         </button>
       </nav>
     </div>
