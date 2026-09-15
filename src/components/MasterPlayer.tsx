@@ -262,14 +262,14 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
       </div>
 
       {/* ================= 3-ZONE BALANCED DOCK WITH DEAD-CENTER PLAY BUTTON ================= */}
-      <div className="max-w-7xl mx-auto relative flex items-center justify-between min-h-[50px]">
+      <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 min-h-[52px]">
         
-        {/* ZONE 1: WMP 11 Now Playing Track Plate (Anchored Left, Max Width 26%) */}
-        <div className="flex items-center gap-2 min-w-0 max-w-[28%] z-10 flex-shrink-0">
+        {/* ZONE 1 (Left 1fr): WMP 11 Now Playing Track Plate */}
+        <div className="flex items-center gap-2.5 min-w-0 justify-self-start">
           {currentSong ? (
             <>
               {/* WMP Album Art with Metallic Beveled Frame */}
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,40,90,0.25)] border border-white/90 flex-shrink-0 bg-sky-100 relative group">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,40,90,0.25)] border border-white/90 flex-shrink-0 bg-sky-100 relative group">
                 {currentSong.artworkUrl ? (
                   <img
                     src={currentSong.artworkUrl}
@@ -293,10 +293,10 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   {currentSong.artist}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 text-[9px] font-mono">
-                  <span className="px-1 py-0.2 rounded-md bg-white/80 border border-sky-300/80 text-sky-900 font-black shadow-2xs">
+                  <span className="px-1.5 py-0.2 rounded-md bg-white/80 border border-sky-300/80 text-sky-900 font-black shadow-2xs">
                     {currentSong.bpm} BPM
                   </span>
-                  <span className="px-1 py-0.2 rounded-md bg-amber-100/90 border border-amber-300 text-amber-950 font-black shadow-2xs">
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100/90 border border-amber-300 text-amber-950 font-black shadow-2xs">
                     {currentSong.originalKey}
                   </span>
                 </div>
@@ -307,139 +307,136 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           )}
         </div>
 
-        {/* ZONE 2: WMP 11 Center Pod (100% MATHEMATICALLY DEAD CENTER) */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-20 pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center">
-            {/* Authentic Symmetrical WMP Pod */}
-            <div className="wmp-control-pod">
-              <div className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 w-full">
-                {/* Shuffle / A-B Loop Left Button (Visible on desktop) */}
-                <button
-                  onClick={onToggleLoop}
-                  className={`hidden sm:inline-block wmp-btn-shuffle ${loopRegion.enabled ? 'active' : ''}`}
-                  title={loopRegion.enabled ? 'Loop A-B Aktif (Klik untuk Matikan)' : 'Aktifkan Loop A-B'}
-                  aria-label="Loop A-B"
-                />
+        {/* ZONE 2 (Center auto): Symmetrical WMP 11 Transport Capsule Pod */}
+        <div className="flex flex-col items-center justify-center justify-self-center">
+          <div className="wmp-control-pod">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 w-full">
+              {/* Shuffle / A-B Loop Left Button */}
+              <button
+                onClick={onToggleLoop}
+                className={`wmp-btn-shuffle ${loopRegion.enabled ? 'active' : ''}`}
+                title={loopRegion.enabled ? 'Loop A-B Aktif (Klik untuk Matikan)' : 'Aktifkan Loop A-B'}
+                aria-label="Loop A-B"
+              />
 
-                {/* Stop Button (WMP 11 Authentic stop.png) */}
-                <button
-                  onClick={onStop}
-                  className="wmp-btn-stop"
-                  title="Stop"
-                  aria-label="Stop Pemutaran"
-                />
+              {/* Stop Button */}
+              <button
+                onClick={onStop}
+                className="wmp-btn-stop"
+                title="Stop"
+                aria-label="Stop Pemutaran"
+              />
 
-                {/* Previous Track / Seek -10s Button (WMP 11 Authentic prev.png) */}
-                <button
-                  onClick={() => onSeek(Math.max(0, currentTime - 10))}
-                  className="wmp-btn-prev"
-                  title="Mundur 10 Detik"
-                  aria-label="Mundur 10 Detik"
-                />
+              {/* Previous Track / Seek -10s Button */}
+              <button
+                onClick={() => onSeek(Math.max(0, currentTime - 10))}
+                className="wmp-btn-prev"
+                title="Mundur 10 Detik"
+                aria-label="Mundur 10 Detik"
+              />
 
-                {/* Play / Pause Orb Button (EXACT DEAD CENTER OF THE SCREEN) */}
-                <div className="relative flex items-center justify-center flex-shrink-0">
-                  {isAudioLoading ? (
-                    <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    </div>
-                  ) : (
-                    <button
-                      onClick={isPlaying ? onPause : onPlay}
-                      className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
-                      title={isPlaying ? 'Pause' : 'Play'}
-                      aria-label={isPlaying ? 'Pause' : 'Play'}
-                    />
-                  )}
-                </div>
-
-                {/* Next Track / Seek +10s Button (WMP 11 Authentic next.png) */}
-                <button
-                  onClick={() => onSeek(Math.min(duration, currentTime + 10))}
-                  className="wmp-btn-next"
-                  title="Maju 10 Detik"
-                  aria-label="Maju 10 Detik"
-                />
-
-                {/* Repeat Button (WMP 11 Authentic repeat.png) */}
-                <button
-                  onClick={onToggleLoop}
-                  className={`wmp-btn-repeat ${loopRegion.enabled ? 'active' : ''}`}
-                  title="Repeat Lagu"
-                  aria-label="Repeat Lagu"
-                />
-
-                {/* Quick A / B Marks (Desktop only) */}
-                <div className="hidden lg:flex items-center gap-0.5 ml-1 bg-white/70 px-1 py-0.5 rounded-md border border-sky-300/60 text-[9px] font-mono font-black text-sky-950 shadow-2xs">
+              {/* Play / Pause Blue Aero Orb Button (Dead Center) */}
+              <div className="relative flex items-center justify-center flex-shrink-0">
+                {isAudioLoading ? (
+                  <div className="w-[42px] h-[43px] rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </div>
+                ) : (
                   <button
-                    onClick={onSetLoopStart}
-                    className="px-1 hover:bg-sky-200 rounded"
-                    title="Tandai Titik Awal (A)"
-                  >
-                    A
-                  </button>
-                  <button
-                    onClick={onSetLoopEnd}
-                    className="px-1 hover:bg-sky-200 rounded"
-                    title="Tandai Titik Akhir (B)"
-                  >
-                    B
-                  </button>
-                  {loopRegion.enabled && (
-                    <button
-                      onClick={onClearLoop}
-                      className="px-1 text-rose-600 hover:font-black"
-                      title="Hapus loop A-B"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+                    onClick={isPlaying ? onPause : onPlay}
+                    className={`wmp-btn-playpause ${isPlaying ? 'pause' : 'play'}`}
+                    title={isPlaying ? 'Pause' : 'Play'}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  />
+                )}
               </div>
-            </div>
 
-            {/* WMP 11 Time Text Indicator */}
-            <div className="text-[10px] sm:text-[11px] font-mono text-[#002963] font-black pt-0.5 min-h-[14px] flex items-center justify-center tracking-wider">
-              {isAudioLoading ? (
-                <span className="text-sky-700 font-extrabold animate-pulse">
-                  {audioLoadingText || 'Mengunduh audio stem dari cloud...'}
-                </span>
-              ) : (
-                <span>
-                  {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
-                </span>
-              )}
+              {/* Next Track / Seek +10s Button */}
+              <button
+                onClick={() => onSeek(Math.min(duration, currentTime + 10))}
+                className="wmp-btn-next"
+                title="Maju 10 Detik"
+                aria-label="Maju 10 Detik"
+              />
+
+              {/* Repeat Button */}
+              <button
+                onClick={onToggleLoop}
+                className={`wmp-btn-repeat ${loopRegion.enabled ? 'active' : ''}`}
+                title="Repeat Lagu"
+                aria-label="Repeat Lagu"
+              />
             </div>
+          </div>
+
+          {/* Symmetrical Time Indicator under Pod */}
+          <div className="text-[11px] font-mono text-[#002963] font-black pt-0.5 min-h-[14px] flex items-center justify-center tracking-wider">
+            {isAudioLoading ? (
+              <span className="text-sky-700 font-extrabold animate-pulse">
+                {audioLoadingText || 'Mengunduh audio stem dari cloud...'}
+              </span>
+            ) : (
+              <span>
+                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* ZONE 3: WMP 11 DSP Controls, Clear Sound & Master Volume (Anchored Right, Max Width 36%) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 justify-end min-w-0 max-w-[36%] z-10 flex-shrink-0">
+        {/* ZONE 3 (Right 1fr): Unified DSP, Enhancements & Volume Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-2 justify-self-end">
+          {/* A-B Markers Pill */}
+          <div className="hidden xl:flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-[10px] font-mono font-black text-sky-950">
+            <button
+              onClick={onSetLoopStart}
+              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+              title="Tandai Titik Awal (A)"
+            >
+              A
+            </button>
+            <button
+              onClick={onSetLoopEnd}
+              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+              title="Tandai Titik Akhir (B)"
+            >
+              B
+            </button>
+            {loopRegion.enabled && (
+              <button
+                onClick={onClearLoop}
+                className="px-1 text-rose-600 hover:font-black"
+                title="Hapus loop A-B"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           {/* Metronome DSP Pod */}
-          <div className="flex items-center gap-1 bg-white/80 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+          <div className="flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
             <button
               onClick={onToggleMetronomeClick}
-              className={`flex items-center gap-1 px-1 py-0.2 rounded-full font-bold transition text-[10px] ${
+              className={`flex items-center gap-1 px-1.5 py-0.2 rounded-full font-bold transition text-[10px] ${
                 metronomeClickActive
                   ? 'bg-amber-400 text-black shadow-xs'
                   : 'text-sky-950 hover:text-sky-700'
               }`}
               title="Toggle Metronome Click"
             >
-              <Radio className="w-2.5 h-2.5 text-amber-600" />
+              <Radio className="w-3 h-3 text-amber-600" />
               <span className="font-mono text-[10px]">{metronomeBpm}</span>
             </button>
             <div className="hidden sm:flex items-center gap-0.5 font-mono text-sky-950 font-bold border-l border-sky-300/80 pl-1">
               <button
                 onClick={() => onMetronomeBpmChange(metronomeBpm - 1)}
-                className="w-3.5 h-3.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
+                className="w-4 h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
                 title="Kurang 1 BPM"
               >
                 -
               </button>
               <button
                 onClick={() => onMetronomeBpmChange(metronomeBpm + 1)}
-                className="w-3.5 h-3.5 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
+                className="w-4 h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
                 title="Tambah 1 BPM"
               >
                 +
@@ -454,8 +451,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </button>
           </div>
 
-          {/* Pitch Shifter DSP Pod (Desktop / Large Landscape) */}
-          <div className="hidden lg:flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+          {/* Pitch Shifter DSP Pod */}
+          <div className="hidden lg:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
             <Music2 className="w-3 h-3 text-pink-600" />
             <button
               onClick={() => onPitchChange(pitchSemitones - 1)}
@@ -491,12 +488,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Play Speed Capsule */}
-          <div className="hidden sm:flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
-            <Gauge className="w-2.5 h-2.5 text-sky-600" />
+          <div className="hidden md:flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs">
+            <Gauge className="w-3 h-3 text-sky-600" />
             <select
               value={speed}
               onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
-              className="bg-transparent text-sky-950 text-[10px] font-mono font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-sky-950 text-[10px] sm:text-xs font-mono font-bold focus:outline-none cursor-pointer"
               aria-label="Pilih kecepatan playback"
             >
               <option value={0.75}>0.75x</option>
@@ -509,7 +506,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           {onToggleReplayGain && (
             <button
               onClick={onToggleReplayGain}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group flex-shrink-0 ${
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] sm:text-xs font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group flex-shrink-0 ${
                 replayGainEnabled
                   ? 'bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 border-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.4)]'
                   : 'bg-white/85 hover:bg-white text-slate-700 border-sky-300/80'
@@ -517,17 +514,17 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               title={`Clear Sound (Normalisasi ReplayGain -14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
               aria-label="Aktifkan Clear Sound ReplayGain"
             >
-              <Sparkles className={`w-2.5 h-2.5 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
-              <span className="tracking-tight hidden xs:inline">Clear</span>
+              <Sparkles className={`w-3 h-3 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
+              <span className="tracking-tight hidden sm:inline">Clear</span>
               {replayGainEnabled && replayGainDb !== 0 && (
-                <span className="text-[8px] font-mono font-black bg-black/20 text-slate-900 px-1 py-0.2 rounded-full">
+                <span className="text-[9px] font-mono font-black bg-black/20 text-slate-900 px-1 py-0.2 rounded-full">
                   {replayGainDb > 0 ? `+${replayGainDb}` : replayGainDb}dB
                 </span>
               )}
             </button>
           )}
 
-          {/* WMP 11 Volume Fader & Mute (Authentic WMP vol icons) */}
+          {/* WMP 11 Volume Fader & Mute */}
           <div className="flex items-center gap-1 bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs flex-shrink-0">
             <button
               onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
@@ -542,11 +539,11 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               step="0.01"
               value={masterVolume}
               onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
-              className="w-12 sm:w-16 h-1.5 cursor-pointer accent-[#1170b8]"
+              className="w-14 sm:w-18 h-1.5 cursor-pointer accent-[#1170b8]"
               title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
               aria-label="Volume audio master"
             />
-            <span className="text-[9px] sm:text-[10px] font-mono text-[#002963] font-black w-5 sm:w-6 text-right">
+            <span className="text-[10px] font-mono text-[#002963] font-black w-6 text-right">
               {Math.round(masterVolume * 100)}%
             </span>
           </div>
