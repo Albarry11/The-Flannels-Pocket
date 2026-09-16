@@ -269,7 +269,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           <div className="flex items-center gap-2 min-w-0 max-w-[160px] sm:max-w-[240px]">
             {currentSong ? (
               <>
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden shadow-xs border border-white/90 flex-shrink-0 bg-sky-100 relative">
+                <div className="w-8 h-8 rounded-lg overflow-hidden shadow-xs border border-white/90 flex-shrink-0 bg-sky-100 relative">
                   {currentSong.artworkUrl ? (
                     <img
                       src={currentSong.artworkUrl}
@@ -297,8 +297,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             )}
           </div>
 
-          {/* Duration Badge */}
-          <div className="text-[9px] sm:text-[10px] font-mono text-[#002963] font-black tracking-wider bg-white/85 px-2 py-0.5 rounded-full border border-sky-300/60 shadow-2xs flex-shrink-0 whitespace-nowrap">
+          {/* Duration Badge in Authentic WMP Aero Pill */}
+          <div className="wmp-aero-pill px-2.5 py-0.5 text-[9px] sm:text-[10px] font-mono text-[#002963] font-black tracking-wider flex-shrink-0 whitespace-nowrap">
             {isAudioLoading ? (
               <span className="text-sky-700 font-extrabold animate-pulse">
                 {audioLoadingText || 'Memuat...'}
@@ -311,14 +311,16 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
         </div>
 
-        {/* Right: The 5 DSP Practice Tools (Metronome, Pitch, Speed, Loop, Clear Sound) */}
+        {/* Right: The 5 DSP Practice Tools (Metronome, Pitch, Speed, Loop, Clear Sound) in WMP Aero Style */}
         <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 overflow-x-auto scrollbar-none py-0.5">
           {/* Metronome DSP Pod */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-white/85 px-1.5 sm:px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          <div className="wmp-aero-pill px-1.5 sm:px-2 py-0.5 flex items-center gap-1 text-xs flex-shrink-0">
             <button
               onClick={onToggleMetronomeClick}
-              className={`flex items-center gap-0.5 px-1.5 py-0.2 rounded-full font-bold transition text-[9px] sm:text-[10px] ${
-                metronomeClickActive ? 'bg-amber-400 text-black shadow-xs' : 'text-sky-950 hover:text-sky-700'
+              className={`wmp-aero-btn px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] gap-1 ${
+                metronomeClickActive
+                  ? 'active bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 border-amber-600 text-black shadow-xs'
+                  : ''
               }`}
               title="Toggle Metronome Click"
             >
@@ -328,14 +330,14 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             <div className="flex items-center gap-0.5 font-mono text-sky-950 font-bold border-l border-sky-300/80 pl-0.5">
               <button
                 onClick={() => onMetronomeBpmChange(metronomeBpm - 1)}
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
+                className="wmp-aero-btn w-4 h-4 rounded-full text-[9px] font-bold"
                 title="Kurang 1 BPM"
               >
                 -
               </button>
               <button
                 onClick={() => onMetronomeBpmChange(metronomeBpm + 1)}
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 flex items-center justify-center text-[9px] font-bold"
+                className="wmp-aero-btn w-4 h-4 rounded-full text-[9px] font-bold"
                 title="Tambah 1 BPM"
               >
                 +
@@ -343,7 +345,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </div>
             <button
               onClick={() => setShowAdvancedMetronome(!showAdvancedMetronome)}
-              className="p-0.5 text-slate-500 hover:text-sky-700"
+              className="wmp-aero-btn w-4 h-4 rounded-full p-0.5 text-slate-600"
               title="Pengaturan Birama & Suara Metronom"
             >
               <Settings2 className="w-3 h-3" />
@@ -351,11 +353,11 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Pitch Shifter DSP Pod */}
-          <div className="flex items-center gap-0.5 bg-white/85 px-1.5 sm:px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          <div className="wmp-aero-pill px-1.5 sm:px-2 py-0.5 flex items-center gap-1 text-xs flex-shrink-0">
             <Music2 className="w-3 h-3 text-pink-600" />
             <button
               onClick={() => onPitchChange(pitchSemitones - 1)}
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[9px]"
+              className="wmp-aero-btn w-4 h-4 rounded-full text-[9px] font-bold"
               title="Turunkan nada"
             >
               -
@@ -365,20 +367,20 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </span>
             <button
               onClick={() => onPitchChange(pitchSemitones + 1)}
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold flex items-center justify-center text-[9px]"
+              className="wmp-aero-btn w-4 h-4 rounded-full text-[9px] font-bold"
               title="Naikkan nada"
             >
               +
             </button>
             {currentKeyTransposed && (
-              <span className="text-[8px] sm:text-[9px] font-mono text-amber-950 font-black bg-amber-100 px-1 py-0.2 rounded border border-amber-300">
+              <span className="text-[8px] sm:text-[9px] font-mono text-amber-950 font-black bg-amber-100/90 px-1.5 py-0.2 rounded border border-amber-300 shadow-2xs">
                 {currentKeyTransposed}
               </span>
             )}
             {pitchSemitones !== 0 && (
               <button
                 onClick={() => onPitchChange(0)}
-                className="text-[8px] bg-amber-200 hover:bg-amber-300 text-amber-950 px-1 rounded-full font-bold ml-0.5"
+                className="wmp-aero-btn px-1 py-0.2 rounded-full text-[8px]"
                 title="Reset nada"
               >
                 <RotateCcw className="w-2 h-2" />
@@ -387,12 +389,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* Play Speed Capsule */}
-          <div className="flex items-center gap-0.5 bg-white/85 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0">
+          <div className="wmp-aero-pill px-2 py-0.5 flex items-center gap-1 text-xs flex-shrink-0">
             <Gauge className="w-3 h-3 text-sky-600" />
             <select
               value={speed}
               onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
-              className="bg-transparent text-sky-950 text-[9px] sm:text-[10px] font-mono font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-[#002963] text-[9px] sm:text-[10px] font-mono font-bold focus:outline-none cursor-pointer"
               aria-label="Pilih kecepatan playback"
             >
               <option value={0.75}>0.75x</option>
@@ -402,17 +404,17 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           </div>
 
           {/* A-B Loop Capsule */}
-          <div className="flex items-center gap-0.5 bg-white/85 px-1.5 py-0.5 rounded-full border border-sky-300/80 shadow-2xs text-xs flex-shrink-0 font-mono text-[9px] font-black text-sky-950">
+          <div className="wmp-aero-pill px-1.5 py-0.5 flex items-center gap-1 text-xs flex-shrink-0 font-mono text-[9px] font-black text-[#002963]">
             <button
               onClick={onSetLoopStart}
-              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+              className="wmp-aero-btn px-1.5 py-0.5 rounded text-[9px]"
               title="Tandai Titik Awal (A)"
             >
               A
             </button>
             <button
               onClick={onSetLoopEnd}
-              className="px-1.5 py-0.2 hover:bg-sky-200 rounded"
+              className="wmp-aero-btn px-1.5 py-0.5 rounded text-[9px]"
               title="Tandai Titik Akhir (B)"
             >
               B
@@ -420,7 +422,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             {loopRegion.enabled && (
               <button
                 onClick={onClearLoop}
-                className="px-1 text-rose-600 hover:font-black"
+                className="px-0.5 text-rose-600 hover:font-black"
                 title="Hapus loop A-B"
               >
                 ✕
@@ -428,16 +430,16 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             )}
           </div>
 
-          {/* Clear Sound */}
+          {/* Clear Sound (WMP SRS WOW Audio Effects) */}
           {onToggleReplayGain && (
             <button
               onClick={onToggleReplayGain}
-              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[9px] sm:text-[10px] font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group flex-shrink-0 ${
+              className={`wmp-aero-pill px-2.5 py-0.5 flex items-center gap-1 text-[9px] sm:text-[10px] font-black transition-all active:scale-95 shadow-sm relative overflow-hidden group flex-shrink-0 ${
                 replayGainEnabled
-                  ? 'bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 border-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.4)]'
-                  : 'bg-white/85 hover:bg-white text-slate-700 border-sky-300/80'
+                  ? 'bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 border-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.45)]'
+                  : 'text-slate-700 hover:text-sky-950'
               }`}
-              title={`Clear Sound (Normalisasi ReplayGain -14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
+              title={`Clear Sound (SRS WOW / Normalisasi ReplayGain -14 LUFS) [Offset: ${replayGainDb > 0 ? '+' : ''}${replayGainDb} dB]`}
               aria-label="Aktifkan Clear Sound ReplayGain"
             >
               <Sparkles className={`w-3 h-3 ${replayGainEnabled ? 'text-slate-950 animate-pulse' : 'text-slate-500'}`} />
@@ -502,8 +504,8 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               aria-label="Maju 10 Detik"
             />
 
-            {/* Integrated Master Volume Pill */}
-            <div className="flex items-center gap-1 bg-white/75 px-2 py-0.5 rounded-full border border-sky-300/70 shadow-2xs">
+            {/* Integrated Master Volume Pill with Authentic WMP 11 Slider Track & Handle */}
+            <div className="flex items-center gap-1.5 bg-white/80 px-2 py-0.5 rounded-full border border-sky-300/80 shadow-2xs">
               <button
                 onClick={() => onMasterVolumeChange(masterVolume === 0 ? 0.9 : 0)}
                 className={`wmp-btn-vol ${volIconClass}`}
@@ -517,7 +519,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 step="0.01"
                 value={masterVolume}
                 onChange={(e) => onMasterVolumeChange(parseFloat(e.target.value))}
-                className="w-14 sm:w-16 h-1.5 cursor-pointer accent-[#1170b8]"
+                className="wmp-vol-slider w-14 sm:w-16 cursor-pointer"
                 title={`Master Volume: ${Math.round(masterVolume * 100)}%`}
                 aria-label="Volume audio master"
               />
