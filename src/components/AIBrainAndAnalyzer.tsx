@@ -121,7 +121,7 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-black text-[#0f2942] tracking-tight leading-tight">
-              Tilikan Musisi (with AI)
+              Tilikan Musisi
             </h2>
             <p className="text-[9px] sm:text-[10px] text-sky-700 font-medium leading-none mt-0.5">
               Analisis Aransemen Musik / Kualitas Audio

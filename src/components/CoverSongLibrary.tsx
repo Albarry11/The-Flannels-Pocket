@@ -283,11 +283,11 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         </div>
       ) : (
         <>
-          {/* Main Song List with compact padding */}
-          <div className="flex-1 overflow-y-auto pr-1 pb-6">
+          {/* Main Song List (Horizontal Scrolling Card Rail) */}
+          <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pb-2 pt-1 flex gap-3 sm:gap-4 items-stretch scrollbar-thin">
         {songs.length === 0 ? (
           /* Empty State */
-          <div className="text-center py-10 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-3 max-w-md mx-auto shadow-2xl text-white">
+          <div className="text-center py-10 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-3 max-w-md mx-auto shadow-2xl text-white flex-shrink-0 my-auto">
             <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 border border-white/30">
               <Music2 className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
@@ -326,21 +326,19 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             </div>
           </div>
         ) : (
-          /* Song Cards Grid with Album Artwork & Stem Folders */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3.5">
-            {songs.map((song) => {
-              const isSelected = song.id === currentSongId;
-              const artwork = song.artworkUrl || '';
+          songs.map((song) => {
+            const isSelected = song.id === currentSongId;
+            const artwork = song.artworkUrl || '';
 
-              return (
-                <div
-                  key={song.id}
-                  className={`p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-2.5 shadow-sm relative overflow-hidden ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-sky-100/95 to-blue-100/90 border-sky-400 shadow-[0_8px_24px_rgba(2,132,199,0.2)] ring-2 ring-sky-400/50'
-                      : 'bg-white/85 border-sky-200/80 hover:border-sky-300 hover:bg-white'
-                  }`}
-                >
+            return (
+              <div
+                key={song.id}
+                className={`w-[290px] sm:w-[340px] flex-shrink-0 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-2.5 shadow-sm relative overflow-hidden ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-sky-100/95 to-blue-100/90 border-sky-400 shadow-[0_8px_24px_rgba(2,132,199,0.2)] ring-2 ring-sky-400/50'
+                    : 'bg-white/85 border-sky-200/80 hover:border-sky-300 hover:bg-white'
+                }`}
+              >
                   <div className="flex items-center gap-2.5 sm:gap-3.5">
                     {/* Cover Art */}
                     <div className="relative flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden shadow-md border border-white bg-sky-100">
@@ -545,8 +543,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                   </div>
                 </div>
               );
-            })}
-          </div>
+            })
         )}
       </div>
 

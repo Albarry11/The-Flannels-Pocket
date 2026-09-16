@@ -204,8 +204,8 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
         </button>
       </div>
 
-      {/* Live Auto-Suggestion Search Bar */}
-      <div className="relative mb-3 flex-shrink-0">
+      {/* Live Auto-Suggestion Search Bar - Hidden on mobile for compactness, visible on sm+ */}
+      <div className="hidden sm:block relative mb-2.5 flex-shrink-0">
         <div className="flex items-center gap-2 bg-white/90 border border-sky-300/80 rounded-2xl px-3.5 py-1.5 shadow-xs focus-within:ring-2 focus-within:ring-sky-400">
           <Search className="w-4 h-4 text-sky-600 flex-shrink-0" />
           <input
@@ -263,15 +263,15 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
         )}
       </div>
 
-      {/* Leaderboard List (Clean Responsive Grid, unconstrained card heights, smooth vertical scroll) */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-4 scrollbar-thin">
+      {/* Leaderboard List (Horizontal Scrolling Card Rail) */}
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pb-2 pt-1 flex gap-3 sm:gap-4 items-stretch scrollbar-thin">
         {isLoading ? (
-          <div className="w-full py-12 flex flex-col items-center justify-center text-sky-800 space-y-2">
+          <div className="w-full py-12 flex flex-col items-center justify-center text-sky-800 space-y-2 flex-shrink-0">
             <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto" />
             <p className="text-xs font-semibold">Memuat antrian request...</p>
           </div>
         ) : requests.length === 0 ? (
-          <div className="w-full flex flex-col items-center justify-center p-8 rounded-3xl bg-white/80 border border-sky-200/80 space-y-3 max-w-md mx-auto text-center my-auto">
+          <div className="w-full flex flex-col items-center justify-center p-8 rounded-3xl bg-white/80 border border-sky-200/80 space-y-3 max-w-md mx-auto text-center my-auto flex-shrink-0">
             <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center">
               <Flame className="w-6 h-6" />
             </div>
@@ -281,20 +281,19 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5 pt-1">
-            {requests.map((req, index) => {
-              const hasUpvoted = req.upvotedBy.includes(clientId);
-              const isFulfilled = req.status === 'fulfilled';
+          requests.map((req, index) => {
+            const hasUpvoted = req.upvotedBy.includes(clientId);
+            const isFulfilled = req.status === 'fulfilled';
 
-              return (
-                <div
-                  key={req.id}
-                  className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
-                    isFulfilled
-                      ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
-                      : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
-                  }`}
-                >
+            return (
+              <div
+                key={req.id}
+                className={`w-[270px] sm:w-[310px] flex-shrink-0 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
+                  isFulfilled
+                    ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
+                    : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
+                }`}
+              >
                   {/* Top Section */}
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -387,8 +386,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                 </div>
               </div>
             );
-          })}
-          </div>
+          })
         )}
       </div>
 

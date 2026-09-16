@@ -641,7 +641,7 @@ export function App() {
           key={`wp-${VISTA_WALLPAPERS[wallpaperIndex]?.id}`}
           src={VISTA_WALLPAPERS[wallpaperIndex]?.url}
           alt={VISTA_WALLPAPERS[wallpaperIndex]?.name}
-          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 opacity-90 animate-in fade-in"
+          className="absolute inset-0 w-full h-full object-cover object-center animate-screensaver-fade"
         />
         {/* Soft authentic Aero sky tint overlay */}
         <div className="absolute inset-0 bg-sky-950/15" />
@@ -739,7 +739,7 @@ export function App() {
                 }`}
               >
                 <Brain className={`w-4 h-4 ${activeTab === 'brain' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-emerald-300'}`} />
-                <span className="truncate">Tilikan Musisi (with AI)</span>
+                <span className="truncate">Tilikan Musisi</span>
               </button>
             </div>
           </div>
