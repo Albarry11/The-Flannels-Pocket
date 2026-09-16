@@ -174,29 +174,35 @@
 .wmp-control-pod {
   position: relative;
   width: 268px;
-  height: 49px;
+  height: 51px;
   background-image: url('/wmp-assets/bg_small.png');
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-position: center;
+  background-size: 268px 51px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
   .wmp-control-pod {
-    width: 280px;
+    width: 268px;
+    height: 51px;
     background-image: url('/wmp-assets/bg_small.png');
-    padding: 0 12px;
+    background-size: 268px 51px;
+    padding: 0;
   }
 }
 
 @media (min-width: 1280px) {
   .wmp-control-pod {
-    width: 288px;
+    width: 268px;
+    height: 51px;
     background-image: url('/wmp-assets/bg_small.png');
-    padding: 0 12px;
+    background-size: 268px 51px;
+    padding: 0;
   }
 }
 
@@ -204,11 +210,15 @@
   position: relative;
   width: 42px;
   height: 43px;
-  background-position: center;
+  background-position: 47% center;
   background-repeat: no-repeat;
   flex-shrink: 0;
   transition: filter 0.15s ease;
   cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
 }
 .wmp-btn-playpause.play {
   background-image: url('/wmp-assets/play.png');
@@ -235,7 +245,7 @@
   left: -5px;
   width: 52px;
   height: 52px;
-  background: url('/wmp-assets/play_glow.png') no-repeat;
+  background: url('/wmp-assets/play_glow.png') no-repeat center;
   transition: opacity 0.25s ease;
   opacity: 0;
   pointer-events: none;
@@ -252,6 +262,11 @@
   background-position: center;
   flex-shrink: 0;
   cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
 }
 .wmp-btn-prev:hover {
   background-image: url('/wmp-assets/prev_hover.png');
@@ -268,6 +283,11 @@
   background-position: center;
   flex-shrink: 0;
   cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
 }
 .wmp-btn-next:hover {
   background-image: url('/wmp-assets/next_hover.png');
@@ -284,6 +304,11 @@
   background-position: center;
   flex-shrink: 0;
   cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
 }
 .wmp-btn-stop:hover {
   filter: brightness(1.2);
@@ -300,6 +325,11 @@
   background-position: center;
   flex-shrink: 0;
   cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
 }
 .wmp-btn-repeat.active {
   background-image: url('/wmp-assets/repeat_active.png');
