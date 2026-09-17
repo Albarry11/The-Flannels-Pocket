@@ -173,10 +173,10 @@
 
 .wmp-control-pod {
   position: relative;
-  width: 404px;
+  width: 468px;
   max-width: 100%;
   height: 51px;
-  background-image: url('/wmp-assets/bg_large.png');
+  background-image: url('/wmp-assets/bg_large_mobile.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%;
@@ -187,23 +187,22 @@
   flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
-  .wmp-control-pod {
-    width: 404px;
-    height: 51px;
-    background-image: url('/wmp-assets/bg_large.png');
-    background-size: 404px 51px;
-    padding: 0 4px;
-  }
+.wmp-control-pod button {
+  background-color: transparent !important;
+  box-shadow: none;
+  border: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .wmp-control-pod {
-    width: 404px;
+    width: 484px;
     height: 51px;
-    background-image: url('/wmp-assets/bg_large.png');
-    background-size: 404px 51px;
-    padding: 0 4px;
+    background-image: url('/wmp-assets/bg_large_wide.png');
+    background-size: 484px 51px;
+    padding: 0 6px;
   }
 }
 
@@ -213,6 +212,7 @@
   height: 43px;
   background-position: 47% center;
   background-repeat: no-repeat;
+  background-color: transparent !important;
   flex-shrink: 0;
   transition: filter 0.15s ease;
   cursor: pointer;
@@ -261,6 +261,7 @@
   background-image: url('/wmp-assets/prev.png');
   background-repeat: no-repeat;
   background-position: center;
+  background-color: transparent !important;
   flex-shrink: 0;
   cursor: pointer;
   border: none;
@@ -282,6 +283,7 @@
   background-image: url('/wmp-assets/next.png');
   background-repeat: no-repeat;
   background-position: center;
+  background-color: transparent !important;
   flex-shrink: 0;
   cursor: pointer;
   border: none;
@@ -303,6 +305,7 @@
   background-image: url('/wmp-assets/stop.png');
   background-repeat: no-repeat;
   background-position: center;
+  background-color: transparent !important;
   flex-shrink: 0;
   cursor: pointer;
   border: none;
@@ -324,6 +327,7 @@
   background-image: url('/wmp-assets/repeat.png');
   background-repeat: no-repeat;
   background-position: center;
+  background-color: transparent !important;
   flex-shrink: 0;
   cursor: pointer;
   border: none;
@@ -342,6 +346,7 @@
   background-image: url('/wmp-assets/shuffle.png');
   background-repeat: no-repeat;
   background-position: center;
+  background-color: transparent !important;
   flex-shrink: 0;
   cursor: pointer;
 }
