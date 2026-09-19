@@ -35,6 +35,7 @@ export interface DockOffsets {
   loopPod: { x: number; y: number };
   clearSoundPod: { x: number; y: number };
   mainPod: { x: number; y: number };
+  studioBtn: { x: number; y: number };
 }
 
 export const DESKTOP_DOCK_OFFSETS: DockOffsets = {
@@ -52,6 +53,7 @@ export const DESKTOP_DOCK_OFFSETS: DockOffsets = {
   loopPod: { x: 0, y: 0 },
   clearSoundPod: { x: 0, y: 0 },
   mainPod: { x: 0, y: 0 },
+  studioBtn: { x: 0, y: 0 },
 };
 
 export const MOBILE_DOCK_OFFSETS: DockOffsets = {
@@ -69,6 +71,7 @@ export const MOBILE_DOCK_OFFSETS: DockOffsets = {
   loopPod: { x: 0, y: 0 },
   clearSoundPod: { x: 0, y: 0 },
   mainPod: { x: 55, y: 0 },
+  studioBtn: { x: 0, y: 0 },
 };
 
 export const DEFAULT_DOCK_OFFSETS: DockOffsets = DESKTOP_DOCK_OFFSETS;
@@ -266,6 +269,42 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const startTouchDragTarget = (target: keyof DockOffsets, e: React.TouchEvent) => {
+    if (!showTuner) return;
+    e.stopPropagation();
+    if (e.touches.length === 0) return;
+    const touch = e.touches[0];
+    setActiveTunerTarget(target);
+    isDraggingRef.current = true;
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+    initialOffset.current = { ...offsets[target] };
+
+    const onTouchMove = (ev: TouchEvent) => {
+      if (!isDraggingRef.current || ev.touches.length === 0) return;
+      const moveTouch = ev.touches[0];
+      const dx = moveTouch.clientX - dragStartPos.current.x;
+      const dy = moveTouch.clientY - dragStartPos.current.y;
+      setOffsets((prev) => ({
+        ...prev,
+        [target]: {
+          x: initialOffset.current.x + dx,
+          y: initialOffset.current.y + dy,
+        },
+      }));
+    };
+
+    const onTouchEnd = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+    };
+
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchEnd);
   };
 
   useEffect(() => {
@@ -495,6 +534,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               <option value="pitchPod">12. Kapsul Pitch Shifter</option>
               <option value="metronomePod">13. Kapsul Metronom</option>
               <option value="mainPod">14. Pod Utama (404px)</option>
+              <option value="studioBtn">15. Tombol Studio Mobile</option>
             </select>
           </div>
 
@@ -918,7 +958,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
           {/* Mobile Only: Studio Menu Trigger Button (< 1024px) */}
           <button
-            onClick={() => setMobileStudioOpen(true)}
+            onClick={() => {
+              if (!showTuner) setMobileStudioOpen(true);
+            }}
+            onMouseDown={(e) => startDragTarget('studioBtn', e)}
+            onTouchStart={(e) => startTouchDragTarget('studioBtn', e)}
+            style={getTunerStyle('studioBtn')}
             className="lg:hidden wmp-aero-pill px-3 py-1.5 flex items-center gap-1.5 text-[#002963] font-black text-xs shadow-md relative active:scale-95 transition-all bg-gradient-to-b from-white/95 via-sky-100/90 to-sky-200/90 border border-sky-300"
             title="Buka Alat Studio Mobile (Loop A-B, Pitch, Metronom, Clear Sound)"
           >
