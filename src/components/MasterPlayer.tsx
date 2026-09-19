@@ -57,21 +57,21 @@ export const DESKTOP_DOCK_OFFSETS: DockOffsets = {
 };
 
 export const MOBILE_DOCK_OFFSETS: DockOffsets = {
-  timeDisplay: { x: -40, y: 0 },
+  timeDisplay: { x: 9, y: -10 },
   trackInfo: { x: -30, y: 0 },
-  speedChip: { x: -13, y: 0 },
-  btnRepeat: { x: -12, y: 0 },
-  btnStop: { x: -7, y: -2 },
-  btnPrev: { x: 2, y: 0 },
-  playSocket: { x: -6, y: 0 },
-  btnNext: { x: -14, y: 0 },
-  volModule: { x: -9, y: -1 },
+  speedChip: { x: -128, y: 18 },
+  btnRepeat: { x: -102, y: 0 },
+  btnStop: { x: -94, y: 0 },
+  btnPrev: { x: -88, y: 0 },
+  playSocket: { x: -86, y: 0 },
+  btnNext: { x: -84, y: 0 },
+  volModule: { x: -71, y: -1 },
   pitchPod: { x: 0, y: 0 },
   metronomePod: { x: 0, y: 0 },
   loopPod: { x: 0, y: 0 },
   clearSoundPod: { x: 0, y: 0 },
   mainPod: { x: 55, y: 0 },
-  studioBtn: { x: 0, y: 0 },
+  studioBtn: { x: 25, y: 0 },
 };
 
 export const DEFAULT_DOCK_OFFSETS: DockOffsets = DESKTOP_DOCK_OFFSETS;
