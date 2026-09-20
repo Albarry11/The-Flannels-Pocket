@@ -770,7 +770,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             }}
           >
             {/* Sayap Kiri Pod: Speed 1.0x (Desktop Only) + Repeat + Stop + Prev */}
-            <div className="w-[190px] lg:w-[221px] h-full flex items-center justify-end gap-1 pr-1 lg:pr-2.5 flex-shrink-0">
+            <div className="w-[245px] lg:w-[221px] h-full flex items-center justify-end gap-1 pr-1 lg:pr-2.5 flex-shrink-0">
               {/* Playback Speed Pill (Desktop Only >= 1024px) */}
               <div
                 style={getTunerStyle('speedChip')}
