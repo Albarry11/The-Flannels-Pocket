@@ -57,9 +57,9 @@ export const DESKTOP_DOCK_OFFSETS: DockOffsets = {
 };
 
 export const MOBILE_DOCK_OFFSETS: DockOffsets = {
-  timeDisplay: { x: 9, y: -10 },
+  timeDisplay: { x: 9, y: 0 },
   trackInfo: { x: -30, y: 0 },
-  speedChip: { x: -128, y: 18 },
+  speedChip: { x: 0, y: 0 },
   btnRepeat: { x: -102, y: 0 },
   btnStop: { x: -94, y: 0 },
   btnPrev: { x: -88, y: 0 },
@@ -683,21 +683,50 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             )}
           </div>
 
-          {/* Duration Badge */}
+          {/* Duration Badge & Speed Chip (Mobile: Vertically Stacked & Centered | Desktop: Standalone Duration) */}
           <div
             style={getTunerStyle('timeDisplay')}
             onMouseDown={(e) => startDragTarget('timeDisplay', e)}
-            className="wmp-aero-pill px-2.5 py-0.5 text-[9px] sm:text-[10px] font-mono text-[#002963] font-black tracking-wider flex-shrink-0 whitespace-nowrap shadow-2xs select-none"
+            onTouchStart={(e) => startTouchDragTarget('timeDisplay', e)}
+            className="flex flex-col items-center gap-1 flex-shrink-0 select-none"
           >
-            {isAudioLoading ? (
-              <span className="text-sky-700 font-extrabold animate-pulse">
-                {audioLoadingText || 'Memuat...'}
-              </span>
-            ) : (
-              <span>
-                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
-              </span>
-            )}
+            <div className="wmp-aero-pill px-2.5 py-0.5 text-[9px] sm:text-[10px] font-mono text-[#002963] font-black tracking-wider whitespace-nowrap shadow-2xs">
+              {isAudioLoading ? (
+                <span className="text-sky-700 font-extrabold animate-pulse">
+                  {audioLoadingText || 'Memuat...'}
+                </span>
+              ) : (
+                <span>
+                  {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+                </span>
+              )}
+            </div>
+
+            {/* Mobile-only Speed Chip: docked directly underneath duration for perfectly centered alignment */}
+            <div
+              style={getTunerStyle('speedChip')}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                startDragTarget('speedChip', e);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                startTouchDragTarget('speedChip', e);
+              }}
+              className="lg:hidden flex items-center gap-0.5 bg-white/35 hover:bg-white/55 border border-white/60 rounded-full px-1.5 py-0.5 shadow-2xs transition backdrop-blur-xs select-none"
+            >
+              <Gauge className="w-2.5 h-2.5 text-sky-800 pointer-events-none" />
+              <select
+                value={speed}
+                onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
+                className="bg-transparent text-[#002963] text-[9px] font-mono font-black focus:outline-none cursor-pointer"
+                aria-label="Pilih kecepatan playback"
+              >
+                <option value={0.75}>0.75x</option>
+                <option value={1.0}>1.0x</option>
+                <option value={1.25}>1.25x</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -740,13 +769,13 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
               }
             }}
           >
-            {/* Sayap Kiri Pod: Speed 1.0x + Repeat + Stop + Prev (Extended to 245px for mobile speed chip) */}
-            <div className="w-[245px] lg:w-[221px] h-full flex items-center justify-end gap-1 pr-1 lg:pr-2.5 flex-shrink-0">
-              {/* Playback Speed Pill */}
+            {/* Sayap Kiri Pod: Speed 1.0x (Desktop Only) + Repeat + Stop + Prev */}
+            <div className="w-[190px] lg:w-[221px] h-full flex items-center justify-end gap-1 pr-1 lg:pr-2.5 flex-shrink-0">
+              {/* Playback Speed Pill (Desktop Only >= 1024px) */}
               <div
                 style={getTunerStyle('speedChip')}
                 onMouseDown={(e) => startDragTarget('speedChip', e)}
-                className="flex items-center gap-0.5 bg-white/35 hover:bg-white/55 border border-white/60 rounded-full px-1.5 py-0.5 shadow-2xs mr-0.5 transition backdrop-blur-xs select-none"
+                className="hidden lg:flex items-center gap-0.5 bg-white/35 hover:bg-white/55 border border-white/60 rounded-full px-1.5 py-0.5 shadow-2xs mr-0.5 transition backdrop-blur-xs select-none"
               >
                 <Gauge className="w-2.5 h-2.5 text-sky-800 pointer-events-none" />
                 <select
