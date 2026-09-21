@@ -283,33 +283,33 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
-          {/* Main Song List (Horizontal Scrolling Card Rail) */}
-          <div className="overflow-x-auto pb-4 pt-0.5 flex gap-2.5 sm:gap-4 items-start scrollbar-thin">
+          {/* Main Song List - Responsive List Rows on compact screens, Card Rail on taller desktop */}
+          <div className="overflow-y-auto max-h-full pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-3 items-start scrollbar-thin">
         {songs.length === 0 ? (
           /* Empty State */
-          <div className="text-center py-10 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-3 max-w-md mx-auto shadow-2xl text-white flex-shrink-0 my-auto">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 border border-white/30">
-              <Music2 className="w-6 h-6 sm:w-7 sm:h-7" />
+          <div className="text-center py-6 px-4 rounded-2xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-2 max-w-md mx-auto shadow-2xl text-white flex-shrink-0 my-auto">
+            <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 border border-white/30">
+              <Music2 className="w-5 h-5" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-black text-white tracking-tight">Library Belum Ada Lagu</h3>
-              <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-medium">
-                Pilih lagu yang ingin kamu kulik bersama The Flannels lewat menu Antrian Request, atau masuk sebagai Admin untuk menginput berkas stem studio.
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-black text-white tracking-tight">Library Belum Ada Lagu</h3>
+              <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
+                Pilih lagu yang ingin kamu kulik bersama The Flannels lewat Antrian Request, atau masuk sebagai Admin untuk menginput berkas stem studio.
               </p>
             </div>
-            <div className="flex flex-col items-center justify-center gap-2 pt-1">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 pt-1">
               <button
                 onClick={onNavigateToRequests}
-                className="w-full sm:w-auto px-5 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-xs font-black shadow-lg shadow-orange-500/30 active:scale-95 transition flex items-center justify-center gap-1.5 border border-white/30"
+                className="w-full sm:w-auto px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[11px] font-black shadow-lg shadow-orange-500/30 active:scale-95 transition flex items-center justify-center gap-1 border border-white/30"
               >
-                <Flame className="w-4 h-4" />
-                <span>Buka Antrian Request Lagu</span>
+                <Flame className="w-3.5 h-3.5" />
+                <span>Buka Antrian Request</span>
               </button>
 
               {!isAdmin ? (
                 <button
                   onClick={onUnlockAdmin}
-                  className="text-xs text-sky-300/80 hover:text-white underline font-semibold transition py-1 flex items-center gap-1"
+                  className="text-[11px] text-sky-300/80 hover:text-white underline font-semibold transition py-1 flex items-center gap-1"
                 >
                   <Lock className="w-3 h-3" />
                   <span>Mode Admin (Albarry)</span>
@@ -317,10 +317,10 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               ) : (
                 <button
                   onClick={onOpenAdminUpload}
-                  className="w-full sm:w-auto px-5 py-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-black shadow-lg shadow-sky-500/30 active:scale-95 transition flex items-center justify-center gap-1.5 border border-white/30"
+                  className="w-full sm:w-auto px-4 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-[11px] font-black shadow-lg shadow-sky-500/30 active:scale-95 transition flex items-center justify-center gap-1 border border-white/30"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Input Stem Studio Sekarang</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Input Stem Studio</span>
                 </button>
               )}
             </div>
@@ -333,127 +333,160 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             return (
               <div
                 key={song.id}
-                className={`w-[260px] sm:w-[340px] flex-shrink-0 p-2 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-1.5 sm:gap-2.5 shadow-sm relative overflow-hidden max-h-full ${
+                className={`w-full sm:w-[280px] lg:w-[320px] flex-shrink-0 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between gap-1 sm:gap-2 shadow-xs relative ${
                   isSelected
-                    ? 'bg-gradient-to-r from-sky-100/95 to-blue-100/90 border-sky-400 shadow-[0_8px_24px_rgba(2,132,199,0.2)] ring-2 ring-sky-400/50'
+                    ? 'bg-gradient-to-r from-sky-100/95 to-blue-100/90 border-sky-400 shadow-[0_4px_16px_rgba(2,132,199,0.2)] ring-1.5 ring-sky-400/50'
                     : 'bg-white/85 border-sky-200/80 hover:border-sky-300 hover:bg-white'
                 }`}
               >
-                  <div className="flex items-center gap-2 sm:gap-3.5">
-                    {/* Cover Art */}
-                    <div className="relative flex-shrink-0 w-11 h-11 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden shadow-md border border-white bg-sky-100">
-                      {artwork ? (
-                        <img src={artwork} alt={song.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-sky-600">
-                          <Music2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </div>
-                      )}
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-sky-500/20 flex items-center justify-center">
-                          <span className="text-[7px] sm:text-[9px] bg-sky-600 text-white px-1.5 py-0.2 rounded-full font-black shadow-xs">
-                            ACTIVE
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {/* Cover Art */}
+                      <div className="relative flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl overflow-hidden shadow-xs border border-white bg-sky-100">
+                        {artwork ? (
+                          <img src={artwork} alt={song.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-sky-600">
+                            <Music2 className="w-4 h-4" />
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-sky-500/20 flex items-center justify-center">
+                            <span className="text-[6px] sm:text-[8px] bg-sky-600 text-white px-1 py-0.2 rounded-full font-black">
+                              ACTIVE
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-[11px] sm:text-sm font-extrabold text-[#0f2942] tracking-tight truncate leading-tight">
+                            {song.title}
+                          </h4>
+                          <span className="text-[9px] font-mono font-bold text-sky-700 bg-sky-100 px-1 rounded sm:hidden flex-shrink-0">
+                            {song.bpm} BPM
                           </span>
                         </div>
-                      )}
+                        <span className="text-[9px] sm:text-xs text-sky-800 font-medium block truncate">
+                          by {song.artist} {song.album ? `• ${song.album}` : ''}
+                        </span>
+
+                        <div className="hidden sm:flex items-center gap-1 mt-0.5 flex-wrap text-[9px] sm:text-[10px] font-mono">
+                          <span className="px-1 py-0.2 rounded bg-sky-100 border border-sky-300 text-sky-900 font-bold">
+                            {song.bpm} BPM
+                          </span>
+                          <span className="px-1 py-0.2 rounded bg-amber-100 border border-amber-300 text-amber-900 font-bold">
+                            {song.originalKey}
+                          </span>
+                          <span className="px-1 py-0.2 rounded bg-slate-100 border border-slate-300 text-slate-700">
+                            {formatSecondsToTime(song.duration)}
+                          </span>
+                          <span className="px-1 py-0.2 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
+                            {song.stems.length} Stems
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs sm:text-base font-extrabold text-[#0f2942] tracking-tight truncate leading-tight">
-                        {song.title}
-                      </h4>
-                      <span className="text-[10px] sm:text-xs text-sky-800 font-medium block truncate">
-                        by {song.artist} {song.album ? `• ${song.album}` : ''}
-                      </span>
+                    {/* Inline Select Button - Direct click on compact screens */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => onSelectSong(song)}
+                        className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95 ${
+                          isSelected
+                            ? 'bg-sky-600 text-white font-black'
+                            : 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white hover:opacity-95'
+                        }`}
+                      >
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                        <span>{isSelected ? 'Dimuat' : 'Pilih Lagu'}</span>
+                      </button>
 
-                      <div className="flex items-center gap-1 mt-0.5 sm:mt-1 flex-wrap text-[9px] sm:text-[11px] font-mono">
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-md bg-sky-100 border border-sky-300 text-sky-900 font-bold">
-                          {song.bpm} BPM
-                        </span>
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-md bg-amber-100 border border-amber-300 text-amber-900 font-bold">
-                          {song.originalKey}
-                        </span>
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-md bg-slate-100 border border-slate-300 text-slate-700">
-                          {formatSecondsToTime(song.duration)}
-                        </span>
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-md bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
-                          {song.stems.length} Stems
-                        </span>
-                      </div>
+                      {isAdmin && (
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => handleOpenEdit(song)}
+                            className="p-1 rounded-full text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition"
+                            title="Edit BPM & Tangga Nada"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(song.id)}
+                            className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Hapus lagu"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Discrete Folder Badge */}
-                  <div className="pt-1.5 sm:pt-2 border-t border-sky-100">
+                  {/* Discrete Folder Badge (Accordion) */}
+                  <div className="pt-1 border-t border-sky-100">
                     <button
                       onClick={() => setExpandedFolderId(expandedFolderId === song.id ? null : song.id)}
-                      className="w-full flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-sky-900 bg-sky-50/90 hover:bg-sky-100/90 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-sky-200 transition"
+                      className="w-full flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-sky-900 bg-sky-50/80 hover:bg-sky-100/90 px-2 py-0.5 rounded-lg border border-sky-200 transition"
                       title="Lihat berkas fisik stem di dalam folder ini"
                     >
                       <span className="truncate flex items-center gap-1">
-                        <Folder className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-sky-600" />
+                        <Folder className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-sky-600" />
                         <span>{song.folderName || `Songs/${song.title}/`}</span>
                       </span>
-                      <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-sky-700 font-sans font-bold flex-shrink-0">
-                        <span>{song.stems.length} Stem Diskrit</span>
-                        {expandedFolderId === song.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      <span className="flex items-center gap-1 text-[8px] sm:text-[9px] text-sky-700 font-sans font-bold flex-shrink-0">
+                        <span>{song.stems.length} Stem</span>
+                        {expandedFolderId === song.id ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
                       </span>
                     </button>
 
                     {/* Expandable list of discrete files */}
                     {expandedFolderId === song.id && (
-                      <div className="mt-2 p-2.5 rounded-2xl bg-white/95 border border-sky-200 space-y-2 text-[10px] font-mono animate-in fade-in duration-100">
-                        <div className="flex items-center justify-between text-slate-500 pb-1.5 border-b border-sky-100 text-[9px] uppercase font-bold">
+                      <div className="mt-1.5 p-2 rounded-xl bg-white/95 border border-sky-200 space-y-1.5 text-[9px] font-mono animate-in fade-in duration-100">
+                        <div className="flex items-center justify-between text-slate-500 pb-1 border-b border-sky-100 text-[8px] uppercase font-bold">
                           <span>Berkas Stem Diskrit ({song.stems.length} track):</span>
                           <span>Studio Audio</span>
                         </div>
 
                         {stemLoadingStatus && (
-                          <div className="p-2 rounded-xl bg-sky-100 border border-sky-300 text-sky-900 font-bold flex items-center gap-1.5 text-[10px] animate-pulse">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600 flex-shrink-0" />
+                          <div className="p-1.5 rounded-lg bg-sky-100 border border-sky-300 text-sky-900 font-bold flex items-center gap-1 text-[9px] animate-pulse">
+                            <Loader2 className="w-3 h-3 animate-spin text-sky-600 flex-shrink-0" />
                             <span className="truncate">{stemLoadingStatus}</span>
                           </div>
                         )}
 
                         <div className="space-y-1">
                           {song.stems.map((stem) => (
-                            <div key={stem.id} className="flex items-center justify-between py-1.5 hover:bg-sky-50/80 px-2 rounded-xl border border-transparent hover:border-sky-200 transition">
-                              <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
-                                <FileAudio className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
-                                <span className="px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-800 text-[9px] font-bold uppercase flex-shrink-0">
+                            <div key={stem.id} className="flex items-center justify-between py-1 hover:bg-sky-50/80 px-1.5 rounded-lg border border-transparent hover:border-sky-200 transition">
+                              <div className="flex items-center gap-1 min-w-0 flex-1 pr-1">
+                                <FileAudio className="w-3 h-3 text-sky-600 flex-shrink-0" />
+                                <span className="px-1 py-0.2 rounded bg-sky-100 text-sky-800 text-[8px] font-bold uppercase flex-shrink-0">
                                   {stem.role}
                                 </span>
                                 <span className="text-sky-950 font-bold truncate">
                                   {stem.name || stem.role}
                                 </span>
-                                <span className="text-slate-400 text-[9px] truncate hidden sm:inline">
-                                  ({stem.fileName || `${stem.role}.wav`})
-                                </span>
                               </div>
 
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                {/* Download */}
-                                {(stem.blob || stem.audioUrl) && (
-                                  <button
-                                    onClick={() => handleDownloadStem(stem, song.title)}
-                                    className="p-1 rounded-lg text-sky-700 hover:text-sky-900 hover:bg-sky-100 transition"
-                                    title={`Unduh berkas ${stem.fileName || `${stem.role}.wav`}`}
-                                  >
-                                    <Download className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => handleDownloadStem(stem, song.title)}
+                                  className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-100 transition"
+                                  title="Download berkas stem ini"
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                </button>
 
-                                {/* Admin Stem CRUD */}
                                 {isAdmin && (
                                   <>
-                                    {/* Swap / Replace Stem Audio */}
                                     <label
                                       htmlFor={`replace-stem-${song.id}-${stem.id}`}
-                                      className="px-2 py-0.5 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-[9px] flex items-center gap-1 cursor-pointer transition shadow-2xs active:scale-95"
-                                      title="Ganti berkas stem ini dengan rekaman yang lebih bagus (.wav / .flac / .mp3)"
+                                      className="px-1.5 py-0.2 rounded bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-[8px] flex items-center gap-0.5 cursor-pointer transition"
+                                      title="Ganti berkas stem ini"
                                     >
-                                      <RefreshCw className="w-2.5 h-2.5 text-sky-600" />
+                                      <RefreshCw className="w-2 h-2 text-sky-600" />
                                       <span>Tukar</span>
                                       <input
                                         type="file"
@@ -470,14 +503,13 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                                       />
                                     </label>
 
-                                    {/* Delete Stem (only if > 1 stem) */}
                                     {song.stems.length > 1 && (
                                       <button
                                         onClick={() => handleDeleteStem(song.id, stem.id, stem.name || stem.role)}
-                                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                                        title={`Hapus stem ${stem.name || stem.role} dari lagu ini`}
+                                        className="p-0.5 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                        title={`Hapus stem ${stem.name || stem.role}`}
                                       >
-                                        <Trash2 className="w-3 h-3" />
+                                        <Trash2 className="w-2.5 h-2.5" />
                                       </button>
                                     )}
                                   </>
@@ -487,7 +519,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                           ))}
                         </div>
 
-                        {/* Admin Add New Stem Button */}
                         {isAdmin && (
                           <div className="pt-1 border-t border-sky-100">
                             <button
@@ -497,47 +528,13 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                                 setNewStemRole('guitar');
                                 setNewStemFile(null);
                               }}
-                              className="w-full py-1.5 px-3 rounded-xl border border-dashed border-sky-300 hover:border-sky-500 hover:bg-sky-100/60 text-sky-800 text-[10px] font-bold flex items-center justify-center gap-1.5 transition active:scale-98"
+                              className="w-full py-1 px-2 rounded-lg border border-dashed border-sky-300 hover:border-sky-500 hover:bg-sky-100/60 text-sky-800 text-[9px] font-bold flex items-center justify-center gap-1 transition"
                             >
-                              <Plus className="w-3.5 h-3.5 text-sky-600" />
-                              <span>Tambah Stem Baru (Gitar Tambahan, Vokal, Synth, dll.)</span>
+                              <Plus className="w-3 h-3 text-sky-600" />
+                              <span>Tambah Stem Baru</span>
                             </button>
                           </div>
                         )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-sky-100">
-                    <button
-                      onClick={() => onSelectSong(song)}
-                      className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shadow-xs ${
-                        isSelected
-                          ? 'bg-sky-600 text-white font-black'
-                          : 'bg-sky-100 text-sky-900 hover:bg-sky-200'
-                      }`}
-                    >
-                      <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" />
-                      <span>{isSelected ? 'Dimuat di Mixer' : 'Pilih Lagu'}</span>
-                    </button>
-
-                    {isAdmin && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleOpenEdit(song)}
-                          className="p-1 sm:p-1.5 rounded-full text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition"
-                          title="Edit BPM & Tangga Nada"
-                        >
-                          <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(song.id)}
-                          className="p-1 sm:p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                          title="Hapus lagu dari studio"
-                        >
-                          <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </button>
                       </div>
                     )}
                   </div>
