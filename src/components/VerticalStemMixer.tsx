@@ -420,18 +420,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* 5. Bottom: Console Masking Tape Strip */}
-              <div className="w-full text-center pt-1 border-t border-slate-800/80 flex-shrink-0 flex flex-col items-center">
-                <div className="w-full bg-[#f6ecd2] border border-amber-300/80 px-1.5 py-0.5 shadow-sm rounded-xs flex items-center justify-between rotate-[-0.5deg]">
-                  <span className="text-[8px] font-mono font-black text-slate-800 tracking-tighter uppercase truncate">
-                    {roleInfo.tapeLabel}
-                  </span>
-                  <span className="text-[9px] font-mono font-black text-slate-950">
-                    {Math.round(stem.volume * 100)}%
-                  </span>
-                </div>
-              </div>
             </div>
           );
         })}
