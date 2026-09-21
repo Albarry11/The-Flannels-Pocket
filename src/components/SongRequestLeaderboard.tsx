@@ -247,7 +247,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
       </div>
 
       {/* Leaderboard List (Horizontal Scrolling Card Rail on desktop, rows on mobile) */}
-      <div className="flex-1 min-h-0 overflow-y-auto sm:overflow-y-hidden pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-4 items-stretch scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto sm:overflow-y-hidden pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-4 items-center scrollbar-thin my-auto">
         {isLoading ? (
           <div className="w-full py-8 sm:py-12 flex flex-col items-center justify-center text-sky-800 space-y-2 flex-shrink-0">
             <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-sky-500 animate-spin mx-auto" />
@@ -271,7 +271,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             return (
               <div
                 key={req.id}
-                className={`w-full sm:w-[310px] flex-shrink-0 p-1.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between gap-1 sm:gap-2 shadow-xs relative ${
+                className={`w-full sm:w-[340px] flex-shrink-0 p-1.5 sm:p-3.5 rounded-xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-1 sm:gap-2.5 shadow-xs sm:shadow-sm relative ${
                   isFulfilled
                     ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
                     : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'

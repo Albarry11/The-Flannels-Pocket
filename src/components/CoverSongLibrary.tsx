@@ -270,9 +270,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           />
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col justify-center">
           {/* Main Song List - Responsive List Rows on mobile, Card Rail on desktop */}
-          <div className="overflow-y-auto sm:overflow-y-hidden max-h-full pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-4 items-start scrollbar-thin flex-1 min-h-0">
+          <div className="overflow-y-auto sm:overflow-y-hidden max-h-full pb-2 pt-0.5 sm:py-auto space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-4 items-center scrollbar-thin">
         {songs.length === 0 ? (
           /* Empty State */
           <div className="text-center py-6 px-4 rounded-2xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-2 max-w-md mx-auto shadow-2xl text-white flex-shrink-0 my-auto">
