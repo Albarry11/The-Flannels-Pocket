@@ -191,7 +191,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0 overflow-hidden">
       {/* Header - Compact Sleek Submenu Header */}
       <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1">
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -268,7 +268,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
       </div>
 
       {activeSubTab === 'requests' ? (
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <SongRequestLeaderboard
             isAdmin={isAdmin}
             onFulfillRequest={(req) => onFulfillRequest?.(req)}
@@ -282,9 +282,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           />
         </div>
       ) : (
-        <>
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
           {/* Main Song List (Horizontal Scrolling Card Rail) */}
-          <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto pb-4 pt-0.5 flex gap-2.5 sm:gap-4 items-stretch scrollbar-thin">
+          <div className="overflow-x-auto pb-4 pt-0.5 flex gap-2.5 sm:gap-4 items-start scrollbar-thin">
         {songs.length === 0 ? (
           /* Empty State */
           <div className="text-center py-10 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-[#08182b]/90 backdrop-blur-3xl border border-sky-400/30 space-y-3 max-w-md mx-auto shadow-2xl text-white flex-shrink-0 my-auto">
@@ -333,7 +333,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             return (
               <div
                 key={song.id}
-                className={`w-[260px] sm:w-[340px] flex-shrink-0 p-2 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-1.5 sm:gap-2.5 shadow-sm relative overflow-hidden ${
+                className={`w-[260px] sm:w-[340px] flex-shrink-0 p-2 sm:p-3.5 rounded-2xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-1.5 sm:gap-2.5 shadow-sm relative overflow-hidden max-h-full ${
                   isSelected
                     ? 'bg-gradient-to-r from-sky-100/95 to-blue-100/90 border-sky-400 shadow-[0_8px_24px_rgba(2,132,199,0.2)] ring-2 ring-sky-400/50'
                     : 'bg-white/85 border-sky-200/80 hover:border-sky-300 hover:bg-white'
@@ -545,7 +545,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
               );
             })
         )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit BPM & Key Modal for Admin */}
       {editingSong && (
@@ -708,8 +710,6 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
             </form>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );
