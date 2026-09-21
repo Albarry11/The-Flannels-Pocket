@@ -240,9 +240,6 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                     }}
                   />
                 </div>
-                <span className="text-[9px] text-slate-400 font-semibold truncate max-w-full">
-                  {roleInfo.personil}
-                </span>
               </div>
 
               {/* 2. Hardware Console Mute & Solo Push Buttons */}
