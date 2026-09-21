@@ -113,71 +113,57 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
 
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-2 sm:p-3.5 shadow-lg">
-      {/* Top Header Tilikan - Compact Sleek Submenu Header */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-2 flex-wrap gap-1.5">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-xs text-white">
-            <Brain className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <h2 className="text-xs sm:text-sm font-black text-[#0f2942] tracking-tight leading-tight">
-              Tilikan Musisi
-            </h2>
-            <p className="text-[9px] sm:text-[10px] text-sky-700 font-medium leading-none mt-0.5">
-              Analisis Aransemen Musik / Kualitas Audio
-            </p>
-          </div>
+      {/* Top Header Tilikan - Integrated Vista Tab Switcher as Header Title */}
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1.5">
+        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md">
+          <button
+            onClick={() => setActiveTab('coaching')}
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+              activeTab === 'coaching'
+                ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
+                : 'text-sky-950 hover:bg-white/40'
+            }`}
+          >
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Kulik Personil</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
+                : 'text-sky-950 hover:bg-white/40'
+            }`}
+          >
+            <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Tanya Produser</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('quality')}
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+              activeTab === 'quality'
+                ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
+                : 'text-sky-950 hover:bg-white/40'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Kualitas Audio</span>
+          </button>
         </div>
 
-        {/* Tab Buttons & Refresh */}
-        <div className="flex items-center gap-1.5">
+        {/* Tab Actions / Refresh */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {activeTab === 'coaching' && coaching && (
             <button
               onClick={() => runCoachingAnalysis(true)}
               disabled={isLoadingCoaching}
-              className="px-2.5 py-0.5 rounded-full bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-[10px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+              className="px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
               title="Analisis ulang aransemen via Gemini"
             >
-              <RefreshCw className={`w-3 h-3 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Analisis Ulang</span>
+              <RefreshCw className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
+              <span className="hidden xs:inline">Analisis Ulang</span>
             </button>
           )}
-
-          <div className="flex bg-white/80 p-0.5 rounded-full border border-sky-200/80 text-[10px] sm:text-[11px] font-bold shadow-2xs">
-            <button
-              onClick={() => setActiveTab('coaching')}
-              className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 ${
-                activeTab === 'coaching'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                  : 'text-sky-900 hover:text-sky-600'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Kulik Personil</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
-                activeTab === 'chat'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                  : 'text-sky-900 hover:text-sky-600'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Tanya Produser</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('quality')}
-              className={`px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 ${
-                activeTab === 'quality'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-sm'
-                  : 'text-sky-900 hover:text-sky-600'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Kualitas Audio</span>
-            </button>
-          </div>
         </div>
       </div>
 
