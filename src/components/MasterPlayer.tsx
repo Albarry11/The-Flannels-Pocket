@@ -1006,10 +1006,10 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
       </div>
 
-      {/* Floating DEV Tuner Mode Trigger */}
+      {/* Floating DEV Tuner Mode Trigger - Hidden on short landscape & small mobile */}
       <button
         onClick={() => setShowTuner(!showTuner)}
-        className={`fixed bottom-20 right-4 z-50 px-3.5 py-1.5 rounded-full font-black text-xs flex items-center gap-2 shadow-2xl transition-all ${
+        className={`hidden md:flex fixed bottom-20 right-4 z-50 px-3.5 py-1.5 rounded-full font-black text-xs items-center gap-2 shadow-2xl transition-all ${
           showTuner
             ? 'bg-amber-400 text-black border-2 border-amber-500 scale-105 shadow-[0_0_15px_#f59e0b]'
             : 'bg-[#07192b]/90 hover:bg-[#0c2b4c] text-cyan-300 border border-cyan-400/60 backdrop-blur-lg hover:scale-105'
