@@ -192,27 +192,39 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
 
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0 overflow-hidden">
-      {/* Header - Compact Sleek Submenu Header */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-xs text-white flex-shrink-0">
-            <Folder className="w-3 h-3 sm:w-4 sm:h-4" />
-          </div>
-          <div>
-            <h2 className="text-[11px] sm:text-sm font-black text-[#0f2942] tracking-tight leading-tight">
-              Library Lagu Cover The Flannels
-            </h2>
-            <p className="text-[8px] sm:text-[10px] text-sky-800 font-medium leading-none mt-0.5 hidden xs:block">
-              Koleksi Master & Stem Diskrit • 100% Studio Rehearsal Quality
-            </p>
-          </div>
+      {/* Header - Compact Integrated Segmented Switch & Actions */}
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1.5">
+        {/* Integrated Vista Tab Switcher as Header Title */}
+        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md">
+          <button
+            onClick={() => setActiveSubTab('songs')}
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+              activeSubTab === 'songs'
+                ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
+                : 'text-sky-950 hover:bg-white/40'
+            }`}
+          >
+            <Folder className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Koleksi Lagu ({songs.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('requests')}
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+              activeSubTab === 'requests'
+                ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
+                : 'text-sky-950 hover:bg-white/40'
+            }`}
+          >
+            <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Antrian Request</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-1.5">
-          {songs.length > 0 && (
+          {songs.length > 0 && activeSubTab === 'songs' && (
             <button
               onClick={handleExportBackup}
-              className="px-2 sm:px-2.5 py-0.5 rounded-full bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+              className="px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
               title="Ekspor paket library JSON"
             >
               <FileDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -224,47 +236,23 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           {isAdmin ? (
             <button
               onClick={onOpenAdminUpload}
-              className="px-2 sm:px-3 py-0.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
+              className="px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
             >
               <Upload className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span>Input Stem Baru</span>
+              <span>Input Stem</span>
             </button>
           ) : (
-            <button
-              onClick={() => setActiveSubTab('requests')}
-              className="px-2 sm:px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
-            >
-              <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span>Request Lagu</span>
-            </button>
+            activeSubTab === 'songs' && (
+              <button
+                onClick={() => setActiveSubTab('requests')}
+                className="px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
+              >
+                <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span>Request Lagu</span>
+              </button>
+            )
           )}
         </div>
-      </div>
-
-      {/* Sub-tab Navigation */}
-      <div className="flex items-center gap-1 mb-1 sm:mb-2 p-0.5 rounded-lg bg-white/40 border border-white/60 shadow-2xs backdrop-blur-md flex-shrink-0">
-        <button
-          onClick={() => setActiveSubTab('songs')}
-          className={`flex-1 py-1 px-2 sm:px-2.5 rounded-md font-black text-[10px] sm:text-[11px] transition flex items-center justify-center gap-1 active:scale-95 ${
-            activeSubTab === 'songs'
-              ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
-              : 'text-sky-950 hover:bg-white/40'
-          }`}
-        >
-          <Folder className="w-3 h-3" />
-          <span>Koleksi Lagu Cover ({songs.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveSubTab('requests')}
-          className={`flex-1 py-1 px-2 sm:px-2.5 rounded-md font-black text-[10px] sm:text-[11px] transition flex items-center justify-center gap-1 active:scale-95 ${
-            activeSubTab === 'requests'
-              ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
-              : 'text-sky-950 hover:bg-white/40'
-          }`}
-        >
-          <Flame className="w-3 h-3" />
-          <span>Antrian Request Lagu</span>
-        </button>
       </div>
 
       {activeSubTab === 'requests' ? (
