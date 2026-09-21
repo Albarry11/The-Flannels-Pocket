@@ -247,19 +247,19 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
       </div>
 
       {/* Leaderboard List (Horizontal Scrolling Card Rail) */}
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto pb-3 pt-1 flex gap-2.5 sm:gap-4 items-stretch scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-3 items-start scrollbar-thin">
         {isLoading ? (
-          <div className="w-full py-12 flex flex-col items-center justify-center text-sky-800 space-y-2 flex-shrink-0">
-            <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto" />
+          <div className="w-full py-8 flex flex-col items-center justify-center text-sky-800 space-y-2 flex-shrink-0">
+            <Loader2 className="w-6 h-6 text-sky-500 animate-spin mx-auto" />
             <p className="text-xs font-semibold">Memuat antrian request...</p>
           </div>
         ) : requests.length === 0 ? (
-          <div className="w-full flex flex-col items-center justify-center p-8 rounded-3xl bg-white/80 border border-sky-200/80 space-y-3 max-w-md mx-auto text-center my-auto flex-shrink-0">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center">
-              <Flame className="w-6 h-6" />
+          <div className="w-full flex flex-col items-center justify-center p-6 rounded-2xl bg-white/80 border border-sky-200/80 space-y-2 max-w-md mx-auto text-center my-auto flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center">
+              <Flame className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-extrabold text-[#0f2942]">Antrian Masih Kosong</h3>
-            <p className="text-xs text-slate-600 font-medium">
+            <h3 className="text-xs font-extrabold text-[#0f2942]">Antrian Masih Kosong</h3>
+            <p className="text-[11px] text-slate-600 font-medium">
               Ketik judul lagu yang ingin kamu kulik bersama The Flannels di kotak pencarian di atas untuk memasukkannya ke antrian!
             </p>
           </div>
@@ -271,105 +271,100 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             return (
               <div
                 key={req.id}
-                className={`w-[270px] sm:w-[310px] flex-shrink-0 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between shadow-xs relative ${
+                className={`w-full sm:w-[280px] lg:w-[320px] flex-shrink-0 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between gap-1 sm:gap-2 shadow-xs relative ${
                   isFulfilled
                     ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
-                    : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
+                    : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-sm'
                 }`}
               >
-                  {/* Top Section */}
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="font-mono font-black text-[11px] sm:text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {/* Rank badge */}
+                      <span className="font-mono font-black text-[10px] text-slate-500 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200 flex-shrink-0">
                         #{index + 1}
                       </span>
-                      {isFulfilled ? (
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Siap
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-600" /> Antrian
-                        </span>
-                      )}
-                    </div>
 
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
+                      {/* Artwork */}
+                      <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
                         {req.artworkUrl ? (
                           <img src={req.artworkUrl} alt={req.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-sky-600">
-                            <Music className="w-5 h-5 sm:w-6 sm:h-6" />
+                            <Music className="w-4 h-4" />
                           </div>
                         )}
                       </div>
 
+                      {/* Song Details */}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-xs sm:text-sm font-extrabold text-[#0f2942] truncate tracking-tight leading-tight" title={req.title}>
-                          {req.title}
-                        </h4>
-                        <p className="text-[11px] sm:text-xs text-sky-800 font-semibold truncate" title={req.artist}>
-                          {req.artist}
-                        </p>
-                        <p className="text-[9px] sm:text-[10px] text-slate-600 truncate mt-0.5">
-                          {req.album || 'Single'}
+                        <div className="flex items-center gap-1">
+                          <h4 className="text-[11px] sm:text-xs font-extrabold text-[#0f2942] truncate tracking-tight leading-tight" title={req.title}>
+                            {req.title}
+                          </h4>
+                          {isFulfilled ? (
+                            <span className="text-[8px] font-bold px-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5 flex-shrink-0">
+                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> Siap
+                            </span>
+                          ) : (
+                            <span className="text-[8px] font-bold px-1 rounded bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5 flex-shrink-0 sm:hidden">
+                              <Clock className="w-2.5 h-2.5 text-amber-600" /> Antri
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[9px] sm:text-[11px] text-sky-800 font-semibold truncate" title={req.artist}>
+                          {req.artist} • <span className="text-slate-500">{req.requesterName}</span>
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-2 p-1.5 rounded-lg sm:rounded-xl bg-sky-50/70 border border-sky-100 text-[10px] sm:text-[11px] text-slate-600 space-y-0.5">
-                      <div className="font-bold text-sky-950 text-[10px] sm:text-[11px] truncate">
-                        Oleh: {req.requesterName}
-                      </div>
-                      {req.notes && (
-                        <p className="italic text-slate-500 text-[9px] sm:text-[10px] truncate" title={req.notes}>
-                          "{req.notes}"
-                        </p>
+                    {/* Vote Button & Actions - Always visible inline */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleUpvote(req.id)}
+                        disabled={isFulfilled}
+                        className={`px-2 py-1 rounded-full flex items-center gap-1 transition border active:scale-95 text-[10px] ${
+                          hasUpvoted
+                            ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white border-orange-300 font-black shadow-xs'
+                            : 'bg-white text-slate-700 hover:text-orange-600 border-sky-200 hover:bg-orange-50 font-bold'
+                        }`}
+                        title={hasUpvoted ? 'Batalkan Upvote' : 'Vote lagu ini'}
+                      >
+                        <Flame className={`w-3 h-3 ${hasUpvoted ? 'fill-current' : ''}`} />
+                        <span className="font-mono text-[10px]">{req.upvotes}</span>
+                      </button>
+
+                      {isAdmin && (
+                        <div className="flex items-center gap-0.5">
+                          {!isFulfilled && (
+                            <button
+                              onClick={() => onFulfillRequest(req)}
+                              className="px-2 py-1 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[9px] font-black shadow-xs hover:opacity-95"
+                              title="Input stem"
+                            >
+                              Stem
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(req.id)}
+                            className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Hapus request"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Bottom Action Section */}
-                  <div className="pt-2.5 border-t border-sky-100 flex items-center justify-between gap-2 mt-2">
-                    <button
-                      onClick={() => handleUpvote(req.id)}
-                      disabled={isFulfilled}
-                      className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border active:scale-95 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
-                        hasUpvoted
-                          ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white border-orange-300 shadow-md shadow-orange-500/30 font-black'
-                          : 'bg-white text-slate-700 hover:text-orange-600 border-sky-200 hover:bg-orange-50 font-bold'
-                      }`}
-                      title={hasUpvoted ? 'Batalkan Upvote' : 'Vote lagu ini agar cepat dikulik'}
-                    >
-                      <Flame className={`w-3.5 h-3.5 ${hasUpvoted ? 'fill-current' : ''}`} />
-                      <span className="text-xs font-mono">{req.upvotes} Vote</span>
-                    </button>
-
-                  {isAdmin && (
-                    <div className="flex items-center gap-1">
-                      {!isFulfilled && (
-                        <button
-                          onClick={() => onFulfillRequest(req)}
-                          className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[11px] font-extrabold shadow-xs hover:opacity-95"
-                          title="Input stem studio untuk lagu ini"
-                        >
-                          Input Stem
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(req.id)}
-                        className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                        title="Hapus request"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                  {/* Notes / Subtitle (if available) */}
+                  {req.notes && (
+                    <div className="pt-0.5 border-t border-sky-100 text-[8px] sm:text-[9px] text-slate-500 italic truncate" title={req.notes}>
+                      "{req.notes}"
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })
+              );
+            })
         )}
       </div>
 
