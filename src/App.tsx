@@ -185,18 +185,36 @@ export function App() {
   }, [currentSong]);
 
   const refreshSongs = useCallback(async () => {
+    // Ticker untuk animasi progress merayap halus agar user tidak merasa stuck
+    let ticker: any = null;
+    let targetProgress = 20;
+
+    ticker = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev < targetProgress) {
+          // Bergerak naik perlahan mendekati target
+          return Math.min(targetProgress, prev + 1);
+        } else if (prev < 92) {
+          // Asymptotic micro-creep: bergerak sangat halus 1% berkala agar indikator hidup
+          return prev + (Math.random() > 0.6 ? 1 : 0);
+        }
+        return prev;
+      });
+    }, 120);
+
     try {
-      setLoadingProgress(25);
+      targetProgress = 35;
       setLoadingStatusText('Menghubungkan ke Supabase Cloud...');
+
       // 1. Direct fetch from Supabase Cloud Catalog first (automatic for all band members)
       let songList: Song[] = [];
       try {
         const { syncSongsFromCloud } = await import('./services/cloudDatabase');
-        setLoadingProgress(45);
+        targetProgress = 60;
         const cloudRes = await syncSongsFromCloud((msg) => {
           if (msg) setLoadingStatusText(msg);
         });
-        setLoadingProgress(70);
+        targetProgress = 80;
         if (cloudRes.songs && cloudRes.songs.length > 0) {
           songList = cloudRes.songs;
         }
@@ -204,24 +222,27 @@ export function App() {
 
       // 2. Fallback to local storage if offline
       if (songList.length === 0) {
-        setLoadingProgress(85);
+        targetProgress = 85;
         setLoadingStatusText('Memeriksa penyimpanan lokal IndexedDB...');
         songList = await listAllSongsFromStorage();
       }
 
-      setLoadingProgress(95);
+      targetProgress = 95;
       setLoadingStatusText('Menyiapkan workspace...');
       if (songList.length > 0) {
         setSongs(songList);
-        // User directive: jangan auto-fetch lagu saat loading selesai, fetching dilakukan manual oleh user
       } else {
         setSongs([]);
       }
+
+      clearInterval(ticker);
       setLoadingProgress(100);
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      setLoadingStatusText('Siap!');
+      await new Promise((resolve) => setTimeout(resolve, 250));
     } catch (err) {
       console.error('Failed to load songs:', err);
     } finally {
+      if (ticker) clearInterval(ticker);
       setIsLoading(false);
     }
   }, []);
@@ -609,9 +630,12 @@ export function App() {
           <div className="w-full space-y-1.5 pt-2">
             <div className="w-full h-3.5 bg-sky-950/20 rounded-full p-0.5 border border-white/80 shadow-inner overflow-hidden relative">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 transition-all duration-300 relative overflow-hidden shadow-sm"
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 transition-all duration-300 ease-out relative overflow-hidden shadow-sm"
                 style={{ width: `${loadingProgress}%` }}
-              />
+              >
+                {/* Flowing shimmer highlight */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+              </div>
             </div>
             <div className="flex items-center justify-between text-[10px] font-mono font-bold text-sky-900">
               <span className="truncate">{loadingStatusText}</span>

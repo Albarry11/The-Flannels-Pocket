@@ -70,21 +70,24 @@ export const AudioLoadingModal: React.FC<AudioLoadingModalProps> = ({
 
           {/* Glossy Progress Bar Container */}
           <div className="w-full space-y-2">
-            <div className="w-full h-3.5 bg-black/50 rounded-full border border-sky-400/50 p-0.5 relative overflow-hidden shadow-inner">
+            <div className="w-full h-4 bg-black/60 rounded-full border border-sky-400/50 p-0.5 relative overflow-hidden shadow-inner">
               {/* Animated Progress Fill */}
               <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 transition-all duration-200 relative overflow-hidden shadow-[0_0_12px_rgba(6,182,212,0.6)]"
+                className="h-full rounded-full bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 transition-all duration-300 ease-out relative overflow-hidden shadow-[0_0_14px_rgba(6,182,212,0.8)]"
                 style={{ width: `${clampedPercent}%` }}
               >
                 {/* Upper Glass Specular Highlight */}
                 <div className="absolute top-0 inset-x-0 h-1/2 bg-white/50 rounded-t-full pointer-events-none" />
+                {/* Active candy pulse line */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
               </div>
             </div>
 
             {/* Dynamic Status & Byte Details */}
             <div className="flex items-center justify-between text-[11px] font-mono font-bold text-sky-100 px-1">
-              <span className="truncate max-w-[220px] sm:max-w-[260px] text-left">
-                {text || 'Menyiapkan berkas audio...'}
+              <span className="truncate max-w-[220px] sm:max-w-[260px] text-left flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block flex-shrink-0" />
+                <span className="truncate">{text || 'Menyiapkan berkas audio...'}</span>
               </span>
               <span className="text-cyan-300 flex-shrink-0 text-right">
                 {detail || `${song.stems.length} Stems`}
