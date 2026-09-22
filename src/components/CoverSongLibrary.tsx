@@ -237,7 +237,7 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0 overflow-y-auto">
       {/* Header - Compact Integrated Segmented Switch & Actions */}
       <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 gap-1.5 sm:gap-2 relative">
         {/* Integrated Vista Tab Switcher as Header Title */}

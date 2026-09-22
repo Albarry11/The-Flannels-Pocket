@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="aero-window-header w-full px-3 sm:px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pb-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs relative">
+    <header className="aero-window-header w-full px-3 sm:px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pl-[calc(0.75rem+env(safe-area-inset-left,0px))] pr-[calc(0.75rem+env(safe-area-inset-right,0px))] pb-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs relative">
       {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title, Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4">
         {onToggleNav && (
@@ -251,8 +251,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* Windows Vista / 7 Aero Window Buttons (Minimize, Maximize, Close) - Desktop only */}
-        <div className="hidden sm:flex items-center gap-1">
+        {/* Windows Vista / 7 Aero Window Buttons (Minimize, Maximize, Close) - Desktop Non-Touch only */}
+        <div className="hidden lg:flex items-center gap-1">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('flannels-window-control', { detail: 'minimize' }))}
             className="w-7 h-5 rounded-md vista-win-btn flex items-center justify-center text-[10px] text-slate-700 font-bold transition"
