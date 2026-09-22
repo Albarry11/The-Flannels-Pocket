@@ -247,7 +247,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
       </div>
 
       {/* Leaderboard List (Horizontal Scrolling Card Rail on desktop, rows on mobile) */}
-      <div className="flex-1 min-h-0 overflow-y-auto sm:overflow-y-hidden pb-2 pt-0.5 space-y-1.5 sm:space-y-0 sm:flex sm:overflow-x-auto sm:gap-4 items-center scrollbar-thin my-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto md:overflow-y-hidden max-h-full pb-2 pt-0.5 md:py-auto space-y-1.5 md:space-y-0 md:flex md:overflow-x-auto md:gap-4 items-center scrollbar-thin my-auto">
         {isLoading ? (
           <div className="w-full py-8 sm:py-12 flex flex-col items-center justify-center text-sky-800 space-y-2 flex-shrink-0">
             <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-sky-500 animate-spin mx-auto" />
@@ -271,7 +271,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
             return (
               <div
                 key={req.id}
-                className={`w-full sm:w-[340px] flex-shrink-0 p-1.5 sm:p-3.5 rounded-xl sm:rounded-3xl border transition-all flex flex-col justify-between gap-1 sm:gap-2.5 shadow-xs sm:shadow-sm relative ${
+                className={`w-full md:w-[340px] flex-shrink-0 p-1.5 md:p-3.5 rounded-xl md:rounded-3xl border transition-all flex flex-col justify-between gap-1 md:gap-2.5 shadow-xs md:shadow-sm relative md:overflow-hidden md:max-h-full ${
                   isFulfilled
                     ? 'bg-emerald-50/85 border-emerald-300 opacity-90'
                     : 'bg-white/95 border-sky-200/90 hover:border-sky-300 hover:shadow-md'
@@ -280,7 +280,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                   {/* Top Section Desktop / Main Row Mobile */}
                   <div>
                     {/* Desktop header with rank and status */}
-                    <div className="hidden sm:flex items-center justify-between gap-2 mb-1.5">
+                    <div className="hidden md:flex items-center justify-between gap-2 mb-1.5">
                       <span className="font-mono font-black text-xs text-slate-500 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
                         #{index + 1}
                       </span>
@@ -295,20 +295,20 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="flex items-center justify-between md:justify-start gap-2 md:gap-3">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
                         {/* Mobile rank badge */}
-                        <span className="sm:hidden font-mono font-black text-[10px] text-slate-500 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200 flex-shrink-0">
+                        <span className="md:hidden font-mono font-black text-[10px] text-slate-500 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200 flex-shrink-0">
                           #{index + 1}
                         </span>
 
                         {/* Artwork */}
-                        <div className="w-8 h-8 sm:w-14 sm:h-14 rounded-lg sm:rounded-2xl overflow-hidden shadow-xs border border-white bg-sky-100 flex-shrink-0">
+                        <div className="relative flex-shrink-0 w-8 h-8 md:w-16 md:h-16 rounded-lg md:rounded-2xl overflow-hidden shadow-xs md:shadow-md border border-white bg-sky-100">
                           {req.artworkUrl ? (
                             <img src={req.artworkUrl} alt={req.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-sky-600">
-                              <Music className="w-4 h-4 sm:w-6 sm:h-6" />
+                              <Music className="w-4 h-4 md:w-6 md:h-6" />
                             </div>
                           )}
                         </div>
@@ -316,30 +316,30 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                         {/* Song Details */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <h4 className="text-[11px] sm:text-sm font-extrabold text-[#0f2942] truncate tracking-tight leading-tight" title={req.title}>
+                            <h4 className="text-[11px] md:text-base font-extrabold text-[#0f2942] truncate tracking-tight leading-tight" title={req.title}>
                               {req.title}
                             </h4>
                             {isFulfilled ? (
-                              <span className="text-[8px] font-bold px-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5 flex-shrink-0 sm:hidden">
+                              <span className="text-[8px] font-bold px-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5 flex-shrink-0 md:hidden">
                                 <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> Siap
                               </span>
                             ) : (
-                              <span className="text-[8px] font-bold px-1 rounded bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5 flex-shrink-0 sm:hidden">
-                                <Clock className="w-2.5 h-2.5 text-amber-600" /> Antri
+                              <span className="text-[8px] font-bold px-1 rounded bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5 flex-shrink-0 md:hidden">
+                                <Clock className="w-2.5 h-2.5 text-amber-600" /> Antrian
                               </span>
                             )}
                           </div>
-                          <p className="text-[9px] sm:text-xs text-sky-800 font-semibold truncate" title={req.artist}>
-                            {req.artist} <span className="sm:hidden text-slate-500">• {req.requesterName}</span>
+                          <p className="text-[9px] md:text-xs text-sky-800 font-semibold truncate" title={req.artist}>
+                            {req.artist} <span className="md:hidden text-slate-500">• {req.requesterName}</span>
                           </p>
-                          <p className="hidden sm:block text-[10px] text-slate-600 truncate mt-0.5">
+                          <p className="hidden md:block text-[10px] text-slate-600 truncate mt-0.5">
                             {req.album || 'Single'}
                           </p>
                         </div>
                       </div>
 
                       {/* Mobile Only: Inline Vote & Admin */}
-                      <div className="flex sm:hidden items-center gap-1 flex-shrink-0">
+                      <div className="flex md:hidden items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => handleUpvote(req.id)}
                           disabled={isFulfilled}
@@ -378,7 +378,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                     </div>
 
                     {/* Desktop requester & note badge */}
-                    <div className="hidden sm:block mt-2 p-1.5 rounded-xl bg-sky-50/70 border border-sky-100 text-[11px] text-slate-600 space-y-0.5">
+                    <div className="hidden md:block mt-2 p-1.5 rounded-xl bg-sky-50/70 border border-sky-100 text-[11px] text-slate-600 space-y-0.5">
                       <div className="font-bold text-sky-950 text-[11px] truncate">
                         Oleh: {req.requesterName}
                       </div>
@@ -391,7 +391,7 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
                   </div>
 
                   {/* Desktop Action Section (Bottom) */}
-                  <div className="hidden sm:flex pt-2.5 border-t border-sky-100 items-center justify-between gap-2 mt-2">
+                  <div className="hidden md:flex pt-2.5 border-t border-sky-100 items-center justify-between gap-2 mt-2">
                     <button
                       onClick={() => handleUpvote(req.id)}
                       disabled={isFulfilled}
