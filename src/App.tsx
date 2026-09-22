@@ -615,35 +615,37 @@ export function App() {
         <div className="absolute inset-0 bg-sky-950/25 backdrop-blur-[1.5px]" />
 
         {/* Modern iOS Liquid Glass Loading Dialog Box */}
-        <div className="w-full max-w-sm rounded-[32px] p-6 bg-gradient-to-b from-white/35 via-white/20 to-white/10 backdrop-blur-[40px] saturate-[200%] border border-white/60 shadow-[0_25px_60px_rgba(0,35,80,0.25),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(255,255,255,0.2)] relative z-10 flex flex-col items-center gap-4 text-center overflow-hidden">
-          {/* Liquid glass top specular reflection */}
-          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none rounded-t-[32px]" />
-          <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
+        <div className="w-full max-w-xs sm:max-w-sm rounded-[32px] p-6 sm:p-7 bg-gradient-to-b from-white/45 via-white/25 to-white/10 backdrop-blur-[45px] saturate-[220%] border border-white/80 shadow-[0_30px_70px_rgba(0,35,80,0.3),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-1.5px_2px_rgba(255,255,255,0.3)] relative z-10 flex flex-col items-center gap-4 text-center overflow-hidden">
+          {/* Liquid glass top specular reflection & light sweep */}
+          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/50 via-white/15 to-transparent pointer-events-none rounded-t-[32px]" />
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
+          <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-white/15 to-transparent rotate-45 pointer-events-none" />
 
           {/* Glowing Orb Logo */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_28px_rgba(14,165,233,0.7)] border border-white/90 flex items-center justify-center relative">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_28px_rgba(14,165,233,0.7)] border-2 border-white/95 flex items-center justify-center relative">
             <div className="absolute top-1 inset-x-2 h-6 bg-white/70 rounded-full blur-[1px]" />
             <Sliders className="w-8 h-8 text-white relative z-10 drop-shadow-sm" />
           </div>
 
           <div>
-            <h2 className="text-xl font-black text-[#071f38] tracking-tight">The Flannels pocket</h2>
-            <p className="text-xs font-black text-sky-950 mt-0.5 tracking-wide">This is the future we were promised</p>
+            <h2 className="text-xl sm:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,35,70,0.6)] tracking-tight">The Flannels pocket</h2>
+            <p className="text-xs font-black text-sky-100 drop-shadow-[0_1px_3px_rgba(0,35,70,0.7)] mt-0.5 tracking-wide">This is the future we were promised</p>
           </div>
 
           {/* Authentic Vista Candy Progress Bar */}
           <div className="w-full space-y-1.5 pt-2">
-            <div className="w-full h-3.5 bg-sky-950/20 rounded-full p-0.5 border border-white/80 shadow-inner overflow-hidden relative">
+            <div className="w-full h-4 bg-sky-950/40 backdrop-blur-md rounded-full p-0.5 border border-white/90 shadow-inner overflow-hidden relative">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 transition-all duration-300 ease-out relative overflow-hidden shadow-sm"
                 style={{ width: `${loadingProgress}%` }}
               >
                 {/* Flowing shimmer highlight */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" />
+                <div className="absolute top-0 inset-x-0 h-1/2 bg-white/40 rounded-t-full pointer-events-none" />
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] font-mono font-bold text-sky-900">
-              <span className="truncate">{loadingStatusText}</span>
+            <div className="flex items-center justify-between text-[11px] font-mono font-black text-white drop-shadow-[0_1px_2px_rgba(0,25,50,0.8)] px-0.5">
+              <span className="truncate max-w-[210px] text-left">{loadingStatusText}</span>
               <span className="ml-2 flex-shrink-0">{loadingProgress}%</span>
             </div>
           </div>
