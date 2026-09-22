@@ -117,39 +117,39 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg min-h-0">
       {/* Top Header Tilikan - Integrated Vista Tab Switcher as Header Title */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-1.5 gap-1.5 flex-nowrap">
-        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md flex-shrink-0">
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-1.5 gap-1.5 min-w-0">
+        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md overflow-x-auto scrollbar-none flex-1 min-w-0">
           <button
             onClick={() => setActiveTab('coaching')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 ${
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'coaching'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
             }`}
           >
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
             <span>Kulik Personil</span>
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 ${
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'chat'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
             }`}
           >
-            <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
             <span>Tanya Produser</span>
           </button>
           <button
             onClick={() => setActiveTab('quality')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 ${
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'quality'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
             }`}
           >
-            <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
             <span>Kualitas Audio</span>
           </button>
         </div>
@@ -224,7 +224,8 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                   {coaching.personilGuides.length > 0 && (() => {
                     const guide = coaching.personilGuides[Math.min(activePersonilIdx, coaching.personilGuides.length - 1)];
                     return (
-                      <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-200 p-2.5 sm:p-3 shadow-xs flex flex-col justify-between min-h-0">
+                      <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-200 p-2.5 shadow-xs flex flex-col min-h-0 overflow-hidden">
+                        {/* Header Personil */}
                         <div className="flex items-center justify-between border-b border-sky-100 pb-1.5 flex-shrink-0">
                           <div className="flex items-center gap-1.5">
                             {roleIcons[guide.personil] || <Music className="w-4 h-4 text-sky-600" />}
@@ -232,21 +233,22 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                               {guide.personil}
                             </span>
                           </div>
-                          <span className="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300/60">
+                          <span className="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300/60 truncate max-w-[140px]">
                             {guide.focus}
                           </span>
                         </div>
 
-                        {/* Tips List */}
-                        <div className="flex-1 my-1.5 overflow-hidden flex flex-col justify-center">
+                        {/* Tips List - Scrollable if content overflows */}
+                        <div className="flex-1 my-1.5 overflow-y-auto scrollbar-none pr-0.5 flex flex-col justify-center min-h-0">
                           <ul className="text-[11px] sm:text-xs text-[#1e3a5f] space-y-1 list-disc list-inside font-medium leading-snug">
                             {guide.tips.map((tip, tIdx) => (
-                              <li key={tIdx} className="line-clamp-2">{tip}</li>
+                              <li key={tIdx} className="leading-tight">{tip}</li>
                             ))}
                           </ul>
                         </div>
 
-                        <div className="pt-1.5 border-t border-sky-100 text-[10px] sm:text-[11px] font-mono text-amber-800 font-bold truncate flex-shrink-0">
+                        {/* Chord / Pattern Footer */}
+                        <div className="pt-1.5 border-t border-sky-100 text-[10px] sm:text-[11px] font-mono text-amber-800 font-bold truncate flex-shrink-0 bg-amber-50/60 -mx-2.5 -mb-2.5 px-2.5 py-1.5 rounded-b-xl border-t border-amber-200/50">
                           🎵 {guide.keyChordsOrPattern}
                         </div>
                       </div>
