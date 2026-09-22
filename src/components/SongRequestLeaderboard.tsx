@@ -24,16 +24,37 @@ interface SongRequestLeaderboardProps {
   isAdmin: boolean;
   onFulfillRequest: (req: SongRequest) => void;
   onSongSelectedFromLibrary?: (title: string, artist: string) => void;
+  renderTopControls?: boolean;
+  onRequestModalStateChange?: (open: boolean) => void;
+  openModalTrigger?: number;
+  renderHeaderControlsInParent?: boolean;
 }
 
 export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
   isAdmin,
   onFulfillRequest,
+  renderTopControls = false,
+  onRequestModalStateChange,
+  openModalTrigger,
 }) => {
   const [requests, setRequests] = useState<SongRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+
+  useEffect(() => {
+    onRequestModalStateChange?.(showRequestModal);
+  }, [showRequestModal, onRequestModalStateChange]);
+
+  useEffect(() => {
+    if (openModalTrigger && openModalTrigger > 0) {
+      setReqTitle('');
+      setReqArtist('');
+      setReqAlbum('');
+      setReqArtwork(undefined);
+      setShowRequestModal(true);
+    }
+  }, [openModalTrigger]);
 
   // Search input & Suggestions
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,6 +139,18 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
     }, 300);
   };
 
+  useEffect(() => {
+    const handleExternalOpen = () => {
+      setReqTitle('');
+      setReqArtist('');
+      setReqAlbum('');
+      setReqArtwork(undefined);
+      setShowRequestModal(true);
+    };
+    window.addEventListener('flannels-open-request-modal', handleExternalOpen);
+    return () => window.removeEventListener('flannels-open-request-modal', handleExternalOpen);
+  }, []);
+
   const handleSelectSuggestion = (s: MusicSuggestion) => {
     setReqTitle(s.title);
     setReqArtist(s.artist);
@@ -173,78 +206,80 @@ export const SongRequestLeaderboard: React.FC<SongRequestLeaderboardProps> = ({
 
   return (
     <div className="flex flex-col w-full h-full min-h-0 relative">
-      {/* Controls Bar: Search + Action Button in one sleek row */}
-      <div className="flex items-center gap-2 mb-2 flex-shrink-0 relative">
-        <div className="flex-1 flex items-center gap-2 bg-white/90 border border-sky-300/80 rounded-2xl px-3 py-1.5 shadow-xs focus-within:ring-2 focus-within:ring-sky-400">
-          <Search className="w-4 h-4 text-sky-600 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Cari lagu nasional / internasional (misal: Sheila On 7, Dewa 19, Oasis, Swellow)..."
-            className="w-full bg-transparent text-xs text-[#0f2942] font-semibold focus:outline-none placeholder:text-slate-400"
-          />
-          {isSearching && <Loader2 className="w-4 h-4 text-sky-500 animate-spin flex-shrink-0" />}
-        </div>
-
-        <button
-          onClick={() => {
-            setReqTitle(searchQuery);
-            setReqArtist('');
-            setReqAlbum('');
-            setReqArtwork(undefined);
-            setShowRequestModal(true);
-          }}
-          className="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-xs font-black transition flex items-center gap-1.5 shadow-xs active:scale-95 flex-shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span className="whitespace-nowrap">Request Lagu Baru</span>
-        </button>
-
-        {/* Suggestion Dropdown */}
-        {suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-2xl border border-sky-300 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-72 overflow-y-auto">
-            <div className="p-2 text-[10px] font-bold uppercase text-slate-500 border-b border-sky-100 flex justify-between">
-              <span>Saran Lagu Terverifikasi (Klik untuk Request)</span>
-              <span>{suggestions.length} ditemukan</span>
-            </div>
-            {suggestions.map((item, idx) => (
-              <div
-                key={idx}
-                onClick={() => handleSelectSuggestion(item)}
-                className="flex items-center gap-3 p-2.5 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 transition focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:outline-none"
-                tabIndex={0}
-                role="button"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectSuggestion(item); }}
-              >
-                {item.artworkUrl ? (
-                  <img
-                    src={item.artworkUrl}
-                    alt={item.title}
-                    className="w-10 h-10 rounded-xl object-cover shadow-xs border border-white flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
-                    <Music className="w-5 h-5" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs font-bold text-[#0f2942] truncate block">
-                    {item.title}
-                  </span>
-                  <span className="text-[11px] text-sky-800 truncate block">
-                    {item.artist} {item.album ? `• ${item.album}` : ''} {item.releaseYear ? `(${item.releaseYear})` : ''}
-                  </span>
-                </div>
-                <div className="text-sky-600 text-xs font-bold flex items-center gap-1 flex-shrink-0">
-                  <span className="hidden sm:inline">Pilih</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
+      {/* Controls Bar: Search + Action Button in one sleek row (Optional if rendered in parent header) */}
+      {renderTopControls && (
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-shrink-0 relative">
+          <div className="flex-1 flex items-center gap-1.5 sm:gap-2 bg-white/90 border border-sky-300/80 rounded-xl sm:rounded-2xl px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-xs focus-within:ring-2 focus-within:ring-sky-400">
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Cari lagu nasional / internasional..."
+              className="w-full bg-transparent text-[11px] sm:text-xs text-[#0f2942] font-semibold focus:outline-none placeholder:text-slate-400"
+            />
+            {isSearching && <Loader2 className="w-3.5 h-3.5 text-sky-500 animate-spin flex-shrink-0" />}
           </div>
-        )}
-      </div>
+
+          <button
+            onClick={() => {
+              setReqTitle(searchQuery);
+              setReqArtist('');
+              setReqAlbum('');
+              setReqArtwork(undefined);
+              setShowRequestModal(true);
+            }}
+            className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[10px] sm:text-xs font-black transition flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 flex-shrink-0"
+          >
+            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="whitespace-nowrap">Request Lagu</span>
+          </button>
+
+          {/* Suggestion Dropdown */}
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-2xl border border-sky-300 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-72 overflow-y-auto">
+              <div className="p-2 text-[10px] font-bold uppercase text-slate-500 border-b border-sky-100 flex justify-between">
+                <span>Saran Lagu Terverifikasi (Klik untuk Request)</span>
+                <span>{suggestions.length} ditemukan</span>
+              </div>
+              {suggestions.map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectSuggestion(item)}
+                  className="flex items-center gap-3 p-2.5 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 transition focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:outline-none"
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectSuggestion(item); }}
+                >
+                  {item.artworkUrl ? (
+                    <img
+                      src={item.artworkUrl}
+                      alt={item.title}
+                      className="w-10 h-10 rounded-xl object-cover shadow-xs border border-white flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
+                      <Music className="w-5 h-5" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-[#0f2942] truncate block">
+                      {item.title}
+                    </span>
+                    <span className="text-[11px] text-sky-800 truncate block">
+                      {item.artist} {item.album ? `• ${item.album}` : ''} {item.releaseYear ? `(${item.releaseYear})` : ''}
+                    </span>
+                  </div>
+                  <div className="text-sky-600 text-xs font-bold flex items-center gap-1 flex-shrink-0">
+                    <span className="hidden sm:inline">Pilih</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Leaderboard List (Horizontal Scrolling Card Rail on desktop, rows on mobile) */}
       <div className="flex-1 min-h-0 overflow-y-auto md:overflow-y-hidden max-h-full pb-2 pt-0.5 md:py-auto space-y-1.5 md:space-y-0 md:flex md:overflow-x-auto md:gap-4 items-center scrollbar-thin my-auto">

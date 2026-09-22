@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { Song, StemTrack, StemRole, SongRequest } from '../types';
+import React, { useState, useRef } from 'react';
+import type { Song, StemTrack, StemRole, SongRequest, MusicSuggestion } from '../types';
 import { SongRequestLeaderboard } from './SongRequestLeaderboard';
 import {
   deleteSongFromStorage,
@@ -8,6 +8,8 @@ import {
   addStemToSong,
   deleteStemFromSong,
 } from '../services/storage';
+import { searchMusicSuggestions } from '../services/musicSearch';
+import { submitSongRequest } from '../services/requestQueue';
 import {
   Folder,
   Plus,
@@ -27,6 +29,9 @@ import {
   X,
   RefreshCw,
   Loader2,
+  Search,
+  Music,
+  ChevronRight,
 } from 'lucide-react';
 import { formatSecondsToTime } from '../services/lyricsManager';
 import { exportSongPackage } from '../services/cloudDatabase';
@@ -140,6 +145,47 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   const [editBpm, setEditBpm] = useState<number>(120);
   const [editKey, setEditKey] = useState<string>('C');
 
+  // Top header search & request controls for "Antrian Request"
+  const [requestSearchQuery, setRequestSearchQuery] = useState('');
+  const [requestSuggestions, setRequestSuggestions] = useState<MusicSuggestion[]>([]);
+  const [isRequestSearching, setIsRequestSearching] = useState(false);
+  const requestSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleRequestSearchChange = (val: string) => {
+    setRequestSearchQuery(val);
+    if (requestSearchDebounceRef.current) clearTimeout(requestSearchDebounceRef.current);
+
+    if (val.trim().length < 2) {
+      setRequestSuggestions([]);
+      setIsRequestSearching(false);
+      return;
+    }
+
+    setIsRequestSearching(true);
+    requestSearchDebounceRef.current = setTimeout(async () => {
+      const results = await searchMusicSuggestions(val);
+      setRequestSuggestions(results);
+      setIsRequestSearching(false);
+    }, 300);
+  };
+
+  const handleSelectRequestSuggestion = async (s: MusicSuggestion) => {
+    try {
+      await submitSongRequest(s.title, s.artist, 'Member Band', 'vocal', {
+        album: s.album,
+        artworkUrl: s.artworkUrl,
+        previewUrl: s.previewUrl,
+        notes: 'Direquest via Quick Search Bar',
+      });
+      window.dispatchEvent(new CustomEvent('flannels-request-added'));
+      setRequestSuggestions([]);
+      setRequestSearchQuery('');
+      alert(`Lagu "${s.title}" oleh ${s.artist} berhasil ditambahkan ke antrian request!`);
+    } catch (err: any) {
+      alert('Gagal menambahkan request: ' + (err?.message || err));
+    }
+  };
+
   const handleOpenEdit = (song: Song) => {
     setEditingSong(song);
     setEditBpm(song.bpm);
@@ -193,9 +239,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0 overflow-hidden">
       {/* Header - Compact Integrated Segmented Switch & Actions */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1.5">
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 gap-1.5 sm:gap-2 relative">
         {/* Integrated Vista Tab Switcher as Header Title */}
-        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md">
+        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md flex-shrink-0">
           <button
             onClick={() => setActiveSubTab('songs')}
             className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
@@ -220,29 +266,99 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          {songs.length > 0 && activeSubTab === 'songs' && (
-            <button
-              onClick={handleExportBackup}
-              className="px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
-              title="Ekspor paket library JSON"
-            >
-              <FileDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">Ekspor</span>
-            </button>
-          )}
+        {/* When in "Antrian Request" tab: Search + Request Action integrated in top row */}
+        {activeSubTab === 'requests' ? (
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 justify-end relative">
+            {/* Search Input */}
+            <div className="flex-1 max-w-md flex items-center gap-1 sm:gap-2 bg-white/90 border border-sky-300/80 rounded-lg sm:rounded-xl px-2 sm:px-3 py-0.5 sm:py-1 shadow-xs focus-within:ring-2 focus-within:ring-sky-400 min-w-0">
+              <Search className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-sky-600 flex-shrink-0" />
+              <input
+                type="text"
+                value={requestSearchQuery}
+                onChange={(e) => handleRequestSearchChange(e.target.value)}
+                placeholder="Cari lagu / ketik judul request..."
+                className="w-full bg-transparent text-[10px] sm:text-xs text-[#0f2942] font-semibold focus:outline-none placeholder:text-slate-400 min-w-0"
+              />
+              {isRequestSearching && (
+                <Loader2 className="w-3 h-3 text-sky-500 animate-spin flex-shrink-0" />
+              )}
+            </div>
 
-          {/* Admin Upload Trigger or Member Request Shortcut */}
-          {isAdmin ? (
+            {/* Request Button */}
             <button
-              onClick={onOpenAdminUpload}
-              className="px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
+              onClick={() => window.dispatchEvent(new CustomEvent('flannels-open-request-modal'))}
+              className="px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95 flex-shrink-0"
+              title="Buat Form Request Lagu Baru"
             >
-              <Upload className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span>Input Stem</span>
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden sm:inline">Request Lagu Baru</span>
+              <span className="sm:hidden">Request</span>
             </button>
-          ) : (
-            activeSubTab === 'songs' && (
+
+            {/* Quick Suggestion Dropdown from Header */}
+            {requestSuggestions.length > 0 && (
+              <div className="absolute top-full right-0 left-0 sm:left-auto sm:w-96 mt-1 bg-white/95 backdrop-blur-2xl border border-sky-300 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto">
+                <div className="p-1.5 sm:p-2 text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 border-b border-sky-100 flex justify-between">
+                  <span>Saran Lagu (Klik untuk langsung tambah)</span>
+                  <span>{requestSuggestions.length} hasil</span>
+                </div>
+                {requestSuggestions.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelectRequestSuggestion(item)}
+                    className="flex items-center gap-2 sm:gap-2.5 p-1.5 sm:p-2 hover:bg-sky-50 cursor-pointer border-b border-sky-50 last:border-0 transition"
+                  >
+                    {item.artworkUrl ? (
+                      <img
+                        src={item.artworkUrl}
+                        alt={item.title}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover shadow-2xs border border-white flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
+                        <Music className="w-3.5 h-3.5" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] sm:text-xs font-bold text-[#0f2942] truncate block">
+                        {item.title}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-sky-800 truncate block">
+                        {item.artist} {item.album ? `• ${item.album}` : ''}
+                      </span>
+                    </div>
+                    <div className="text-sky-600 text-[10px] font-bold flex items-center gap-0.5 flex-shrink-0">
+                      <span className="hidden sm:inline">Pilih</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+            {songs.length > 0 && (
+              <button
+                onClick={handleExportBackup}
+                className="px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg bg-white/80 border border-sky-200 text-sky-900 hover:bg-sky-50 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+                title="Ekspor paket library JSON"
+              >
+                <FileDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span className="hidden sm:inline">Ekspor</span>
+              </button>
+            )}
+
+            {/* Admin Upload Trigger or Member Request Shortcut */}
+            {isAdmin ? (
+              <button
+                onClick={onOpenAdminUpload}
+                className="px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
+              >
+                <Upload className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span>Input Stem</span>
+              </button>
+            ) : (
               <button
                 onClick={() => setActiveSubTab('requests')}
                 className="px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95"
@@ -250,9 +366,9 @@ export const CoverSongLibrary: React.FC<CoverSongLibraryProps> = ({
                 <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 <span>Request Lagu</span>
               </button>
-            )
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {activeSubTab === 'requests' ? (
