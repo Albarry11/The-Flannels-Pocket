@@ -185,32 +185,66 @@ export function App() {
   }, [currentSong]);
 
   const refreshSongs = useCallback(async () => {
+    let animFrame: number | null = null;
+    let currentPct = 1;
+    let targetPct = 15;
+
+    const runProgressLoop = () => {
+      if (currentPct < targetPct) {
+        currentPct += Math.max(0.4, (targetPct - currentPct) * 0.08);
+        if (currentPct > targetPct) currentPct = targetPct;
+        setLoadingProgress(Math.floor(currentPct));
+      }
+      animFrame = requestAnimationFrame(runProgressLoop);
+    };
+    animFrame = requestAnimationFrame(runProgressLoop);
+
+    const stepTo = async (target: number, text?: string, minWait = 120) => {
+      targetPct = target;
+      if (text) setLoadingStatusText(text);
+      const start = Date.now();
+      while (currentPct < target - 0.5 && Date.now() - start < 1500) {
+        await new Promise((r) => setTimeout(r, 16));
+      }
+      if (minWait > 0) await new Promise((r) => setTimeout(r, minWait));
+    };
+
     try {
-      // 1. Ambil data lokal instan dari IndexedDB
-      setLoadingProgress(50);
-      setLoadingStatusText('Memuat lagu...');
+      // Step 1: Initializing Engine & Config
+      await stepTo(25, 'Menyiapkan Audio Engine & Konfigurasi...', 100);
+
+      // Step 2: Query IndexedDB local songs
+      await stepTo(50, 'Membaca katalog lagu lokal...');
       const localSongs = await listAllSongsFromStorage();
       if (localSongs.length > 0) {
         setSongs(localSongs);
       }
 
-      setLoadingProgress(100);
-      setLoadingStatusText('Siap!');
-    } catch (err) {
-      console.error('Failed to load songs from local storage:', err);
-    } finally {
-      setIsLoading(false);
-    }
-
-    // 2. Background sync dengan Supabase Cloud tanpa memblokir UI
-    try {
-      const { syncSongsFromCloud } = await import('./services/cloudDatabase');
-      const cloudRes = await syncSongsFromCloud();
-      if (cloudRes.songs && cloudRes.songs.length > 0) {
-        setSongs(cloudRes.songs);
+      // Step 3: Fast cloud index check
+      await stepTo(75, 'Memeriksa sinkronisasi Cloud...');
+      try {
+        const { syncSongsFromCloud } = await import('./services/cloudDatabase');
+        const cloudPromise = syncSongsFromCloud();
+        const timeoutPromise = new Promise<{ songs?: Song[] }>((resolve) => setTimeout(() => resolve({}), 1800));
+        const cloudRes = await Promise.race([cloudPromise, timeoutPromise]);
+        if (cloudRes && cloudRes.songs && cloudRes.songs.length > 0) {
+          setSongs(cloudRes.songs);
+        }
+      } catch (err) {
+        console.debug('Fast cloud check bypassed:', err);
       }
+
+      // Step 4: Workspace finalization
+      await stepTo(95, 'Menyiapkan workspace...');
+      await stepTo(100, 'Siap!', 150);
+      setLoadingProgress(100);
     } catch (err) {
-      console.debug('Background cloud sync skipped/failed:', err);
+      console.error('Failed to load songs:', err);
+      targetPct = 100;
+      setLoadingProgress(100);
+    } finally {
+      if (animFrame) cancelAnimationFrame(animFrame);
+      setIsLoading(false);
     }
   }, []);
 
