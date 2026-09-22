@@ -52,27 +52,27 @@
     inset 0 -1px 0 rgba(14, 116, 144, 0.06);
 }
 
-/* Main content glass panel - higher opacity for text contrast */
+/* Main content glass panel - Modern iOS Liquid Glass */
 .aero-glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.20) 50%, rgba(255, 255, 255, 0.10) 100%);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.60);
   box-shadow: 
-    0 16px 40px rgba(2, 132, 199, 0.14),
-    0 4px 12px rgba(0, 0, 0, 0.04),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(14, 116, 144, 0.06);
+    0 25px 60px rgba(0, 35, 80, 0.25),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.2);
 }
 
 .aero-window-header {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.42) 60%, rgba(235, 248, 255, 0.50) 100%);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.82);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.20) 50%, rgba(255, 255, 255, 0.10) 100%);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.60);
   box-shadow: 
-    0 4px 20px rgba(2, 132, 199, 0.08),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.98);
+    0 25px 60px rgba(0, 35, 80, 0.15),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.2);
 }
 
 .aero-glass-pill {
