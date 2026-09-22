@@ -20,6 +20,8 @@ import {
   Guitar,
   Sliders,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface AIBrainAndAnalyzerProps {
@@ -37,6 +39,7 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   const [coaching, setCoaching] = useState<AICoachingReport | null>(null);
   const [isLoadingCoaching, setIsLoadingCoaching] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
+  const [activePersonilIdx, setActivePersonilIdx] = useState(0);
 
   // Interactive chat
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'ai'; text: string }[]>([]);
@@ -168,81 +171,133 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto pr-1">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         
-        {/* TAB 1: KULIK PERSONIL */}
+        {/* TAB 1: KULIK PERSONIL (Swipe Carousel - No Page Scroll) */}
         {activeTab === 'coaching' && (
-          <div className="space-y-2.5 sm:space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 overflow-hidden">
             {isLoadingCoaching ? (
-              <div className="text-center py-12 sm:py-16 space-y-2.5">
-                <Loader2 className="w-7 h-7 text-sky-500 animate-spin mx-auto" />
+              <div className="flex-1 flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-7 h-7 text-sky-500 animate-spin" />
                 <p className="text-xs text-sky-900 font-semibold">{progressMsg || 'Membedah aransemen lagu...'}</p>
               </div>
             ) : coaching ? (
               <>
-                {/* Summary Banner */}
-                <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-sky-100/90 to-blue-100/70 border border-sky-300/60 text-xs space-y-1.5 shadow-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-sky-900 text-xs sm:text-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
-                    <span className="truncate">{coaching.songTitle} - Karakter Musik</span>
+                {/* Compact Musical Overview */}
+                <div className="p-2 rounded-xl bg-gradient-to-r from-sky-100/90 to-blue-100/70 border border-sky-300/60 shadow-2xs flex items-center justify-between gap-2 flex-shrink-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 font-extrabold text-sky-900 text-xs truncate">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+                      <span className="truncate">{coaching.songTitle}</span>
+                    </div>
+                    <p className="text-[10px] text-[#0f2942] truncate font-medium mt-0.5">
+                      💡 {coaching.keyAdvice} • {coaching.musicalSummary}
+                    </p>
                   </div>
-                  <p className="text-[#0f2942] leading-relaxed font-medium text-[11px] sm:text-xs">{coaching.musicalSummary}</p>
-                  <div className="p-2 rounded-lg sm:rounded-xl bg-white/80 border border-sky-200/80 text-[10px] sm:text-[11px] text-amber-900 font-medium">
-                    💡 <strong>Panduan Nada:</strong> {coaching.keyAdvice}
+                  {/* Indicator Dot Pill */}
+                  <div className="flex items-center gap-1 bg-white/70 px-2 py-0.5 rounded-full border border-sky-200 flex-shrink-0">
+                    <span className="text-[10px] font-bold text-sky-800">
+                      {activePersonilIdx + 1}/{coaching.personilGuides.length}
+                    </span>
                   </div>
                 </div>
 
-                {/* Personil Breakdown Grid */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] sm:text-xs font-bold text-sky-900 uppercase tracking-wider block px-0.5">
-                    Panduan Personil Flannels
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
-                    {coaching.personilGuides.map((guide, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/85 border border-sky-200/70 flex flex-col justify-between gap-1.5 shadow-xs"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between border-b border-sky-100 pb-1.5 mb-1.5">
-                            <div className="flex items-center gap-1.5">
-                              {roleIcons[guide.personil] || <Music className="w-3.5 h-3.5" />}
-                              <span className="text-xs sm:text-sm font-extrabold text-[#0f2942]">
-                                {guide.personil}
-                              </span>
-                            </div>
-                            <span className="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300/60">
-                              {guide.focus}
+                {/* Swipable Personil Cards View */}
+                <div
+                  className="flex-1 flex flex-col min-h-0 relative touch-pan-y select-none"
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    (e.currentTarget as any)._touchStartX = touch.clientX;
+                  }}
+                  onTouchEnd={(e) => {
+                    const startX = (e.currentTarget as any)._touchStartX;
+                    if (startX === undefined) return;
+                    const endX = e.changedTouches[0].clientX;
+                    const diff = startX - endX;
+                    if (diff > 40) {
+                      setActivePersonilIdx((prev) => Math.min(coaching.personilGuides.length - 1, prev + 1));
+                    } else if (diff < -40) {
+                      setActivePersonilIdx((prev) => Math.max(0, prev - 1));
+                    }
+                  }}
+                >
+                  {coaching.personilGuides.length > 0 && (() => {
+                    const guide = coaching.personilGuides[Math.min(activePersonilIdx, coaching.personilGuides.length - 1)];
+                    return (
+                      <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-200 p-2.5 sm:p-3 shadow-xs flex flex-col justify-between min-h-0">
+                        <div className="flex items-center justify-between border-b border-sky-100 pb-1.5 flex-shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            {roleIcons[guide.personil] || <Music className="w-4 h-4 text-sky-600" />}
+                            <span className="text-xs sm:text-sm font-extrabold text-[#0f2942]">
+                              {guide.personil}
                             </span>
                           </div>
-                          <ul className="text-[11px] sm:text-xs text-[#1e3a5f] space-y-1 list-disc list-inside font-medium">
+                          <span className="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300/60">
+                            {guide.focus}
+                          </span>
+                        </div>
+
+                        {/* Tips List */}
+                        <div className="flex-1 my-1.5 overflow-hidden flex flex-col justify-center">
+                          <ul className="text-[11px] sm:text-xs text-[#1e3a5f] space-y-1 list-disc list-inside font-medium leading-snug">
                             {guide.tips.map((tip, tIdx) => (
-                              <li key={tIdx} className="leading-snug">{tip}</li>
+                              <li key={tIdx} className="line-clamp-2">{tip}</li>
                             ))}
                           </ul>
                         </div>
-                        <div className="pt-1.5 border-t border-sky-100 text-[10px] sm:text-[11px] font-mono text-amber-800 font-bold truncate">
+
+                        <div className="pt-1.5 border-t border-sky-100 text-[10px] sm:text-[11px] font-mono text-amber-800 font-bold truncate flex-shrink-0">
                           🎵 {guide.keyChordsOrPattern}
                         </div>
                       </div>
-                    ))}
+                    );
+                  })()}
+
+                  {/* Navigation Arrows for Swipe */}
+                  <div className="flex items-center justify-between pt-1 flex-shrink-0">
+                    <button
+                      onClick={() => setActivePersonilIdx((prev) => Math.max(0, prev - 1))}
+                      disabled={activePersonilIdx === 0}
+                      className="px-2.5 py-1 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] font-bold disabled:opacity-40 flex items-center gap-0.5 active:scale-95 shadow-2xs"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      <span>Sebelum</span>
+                    </button>
+                    {/* Role tabs mini carousel */}
+                    <div className="flex items-center gap-1 overflow-x-auto max-w-[200px] scrollbar-none px-1">
+                      {coaching.personilGuides.map((g, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActivePersonilIdx(idx)}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            activePersonilIdx === idx
+                              ? 'w-4 bg-sky-600'
+                              : 'bg-sky-200 hover:bg-sky-300'
+                          }`}
+                          title={g.personil}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setActivePersonilIdx((prev) => Math.min(coaching.personilGuides.length - 1, prev + 1))}
+                      disabled={activePersonilIdx >= coaching.personilGuides.length - 1}
+                      className="px-2.5 py-1 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] font-bold disabled:opacity-40 flex items-center gap-0.5 active:scale-95 shadow-2xs"
+                    >
+                      <span>Lanjut</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Rehearsal Plan & Mix Doctor */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 pt-0.5">
-                  <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/85 border border-sky-200/70 text-xs space-y-1.5 shadow-xs">
-                    <span className="font-extrabold text-[#0f2942] text-[11px] sm:text-xs block">📋 Tahapan Latihan</span>
-                    <ol className="space-y-1 list-decimal list-inside text-[#1e3a5f] font-medium text-[11px] sm:text-xs">
-                      {coaching.rehearsalPlan.map((step, sIdx) => (
-                        <li key={sIdx} className="leading-snug">{step}</li>
-                      ))}
-                    </ol>
+                {/* Rehearsal & Mix Doctor Mini Strip */}
+                <div className="grid grid-cols-2 gap-1.5 pt-0.5 flex-shrink-0 text-[10px]">
+                  <div className="p-1.5 rounded-lg bg-white/80 border border-sky-200/80 truncate">
+                    <span className="font-bold text-[#0f2942] block truncate">📋 Latihan</span>
+                    <span className="text-[#1e3a5f] truncate block">{coaching.rehearsalPlan[0] || 'Sinkronisasi intro'}</span>
                   </div>
-
-                  <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/85 border border-sky-200/70 text-xs space-y-1.5 shadow-xs">
-                    <span className="font-extrabold text-sky-800 text-[11px] sm:text-xs block">🩺 Mix Doctor</span>
-                    <p className="text-[#1e3a5f] leading-relaxed font-medium text-[11px] sm:text-xs">{coaching.mixDoctorNotes}</p>
+                  <div className="p-1.5 rounded-lg bg-white/80 border border-sky-200/80 truncate">
+                    <span className="font-bold text-sky-800 block truncate">🩺 Mix Doctor</span>
+                    <span className="text-[#1e3a5f] truncate block">{coaching.mixDoctorNotes}</span>
                   </div>
                 </div>
               </>
@@ -250,65 +305,67 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </div>
         )}
 
-        {/* TAB 2: TANYA PRODUSER */}
+        {/* TAB 2: TANYA PRODUSER (Compact & Non-Scrollable) */}
         {activeTab === 'chat' && (
-          <div className="flex flex-col h-full min-h-[350px]">
+          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 overflow-hidden">
             {/* Quick Suggestion Chips */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1.5 mb-1.5 scrollbar-none text-[10px] sm:text-xs flex-shrink-0">
-              <span className="font-bold uppercase text-sky-800 whitespace-nowrap text-[9px] sm:text-[10px]">Tanya:</span>
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[10px] flex-shrink-0">
+              <span className="font-bold uppercase text-sky-800 whitespace-nowrap text-[9px]">Tanya:</span>
               <button
                 onClick={() => handleSendChat("Bagaimana pembagian riff gitar lead dan rhythm di lagu ini?")}
-                className="px-2.5 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
+                className="px-2 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
               >
-                🎸 Riff Gitar
+                🎸 Riff
               </button>
               <button
                 onClick={() => handleSendChat("Pola ketukan kick drum dan snare yang paling pas untuk part chorus?")}
-                className="px-2.5 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
+                className="px-2 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
               >
-                🥁 Ketukan Drum
+                🥁 Drum
               </button>
               <button
                 onClick={() => handleSendChat("Bagaimana saran improvisasi solo untuk lagu ini?")}
-                className="px-2.5 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
+                className="px-2 py-0.5 rounded-full bg-white/80 border border-sky-300 text-sky-900 hover:bg-sky-50 font-medium whitespace-nowrap shadow-2xs"
               >
-                🎼 Solo Melodi
+                🎼 Solo
               </button>
             </div>
 
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto space-y-2 p-2.5 rounded-xl sm:rounded-2xl bg-white/60 border border-sky-200/80 mb-2 shadow-inner min-h-0">
+            {/* Compact Latest Chat Answer */}
+            <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/70 border border-sky-200/80 p-2.5 sm:p-3 shadow-inner flex flex-col justify-between min-h-0 overflow-hidden">
               {chatMessages.length === 0 ? (
-                <div className="text-center py-12 sm:py-16 text-sky-800 space-y-1.5">
-                  <MessageSquare className="w-7 h-7 text-sky-500 mx-auto" />
-                  <p className="text-xs max-w-sm mx-auto font-medium">
-                    AI Producer siap membantu membedah lagu "{currentSong.title}". Tanyakan chord, melodi solo, atau dinamika panggung!
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-sky-800 space-y-1">
+                  <MessageSquare className="w-6 h-6 text-sky-500" />
+                  <p className="text-[11px] font-semibold text-[#0f2942]">AI Music Producer Siap</p>
+                  <p className="text-[10px] text-sky-700 max-w-xs">
+                    Tanya cepat tentang riff, ketukan drum, chord, atau dinamika panggung lagu ini.
                   </p>
                 </div>
               ) : (
-                chatMessages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-xl sm:rounded-2xl p-2.5 text-xs leading-relaxed font-medium shadow-xs ${
-                        msg.sender === 'user'
-                          ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-tr-none'
-                          : 'bg-white text-[#0f2942] border border-sky-200 rounded-tl-none'
-                      }`}
-                    >
-                      {msg.text}
+                <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden space-y-1.5">
+                  {/* Latest User Question */}
+                  {chatMessages.filter(m => m.sender === 'user').slice(-1).map((m, idx) => (
+                    <div key={idx} className="flex justify-end">
+                      <span className="bg-sky-600 text-white text-[10px] sm:text-[11px] font-medium px-2.5 py-1 rounded-xl rounded-tr-none truncate max-w-[90%] shadow-2xs">
+                        {m.text}
+                      </span>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  {/* Latest AI Answer */}
+                  {chatMessages.filter(m => m.sender === 'ai').slice(-1).map((m, idx) => (
+                    <div key={idx} className="flex justify-start flex-1 min-h-0 overflow-hidden">
+                      <div className="bg-white text-[#0f2942] border border-sky-200 text-[11px] sm:text-xs font-medium p-2.5 rounded-xl rounded-tl-none shadow-xs w-full flex-1 overflow-y-auto leading-relaxed">
+                        {m.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
+
               {isChatLoading && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl sm:rounded-2xl p-2.5 bg-white border border-sky-200 text-xs text-sky-700 flex items-center gap-1.5 font-medium">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
-                    <span>AI Producer sedang merumuskan jawaban...</span>
-                  </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-sky-700 font-bold bg-white/90 p-1.5 rounded-lg border border-sky-200 mt-1 flex-shrink-0">
+                  <Loader2 className="w-3 h-3 animate-spin text-sky-500" />
+                  <span>Produser merumuskan ringkasan...</span>
                 </div>
               )}
             </div>
@@ -320,13 +377,13 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                placeholder="Tanyakan chord, fill drum, atau solo guitar..."
-                className="flex-1 bg-white/90 border border-sky-300 rounded-lg sm:rounded-xl px-3 py-1.5 text-xs text-[#0f2942] focus:outline-none focus:border-sky-500 shadow-2xs min-w-0"
+                placeholder="Tanya riff, fill drum, solo..."
+                className="flex-1 bg-white/90 border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-[#0f2942] focus:outline-none focus:border-sky-500 shadow-2xs min-w-0"
               />
               <button
                 onClick={() => handleSendChat()}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="px-3.5 sm:px-4 py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95 disabled:opacity-50 flex-shrink-0"
+                className="px-3 py-1 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95 disabled:opacity-50 flex-shrink-0"
               >
                 <Send className="w-3 h-3" />
                 <span>Kirim</span>
@@ -335,114 +392,105 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </div>
         )}
 
-        {/* TAB 3: KUALITAS AUDIO & REPLAYGAIN */}
+        {/* TAB 3: KUALITAS AUDIO & REPLAYGAIN (Compact & Non-Scrollable) */}
         {activeTab === 'quality' && (
-          <div className="space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 overflow-hidden">
             {/* Lossless Classification Banner */}
             <div
-              className={`p-4 rounded-2xl border flex items-start gap-3.5 shadow-sm ${
+              className={`p-2 rounded-xl border flex items-center justify-between gap-2 shadow-2xs flex-shrink-0 ${
                 quality?.isLossless
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                   : 'bg-amber-50 border-amber-300 text-amber-950'
               }`}
             >
-              {quality?.isLossless ? (
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-[#0f2942]">
+              <div className="flex items-center gap-2 min-w-0">
+                {quality?.isLossless ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <span className="font-extrabold text-xs text-[#0f2942] block truncate">
                     {quality?.classification || 'Lossless FLAC Master'}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white border border-emerald-300 uppercase font-bold text-emerald-700">
-                    {quality?.cutoffFrequency ? `Cutoff: ${quality.cutoffFrequency} Hz` : 'Full Bandwidth'}
-                  </span>
+                  <p className="text-[10px] text-[#1e3a5f] truncate font-medium">
+                    {quality?.cutoffFrequency ? `Cutoff: ${quality.cutoffFrequency} Hz` : 'Full Bandwidth (>20kHz)'}
+                  </p>
                 </div>
-                <p className="text-xs text-[#1e3a5f] mt-1 font-medium">
-                  {quality?.notes ||
-                    'Audio mempertahankan fidelitas frekuensi tinggi penuh (>20kHz) tanpa kompresi psikoakustik lossy.'}
-                </p>
               </div>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white border border-emerald-300 font-bold text-emerald-700 flex-shrink-0">
+                Hi-Res
+              </span>
             </div>
 
-            {/* Technical Specs Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
-                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
-                  Sample Rate
-                </span>
-                <span className="text-base font-mono font-black text-[#0f2942]">
-                  {quality ? `${(quality.sampleRate / 1000).toFixed(1)} kHz` : '44.1 kHz'}
+            {/* Technical Specs 4-Tile Strip */}
+            <div className="grid grid-cols-4 gap-1.5 flex-shrink-0">
+              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] text-sky-800 uppercase block font-bold">Sample</span>
+                <span className="text-xs font-mono font-black text-[#0f2942]">
+                  {quality ? `${(quality.sampleRate / 1000).toFixed(1)}k` : '44.1k'}
                 </span>
               </div>
-              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
-                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
-                  Bit Depth
-                </span>
-                <span className="text-base font-mono font-black text-[#0f2942]">
-                  {quality ? `${quality.bitDepthEstimate}-bit Float` : '16-bit / 24-bit'}
+              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] text-sky-800 uppercase block font-bold">Bit</span>
+                <span className="text-xs font-mono font-black text-[#0f2942]">
+                  {quality ? `${quality.bitDepthEstimate}-bit` : '16/24-bit'}
                 </span>
               </div>
-              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
-                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
-                  Dynamic Range
-                </span>
-                <span className="text-base font-mono font-black text-sky-700">
-                  {quality ? `DR ${quality.dynamicRangeScore}` : 'DR 12'}
+              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] text-sky-800 uppercase block font-bold">Dynamic</span>
+                <span className="text-xs font-mono font-black text-sky-700">
+                  {quality ? `DR${quality.dynamicRangeScore}` : 'DR12'}
                 </span>
               </div>
-              <div className="bg-white/80 p-3 rounded-2xl border border-sky-200/70 shadow-xs">
-                <span className="text-[10px] text-sky-800 uppercase tracking-wider block font-bold">
-                  Channels
-                </span>
-                <span className="text-base font-mono font-black text-[#0f2942]">
-                  {quality?.channels === 1 ? 'Mono' : 'Stereo 2.0'}
+              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] text-sky-800 uppercase block font-bold">Channel</span>
+                <span className="text-xs font-mono font-black text-[#0f2942]">
+                  {quality?.channels === 1 ? 'Mono' : 'Stereo'}
                 </span>
               </div>
             </div>
 
-            {/* ReplayGain Section */}
-            <div className="bg-white/80 p-4 rounded-2xl border border-sky-200/70 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-extrabold text-[#0f2942]">
-                    Normalisasi Kelantangan ReplayGain (ITU-R BS.1770)
+            {/* ReplayGain Compact Card */}
+            <div className="bg-white/85 p-2 rounded-xl border border-sky-200/70 shadow-2xs flex-1 flex flex-col justify-between min-h-0">
+              <div className="flex items-center justify-between border-b border-sky-100 pb-1 flex-shrink-0">
+                <div className="min-w-0">
+                  <h4 className="text-xs font-extrabold text-[#0f2942] truncate">
+                    Normalisasi ReplayGain (ITU-R BS.1770)
                   </h4>
-                  <p className="text-xs text-sky-700">
-                    Menyamakan kenyaringan audio ke standar studio -14 LUFS
+                  <p className="text-[10px] text-sky-700 truncate">
+                    Standar -14 LUFS kenyaringan seragam
                   </p>
                 </div>
                 <button
                   onClick={onToggleReplayGain}
-                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition flex items-center gap-1.5 shadow-sm ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold transition flex items-center gap-1 shadow-2xs flex-shrink-0 ${
                     replayGainEnabled
-                      ? 'bg-emerald-500 text-white shadow-emerald-500/30'
-                      : 'bg-sky-100 text-sky-800 hover:bg-sky-200 border border-sky-300'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-sky-100 text-sky-800 border border-sky-300'
                   }`}
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{replayGainEnabled ? 'Aktif' : 'Nonaktif'}</span>
+                  <ShieldCheck className="w-3 h-3" />
+                  <span>{replayGainEnabled ? 'Aktif' : 'Off'}</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 pt-1">
-                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
-                  <span className="text-[10px] text-sky-800 uppercase block font-bold">Integrated Loudness</span>
-                  <span className="text-base font-mono font-bold text-[#0f2942]">
+              <div className="grid grid-cols-3 gap-1.5 pt-1.5 flex-1 items-center">
+                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
+                  <span className="text-[9px] text-sky-800 uppercase block font-bold">Loudness</span>
+                  <span className="text-xs font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.integratedLufs} LUFS` : '-14.2 LUFS'}
                   </span>
                 </div>
-                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
-                  <span className="text-[10px] text-sky-800 uppercase block font-bold">True Peak</span>
-                  <span className="text-base font-mono font-bold text-[#0f2942]">
+                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
+                  <span className="text-[9px] text-sky-800 uppercase block font-bold">True Peak</span>
+                  <span className="text-xs font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.truePeakDb} dBTP` : '-0.5 dBTP'}
                   </span>
                 </div>
-                <div className="bg-sky-50/80 p-3 rounded-xl border border-sky-200">
-                  <span className="text-[10px] text-sky-800 uppercase block font-bold">Gain Offset</span>
-                  <span className="text-base font-mono font-bold text-emerald-700">
+                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
+                  <span className="text-[9px] text-sky-800 uppercase block font-bold">Gain Offset</span>
+                  <span className="text-xs font-mono font-bold text-emerald-700">
                     {replay
                       ? `${replay.recommendedGainDb > 0 ? '+' : ''}${replay.recommendedGainDb} dB`
                       : '+0.2 dB'}
