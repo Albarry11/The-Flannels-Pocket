@@ -389,7 +389,9 @@ export function App() {
   const handleToggleReplayGain = () => {
     const next = !replayGainEnabled;
     setReplayGainEnabled(next);
-    const gainDb = currentSong?.replayGain?.recommendedGainDb || 0;
+    // Clarity Boost: jika ada metadata replay gain pakai itu, atau default boost +2.5 dB
+    const analyzedDb = currentSong?.replayGain?.recommendedGainDb || 0;
+    const gainDb = analyzedDb !== 0 ? analyzedDb : 2.5;
     globalAudioEngine.setReplayGain(gainDb, next);
   };
 
@@ -909,8 +911,13 @@ export function App() {
         onToggleLoop={handleToggleLoop}
         onSetLoopStart={handleSetLoopStart}
         onSetLoopEnd={handleSetLoopEnd}
+        onSetLoopPoint={(point) => {
+          if (point === 'A') handleSetLoopStart();
+          else if (point === 'B') handleSetLoopEnd();
+        }}
         onClearLoop={handleClearLoop}
         onToggleReplayGain={handleToggleReplayGain}
+        onToggleClearSound={handleToggleReplayGain}
         onToggleMetronomeClick={handleToggleMetronomeClick}
         onMetronomeBpmChange={handleMetronomeBpmChange}
       />

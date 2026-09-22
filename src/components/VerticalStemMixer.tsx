@@ -344,14 +344,15 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                         min="0"
                         max="1"
                         step="0.01"
-                        defaultValue={stem.volume}
+                        value={stem.volume}
                         onInput={(e) => {
                           const val = parseFloat((e.target as HTMLInputElement).value);
                           globalAudioEngine.setStemVolume(stem.id, val);
                         }}
                         onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full touch-none z-10"
                         title={`Volume: ${Math.round(stem.volume * 100)}%`}
+                        aria-label={`Volume: ${Math.round(stem.volume * 100)}%`}
                       />
                     </div>
 
@@ -505,40 +506,47 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </div>
 
                 {/* Slider + Values */}
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex justify-between items-center text-[9px] font-mono font-bold text-slate-300">
-                    <span>VOL</span>
-                    <span className="text-cyan-300">{Math.round(stem.volume * 100)}%</span>
+                <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                  <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-300">
+                    <span className="text-slate-400">VOL</span>
+                    <span className="text-cyan-300 font-extrabold">{Math.round(stem.volume * 100)}%</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    defaultValue={stem.volume}
-                    onInput={(e) => {
-                      const val = parseFloat((e.target as HTMLInputElement).value);
-                      globalAudioEngine.setStemVolume(stem.id, val);
-                    }}
-                    onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                    className="w-full h-2 accent-cyan-400 cursor-pointer"
-                  />
-                  {/* Pan Slider mini */}
-                  <div className="flex items-center gap-1 pt-0.5">
-                    <span className="text-[8px] font-mono text-slate-400">PAN</span>
+                  {/* Ergonomic Touch Slider with large touch target */}
+                  <div className="relative w-full h-7 flex items-center">
                     <input
                       type="range"
-                      min="-1"
+                      min="0"
                       max="1"
-                      step="0.1"
-                      defaultValue={stem.pan}
+                      step="0.01"
+                      value={stem.volume}
                       onInput={(e) => {
                         const val = parseFloat((e.target as HTMLInputElement).value);
-                        globalAudioEngine.setStemPan(stem.id, val);
+                        globalAudioEngine.setStemVolume(stem.id, val);
                       }}
-                      onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                      className="w-full h-1 accent-sky-400 cursor-pointer"
+                      onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
+                      className="w-full h-3.5 bg-slate-900/80 rounded-lg accent-cyan-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
+                      aria-label={`Volume stem ${roleInfo.label}`}
                     />
+                  </div>
+                  {/* Pan Slider mini */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[9px] font-mono text-slate-400 font-bold">PAN</span>
+                    <div className="relative flex-1 h-5 flex items-center">
+                      <input
+                        type="range"
+                        min="-1"
+                        max="1"
+                        step="0.05"
+                        value={stem.pan}
+                        onInput={(e) => {
+                          const val = parseFloat((e.target as HTMLInputElement).value);
+                          globalAudioEngine.setStemPan(stem.id, val);
+                        }}
+                        onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
+                        className="w-full h-2.5 bg-slate-900/80 rounded-md accent-sky-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
+                        aria-label={`Pan stem ${roleInfo.label}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

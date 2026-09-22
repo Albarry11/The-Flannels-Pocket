@@ -488,11 +488,11 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             {onToggleReplayGain && (
               <div className="pt-2 border-t border-sky-100 flex items-center justify-between">
                 <div>
-                  <span className="font-semibold text-slate-600 block">Clear Sound (SRS WOW):</span>
-                  <span className="text-[10px] text-slate-400">Normalisasi kenyaringan broadcast (-14 LUFS)</span>
+                  <span className="font-semibold text-slate-600 block">Clarity Boost:</span>
+                  <span className="text-[10px] text-slate-400">Vocal clarity & boost kejernihan audio (+2.5dB)</span>
                 </div>
                 <button
-                  onClick={onToggleReplayGain}
+                  onClick={onToggleClearSound || onToggleReplayGain}
                   className={`px-3 py-1 rounded-full text-xs font-black transition flex items-center gap-1 shadow-xs ${
                     replayGainEnabled
                       ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 border border-cyan-300'
@@ -500,7 +500,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   }`}
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>{replayGainEnabled ? `Aktif (${replayGainDb > 0 ? '+' : ''}${replayGainDb}dB)` : 'Nonaktif'}</span>
+                  <span>{replayGainEnabled ? `Aktif (${replayGainDb > 0 ? '+' : ''}${replayGainDb || 2.5}dB)` : 'Nonaktif'}</span>
                 </button>
               </div>
             )}
@@ -733,13 +733,19 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           >
             <span className="text-[9px] font-bold text-sky-700 pointer-events-none">A-B</span>
             <button
-              onClick={() => onSetLoopPoint?.('A')}
-              className={`wmp-aero-btn px-1.5 py-0.5 rounded text-[9px] font-black ${loopRegion.start !== null ? 'bg-amber-300 border-amber-500 text-black' : ''}`}
+              onClick={() => {
+                if (onSetLoopPoint) onSetLoopPoint('A');
+                else if (onSetLoopStart) onSetLoopStart();
+              }}
+              className={`wmp-aero-btn px-1.5 py-0.5 rounded text-[9px] font-black ${loopRegion.start !== null && loopRegion.enabled ? 'bg-amber-300 border-amber-500 text-black' : ''}`}
               title="Set titik A (mulai loop)"
             >A</button>
             <button
-              onClick={() => onSetLoopPoint?.('B')}
-              className={`wmp-aero-btn px-1.5 py-0.5 rounded text-[9px] font-black ${loopRegion.end !== null ? 'bg-amber-300 border-amber-500 text-black' : ''}`}
+              onClick={() => {
+                if (onSetLoopPoint) onSetLoopPoint('B');
+                else if (onSetLoopEnd) onSetLoopEnd();
+              }}
+              className={`wmp-aero-btn px-1.5 py-0.5 rounded text-[9px] font-black ${loopRegion.end !== null && loopRegion.enabled ? 'bg-amber-300 border-amber-500 text-black' : ''}`}
               title="Set titik B (akhir loop)"
             >B</button>
           </div>
@@ -871,17 +877,21 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
             </div>
           </div>
 
-          {/* Clear Sound SRS WOW Pod (Desktop Only >= 1024px: di mobile masuk ke Side Drawer) */}
+          {/* Clarity Boost Pod (Desktop Only >= 1024px: di mobile masuk ke Side Drawer) */}
           <div
             style={getTunerStyle('clearSoundPod')}
             onMouseDown={(e) => startDragTarget('clearSoundPod', e)}
-            className="hidden lg:flex wmp-aero-pill px-2 py-0.5 items-center gap-1 text-xs flex-shrink-0 cursor-pointer select-none shadow-xs"
-            onClick={onToggleClearSound}
-            title="SRS WOW Clear Sound Enhancement"
+            className={`hidden lg:flex wmp-aero-pill px-2.5 py-1 items-center gap-1.5 text-xs flex-shrink-0 cursor-pointer select-none transition-all shadow-xs ${
+              replayGainEnabled
+                ? 'bg-gradient-to-r from-teal-400/90 to-cyan-400/90 text-slate-950 font-black border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                : 'hover:bg-white/80'
+            }`}
+            onClick={onToggleClearSound || onToggleReplayGain}
+            title="Clarity Boost (+2.5dB Vocal & Sound Enhancement)"
           >
-            <Sparkles className="w-3 h-3 text-amber-500 pointer-events-none" />
-            <span className="font-mono font-black text-[9px] sm:text-[10px] text-[#002963] pointer-events-none">Clear</span>
-            <span className="text-[8px] font-mono text-emerald-700 font-bold pointer-events-none">+2dB</span>
+            <Sparkles className={`w-3.5 h-3.5 pointer-events-none ${replayGainEnabled ? 'text-amber-300' : 'text-amber-500'}`} />
+            <span className="font-mono font-black text-[9px] sm:text-[10px] pointer-events-none">Clarity Boost</span>
+            <span className={`text-[8px] font-mono font-bold pointer-events-none ${replayGainEnabled ? 'text-slate-950 font-black' : 'text-emerald-700'}`}>+2.5dB</span>
           </div>
         </div>
 
@@ -1042,9 +1052,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
-                    onClick={() => onSetLoopPoint?.('A')}
+                    onClick={() => {
+                      if (onSetLoopPoint) onSetLoopPoint('A');
+                      else if (onSetLoopStart) onSetLoopStart();
+                    }}
                     className={`py-2 rounded-lg text-xs font-black flex flex-col items-center gap-0.5 border shadow-2xs transition active:scale-95 ${
-                      loopRegion.start !== null
+                      loopRegion.start !== null && loopRegion.enabled
                         ? 'bg-amber-300 border-amber-500 text-amber-950 shadow-inner'
                         : 'bg-white/90 hover:bg-white border-sky-300 text-sky-900'
                     }`}
@@ -1053,9 +1066,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                     <span>Titik A</span>
                   </button>
                   <button
-                    onClick={() => onSetLoopPoint?.('B')}
+                    onClick={() => {
+                      if (onSetLoopPoint) onSetLoopPoint('B');
+                      else if (onSetLoopEnd) onSetLoopEnd();
+                    }}
                     className={`py-2 rounded-lg text-xs font-black flex flex-col items-center gap-0.5 border shadow-2xs transition active:scale-95 ${
-                      loopRegion.end !== null
+                      loopRegion.end !== null && loopRegion.enabled
                         ? 'bg-amber-300 border-amber-500 text-amber-950 shadow-inner'
                         : 'bg-white/90 hover:bg-white border-sky-300 text-sky-900'
                     }`}
@@ -1154,19 +1170,19 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 </div>
               </div>
 
-              {/* 4. Clear Sound SRS WOW Section */}
+              {/* 4. Clarity Boost Section */}
               <div className="bg-white/70 backdrop-blur-md rounded-xl p-3 border border-white/90 shadow-xs flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-white shadow-2xs">
                     <Sparkles className="w-4 h-4 text-amber-200" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-black text-sky-950 block leading-tight">SRS WOW Clear</span>
-                    <span className="text-[9px] font-bold text-teal-700">+2dB Vocal Clarity</span>
+                    <span className="text-[11px] font-black text-sky-950 block leading-tight">Clarity Boost</span>
+                    <span className="text-[9px] font-bold text-teal-700">+2.5dB Vocal & Sound Enhancement</span>
                   </div>
                 </div>
                 <button
-                  onClick={onToggleClearSound}
+                  onClick={onToggleClearSound || onToggleReplayGain}
                   className={`px-3 py-1.5 rounded-lg text-xs font-black border shadow-2xs transition active:scale-95 ${
                     replayGainEnabled
                       ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 border-cyan-300 shadow-md'
