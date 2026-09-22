@@ -615,9 +615,10 @@ export function App() {
         <div className="absolute inset-0 bg-sky-950/25 backdrop-blur-[1.5px]" />
 
         {/* Modern iOS Liquid Glass Loading Dialog Box */}
-        <div className="w-full max-w-sm rounded-[32px] p-6 bg-gradient-to-b from-white/35 via-white/20 to-white/10 backdrop-blur-2xl saturate-[200%] border border-white/60 shadow-[0_25px_60px_rgba(0,35,80,0.25),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(255,255,255,0.2)] relative z-10 flex flex-col items-center gap-4 text-center overflow-hidden">
+        <div className="w-full max-w-sm rounded-[32px] p-6 bg-gradient-to-b from-white/35 via-white/20 to-white/10 backdrop-blur-[40px] saturate-[200%] border border-white/60 shadow-[0_25px_60px_rgba(0,35,80,0.25),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(255,255,255,0.2)] relative z-10 flex flex-col items-center gap-4 text-center overflow-hidden">
           {/* Liquid glass top specular reflection */}
           <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none rounded-t-[32px]" />
+          <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
 
           {/* Glowing Orb Logo */}
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 p-1 shadow-[0_0_28px_rgba(14,165,233,0.7)] border border-white/90 flex items-center justify-center relative">

@@ -1016,7 +1016,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           />
 
           {/* Right Drawer Panel (Aero Glass Style) */}
-          <div className="fixed inset-y-0 right-0 z-[100] w-72 max-w-[85vw] bg-gradient-to-b from-[#ebf5fe]/98 via-[#d6e9fa]/98 to-[#c2def4]/98 backdrop-blur-2xl border-l-2 border-white/90 shadow-[-12px_0_35px_rgba(2,60,120,0.35)] pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
+          <div className="fixed inset-y-0 right-0 z-[100] w-72 max-w-[85vw] bg-[#dbebfc] backdrop-blur-[40px] border-l-2 border-white/90 shadow-[-12px_0_35px_rgba(2,60,120,0.35)] pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
             <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-sky-300/60">
