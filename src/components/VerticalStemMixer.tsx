@@ -461,14 +461,14 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
                 {/* 1. Kiri: Identitas Track */}
                 <div className="flex flex-col items-center justify-center w-8 flex-shrink-0 leading-none relative z-10">
-                  <div className="scale-85 origin-center drop-shadow-sm">{roleInfo.icon}</div>
+                  <div className="scale-85 origin-center [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.9))]">{roleInfo.icon}</div>
                   <span
-                    className="text-[8px] font-black uppercase tracking-tight mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                    className="text-[8px] font-black uppercase tracking-tight mt-0.5 [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]"
                     style={{ color: roleInfo.color }}
                   >
                     {shortRoleName}
                   </span>
-                  <span className="text-[7.5px] font-mono text-cyan-200 font-black mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
+                  <span className="text-[7.5px] font-mono text-cyan-200 font-black mt-0.5 [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]">
                     {Math.round(stem.volume * 100)}%
                   </span>
                 </div>
@@ -477,7 +477,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 <div className="flex flex-col gap-1 flex-shrink-0 relative z-10">
                   <button
                     onClick={() => onToggleMute(stem.id)}
-                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden ${
+                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000] ${
                       stem.muted
                         ? 'bg-gradient-to-b from-rose-500 via-rose-600 to-red-700 text-white border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
                         : 'bg-white/20 hover:bg-white/30 text-white border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] backdrop-blur-md'
@@ -489,9 +489,9 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   </button>
                   <button
                     onClick={() => onToggleSolo(stem.id)}
-                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden ${
+                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000] ${
                       stem.solo
-                        ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-yellow-500 text-slate-950 border-amber-100 shadow-[0_0_10px_rgba(251,191,36,0.8)]'
+                        ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-yellow-500 text-white border-amber-100 shadow-[0_0_10px_rgba(251,191,36,0.8)]'
                         : 'bg-white/20 hover:bg-white/30 text-white border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] backdrop-blur-md'
                     }`}
                     title={stem.solo ? 'Unsolo' : 'Solo'}
@@ -520,7 +520,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 min-w-0 pr-1 relative z-10">
                   {/* Vol Slider */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[7.5px] font-mono text-white/90 font-bold w-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)]">VOL</span>
+                    <span className="text-[7.5px] font-mono text-white font-bold w-3 [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]">VOL</span>
                     <div className="relative flex-1 h-3 flex items-center">
                       <input
                         type="range"
@@ -541,7 +541,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
                   {/* Pan Slider */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[7.5px] font-mono text-white/90 font-bold w-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)]">PAN</span>
+                    <span className="text-[7.5px] font-mono text-white font-bold w-3 [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]">PAN</span>
                     <div className="relative flex-1 h-2.5 flex items-center">
                       <input
                         type="range"
@@ -558,7 +558,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                         aria-label={`Pan stem ${roleInfo.label}`}
                       />
                     </div>
-                    <span className="text-[7.5px] font-mono text-cyan-200 font-bold w-3 text-right drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)]">
+                    <span className="text-[7.5px] font-mono text-cyan-200 font-bold w-3 text-right [text-shadow:_0_0_2px_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]">
                       {stem.pan === 0
                         ? 'C'
                         : stem.pan < 0
