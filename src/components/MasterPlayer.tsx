@@ -369,7 +369,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
   };
 
   return (
-    <div className="wmp-dock-bar relative flex-shrink-0 w-full z-30 px-2 sm:px-4 pt-1 pb-3 sm:pb-2.5 transition-all select-none pb-safe">
+    <div className="wmp-dock-bar relative flex-shrink-0 w-full z-40 px-2 sm:px-4 pt-1 pb-3 sm:pb-2.5 transition-all select-none pb-safe">
       {/* Advanced Metronome Popover Panel */}
       {showAdvancedMetronome && (
         <div className="absolute bottom-20 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-3xl border border-sky-300 p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-xs text-[#0f2942]">
@@ -1011,12 +1011,12 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
         <>
           {/* Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[99] lg:hidden animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[9990] lg:hidden animate-in fade-in duration-200"
             onClick={() => setMobileStudioOpen(false)}
           />
 
           {/* Right Drawer Panel (Solid Vista Frost Glass Style - High Blur & Opacity) */}
-          <div className="fixed inset-y-0 right-0 z-[100] w-72 max-w-[85vw] bg-[#cde4fc] backdrop-blur-[60px] border-l-2 border-white shadow-[-16px_0_40px_rgba(2,45,95,0.45)] pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
+          <div className="fixed inset-y-0 right-0 z-[9999] w-72 max-w-[85vw] bg-[#cde4fc] backdrop-blur-[60px] border-l-2 border-white shadow-[-16px_0_40px_rgba(2,45,95,0.45)] pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
             <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-sky-300/60">

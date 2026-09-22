@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="aero-window-header w-full px-3 sm:px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pl-[calc(0.75rem+env(safe-area-inset-left,0px))] pr-[calc(0.75rem+env(safe-area-inset-right,0px))] pb-2 transition-all flex-shrink-0 z-40 flex items-center justify-between gap-3 shadow-xs relative">
+    <header className="aero-window-header w-full px-3 sm:px-6 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pl-[calc(0.75rem+env(safe-area-inset-left,0px))] pr-[calc(0.75rem+env(safe-area-inset-right,0px))] pb-2 transition-all flex-shrink-0 z-20 flex items-center justify-between gap-3 shadow-xs relative">
       {/* 1. Left: Sidebar Toggle, Navigation Circles, Brand Title, Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4">
         {onToggleNav && (
