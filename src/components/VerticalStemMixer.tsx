@@ -422,144 +422,149 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
         })}
       </div>
 
-      {/* ================= UNIVERSAL MOBILE 2x2 STUDIO CARDS (MOCKUP ACCURATE) ================= */}
-      {/* 2x2 Fitted cards matching mockup design: dark module plate, proper contrast, non-clipping */}
-      <div className="grid md:hidden grid-cols-2 grid-rows-2 gap-2 flex-1 h-full min-h-0 overflow-hidden pb-1">
-        {visibleStems.map((stem) => {
-          const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
-          const isSilenced = stem.muted || (anySoloActive && !stem.solo);
+      {/* ================= UNIVERSAL MOBILE 2x2 SLIM CAPSULE CLUSTER (md:hidden) ================= */}
+      {/* 2x2 Slim capsules rapat ngumpul di tengah secara simetris, ultra-sleek & non-bulky */}
+      <div className="flex md:hidden flex-1 items-center justify-center min-h-0 w-full my-auto px-1 py-1">
+        <div className="grid grid-cols-2 gap-1.5 w-full max-w-[345px]">
+          {visibleStems.map((stem) => {
+            const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
+            const isSilenced = stem.muted || (anySoloActive && !stem.solo);
+            const shortRoleName =
+              stem.role === 'vocal'
+                ? 'VOC'
+                : stem.role === 'guitar' || stem.role === 'lead'
+                ? 'GTR'
+                : stem.role === 'rhythm'
+                ? 'RHY'
+                : stem.role === 'bass'
+                ? 'BAS'
+                : stem.role === 'drums'
+                ? 'DRM'
+                : roleInfo.label.slice(0, 3).toUpperCase();
 
-          return (
-            <div
-              key={`m-${stem.id}`}
-              className={`rounded-2xl p-2.5 transition-all flex flex-col justify-between border relative shadow-md overflow-hidden backdrop-blur-2xl saturate-[190%] ${
-                stem.solo
-                  ? 'bg-gradient-to-b from-[#24354a]/60 via-[#18283a]/50 to-[#0c1824]/55 border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
-                  : stem.muted
-                  ? 'bg-gradient-to-b from-[#141b24]/40 via-[#0e141c]/35 to-[#080d13]/40 border-rose-500/35 opacity-70'
-                  : isSilenced
-                  ? 'bg-gradient-to-b from-[#121922]/35 via-[#0d131a]/30 to-[#070b10]/35 border-slate-700/35 opacity-50'
-                  : 'bg-gradient-to-b from-[#1b2b3d]/50 via-[#121f2d]/42 to-[#091522]/52 border-sky-400/40 shadow-xs'
-              }`}
-            >
-              {/* Metallic corner dots */}
-              <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-slate-500 pointer-events-none" />
-              <div className="absolute top-1 right-1 w-1 h-1 rounded-full bg-slate-500 pointer-events-none" />
-
-              {/* 1. Header: Icon + Name + LED */}
-              <div className="flex items-center justify-between pb-1 border-b border-white/10 flex-shrink-0">
-                <div className="flex items-center gap-1 min-w-0">
-                  {roleInfo.icon}
-                  <span className="text-[11px] font-black uppercase tracking-tight truncate" style={{ color: roleInfo.color }}>
-                    {roleInfo.label}
+            return (
+              <div
+                key={`m-${stem.id}`}
+                className={`rounded-full px-2 py-1 flex items-center gap-1.5 h-[62px] border relative shadow-md backdrop-blur-2xl saturate-[190%] select-none ${
+                  stem.solo
+                    ? 'bg-gradient-to-b from-[#24354a]/85 via-[#18283a]/75 to-[#0c1824]/80 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
+                    : stem.muted
+                    ? 'bg-gradient-to-b from-[#141b24]/60 via-[#0e141c]/55 to-[#080d13]/60 border-rose-500/40 opacity-70'
+                    : isSilenced
+                    ? 'bg-gradient-to-b from-[#121922]/50 via-[#0d131a]/45 to-[#070b10]/50 border-slate-700/40 opacity-50'
+                    : 'bg-gradient-to-b from-[#17283b]/85 via-[#0e1c2b]/80 to-[#071320]/88 border-sky-400/40 shadow-xs'
+                }`}
+              >
+                {/* 1. Kiri: Identitas + Persen */}
+                <div className="flex flex-col items-center justify-center w-7 flex-shrink-0 leading-none">
+                  <div className="scale-75 origin-center">{roleInfo.icon}</div>
+                  <span
+                    className="text-[7.5px] font-black uppercase tracking-tight mt-0.5"
+                    style={{ color: roleInfo.color }}
+                  >
+                    {shortRoleName}
+                  </span>
+                  <span className="text-[7.5px] font-mono text-cyan-300 font-bold mt-0.5">
+                    {Math.round(stem.volume * 100)}%
                   </span>
                 </div>
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
-                  style={{
-                    backgroundColor: isSilenced ? '#64748b' : roleInfo.color,
-                    boxShadow: isSilenced ? 'none' : `0 0 6px ${roleInfo.color}`,
-                  }}
-                />
-              </div>
 
-              {/* 2. Mute & Solo Buttons (Mockup h-6 rounded-md) */}
-              <div className="grid grid-cols-2 gap-1 my-1 w-full flex-shrink-0">
-                <button
-                  onClick={() => onToggleMute(stem.id)}
-                  className={`h-6 rounded-md text-[9px] font-black border transition active:scale-95 flex items-center justify-center ${
-                    stem.muted
-                      ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
-                  title={stem.muted ? 'Unmute' : 'Mute'}
-                >
-                  MUTE
-                </button>
-                <button
-                  onClick={() => onToggleSolo(stem.id)}
-                  className={`h-6 rounded-md text-[9px] font-black border transition active:scale-95 flex items-center justify-center ${
-                    stem.solo
-                      ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.7)]'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
-                  title={stem.solo ? 'Unsolo' : 'Solo'}
-                >
-                  SOLO
-                </button>
-              </div>
-
-              {/* 3. Slider Container Box (Black glass plate seperti di mockup) */}
-              <div className="space-y-1 bg-black/35 p-1.5 rounded-xl border border-white/5 flex-1 flex flex-col justify-center min-h-0">
-                <div className="flex justify-between items-center text-[9px] font-mono font-bold leading-none">
-                  <span className="text-slate-400">VOL</span>
-                  <span className="text-cyan-300">{Math.round(stem.volume * 100)}%</span>
+                {/* 2. Tombol Mute & Solo Kapsul Mini Bulat */}
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => onToggleMute(stem.id)}
+                    className={`w-4 h-3.5 rounded-full text-[7px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                      stem.muted
+                        ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_6px_rgba(244,63,94,0.6)]'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                    title={stem.muted ? 'Unmute' : 'Mute'}
+                  >
+                    M
+                  </button>
+                  <button
+                    onClick={() => onToggleSolo(stem.id)}
+                    className={`w-4 h-3.5 rounded-full text-[7px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                      stem.solo
+                        ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.7)]'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                    title={stem.solo ? 'Unsolo' : 'Solo'}
+                  >
+                    S
+                  </button>
                 </div>
 
-                {/* Vol Slider + Vertical VU Meter */}
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-6 bg-slate-900 rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 flex-shrink-0">
-                    <div
-                      ref={(el) => {
-                        mobileMeterRefs.current[stem.id] = el;
-                      }}
-                      className="w-full rounded-full"
-                      style={{
-                        height: '0%',
-                        backgroundColor: '#10b981',
-                        transition: 'none',
-                      }}
-                    />
-                  </div>
-                  <div className="relative flex-1 h-4 flex items-center">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={stem.volume}
-                      onInput={(e) => {
-                        const val = parseFloat((e.target as HTMLInputElement).value);
-                        globalAudioEngine.setStemVolume(stem.id, val);
-                      }}
-                      onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                      className="w-full h-2 rounded-lg cursor-pointer accent-cyan-400 touch-none"
-                      aria-label={`Volume stem ${roleInfo.label}`}
-                    />
-                  </div>
+                {/* 3. Slim Vertical VU Meter */}
+                <div className="w-1 h-8 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.2 border border-slate-700 shadow-inner flex-shrink-0">
+                  <div
+                    ref={(el) => {
+                      mobileMeterRefs.current[stem.id] = el;
+                    }}
+                    className="w-full rounded-full"
+                    style={{
+                      height: '0%',
+                      backgroundColor: '#10b981',
+                      transition: 'none',
+                    }}
+                  />
                 </div>
 
-                {/* Pan Slider Row */}
-                <div className="flex items-center gap-1 pt-0.5">
-                  <span className="text-[8px] font-mono text-slate-400 font-bold">PAN</span>
-                  <div className="relative flex-1 h-3 flex items-center">
-                    <input
-                      type="range"
-                      min="-1"
-                      max="1"
-                      step="0.05"
-                      value={stem.pan}
-                      onInput={(e) => {
-                        const val = parseFloat((e.target as HTMLInputElement).value);
-                        globalAudioEngine.setStemPan(stem.id, val);
-                      }}
-                      onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                      className="w-full h-1.5 rounded-lg cursor-pointer accent-sky-400 touch-none"
-                      aria-label={`Pan stem ${roleInfo.label}`}
-                    />
+                {/* 4. Kanan: Slider Memanjang Tipis (VOL & PAN) */}
+                <div className="flex-1 flex flex-col justify-center gap-1 min-w-0 pr-1">
+                  {/* Vol Slider */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-[7px] font-mono text-slate-400 font-bold w-3">V</span>
+                    <div className="relative flex-1 h-3 flex items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={stem.volume}
+                        onInput={(e) => {
+                          const val = parseFloat((e.target as HTMLInputElement).value);
+                          globalAudioEngine.setStemVolume(stem.id, val);
+                        }}
+                        onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
+                        className="w-full h-1.5 rounded-full cursor-pointer accent-cyan-400 touch-none bg-slate-900/80 border border-slate-700/60"
+                        aria-label={`Volume stem ${roleInfo.label}`}
+                      />
+                    </div>
                   </div>
-                  <span className="text-[8px] font-mono text-cyan-300 font-bold w-5 text-right">
-                    {stem.pan === 0
-                      ? 'C'
-                      : stem.pan < 0
-                      ? `L${Math.round(Math.abs(stem.pan) * 50)}`
-                      : `R${Math.round(stem.pan * 50)}`}
-                  </span>
+
+                  {/* Pan Slider */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-[7px] font-mono text-slate-400 font-bold w-3">P</span>
+                    <div className="relative flex-1 h-2.5 flex items-center">
+                      <input
+                        type="range"
+                        min="-1"
+                        max="1"
+                        step="0.05"
+                        value={stem.pan}
+                        onInput={(e) => {
+                          const val = parseFloat((e.target as HTMLInputElement).value);
+                          globalAudioEngine.setStemPan(stem.id, val);
+                        }}
+                        onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
+                        className="w-full h-1 rounded-full cursor-pointer accent-sky-400 touch-none bg-slate-900/80 border border-slate-700/60"
+                        aria-label={`Pan stem ${roleInfo.label}`}
+                      />
+                    </div>
+                    <span className="text-[7px] font-mono text-cyan-300 font-bold w-2.5 text-right">
+                      {stem.pan === 0
+                        ? 'C'
+                        : stem.pan < 0
+                        ? 'L'
+                        : 'R'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
