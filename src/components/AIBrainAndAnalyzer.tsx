@@ -115,13 +115,13 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg min-h-0">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-lg min-h-0">
       {/* Top Header Tilikan - Integrated Vista Tab Switcher as Header Title */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-1.5 gap-1.5 min-w-0">
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 sm:pb-2 mb-1.5 sm:mb-2.5 gap-1.5 min-w-0">
         <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md overflow-x-auto scrollbar-none flex-1 min-w-0">
           <button
             onClick={() => setActiveTab('coaching')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
+            className={`py-1 sm:py-1.5 px-2 sm:px-3 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'coaching'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
@@ -132,7 +132,7 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
+            className={`py-1 sm:py-1.5 px-2 sm:px-3 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'chat'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
@@ -143,7 +143,7 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('quality')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
+            className={`py-1 sm:py-1.5 px-2 sm:px-3 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'quality'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
@@ -160,10 +160,10 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
             <button
               onClick={() => runCoachingAnalysis(true)}
               disabled={isLoadingCoaching}
-              className="px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-[9px] sm:text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+              className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-white/80 hover:bg-white text-sky-800 border border-sky-300 text-[9px] sm:text-xs font-bold transition flex items-center gap-1 shadow-2xs"
               title="Analisis ulang aransemen via Gemini"
             >
-              <RefreshCw className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${isLoadingCoaching ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Analisis Ulang</span>
             </button>
           )}
@@ -175,7 +175,7 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
         
         {/* TAB 1: KULIK PERSONIL (Swipe Carousel - No Page Scroll) */}
         {activeTab === 'coaching' && (
-          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 sm:gap-2.5 overflow-hidden">
             {isLoadingCoaching ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-2">
                 <Loader2 className="w-7 h-7 text-sky-500 animate-spin" />
@@ -184,19 +184,19 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
             ) : coaching ? (
               <>
                 {/* Compact Musical Overview */}
-                <div className="p-2 rounded-xl bg-gradient-to-r from-sky-100/90 to-blue-100/70 border border-sky-300/60 shadow-2xs flex items-center justify-between gap-2 flex-shrink-0">
+                <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-sky-100/90 to-blue-100/70 border border-sky-300/60 shadow-2xs flex items-center justify-between gap-2 flex-shrink-0">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 font-extrabold text-sky-900 text-xs truncate">
-                      <Sparkles className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+                    <div className="flex items-center gap-1.5 font-extrabold text-sky-900 text-xs sm:text-sm truncate">
+                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 flex-shrink-0" />
                       <span className="truncate">{coaching.songTitle}</span>
                     </div>
-                    <p className="text-[10px] text-[#0f2942] truncate font-medium mt-0.5">
+                    <p className="text-[10px] sm:text-xs text-[#0f2942] truncate font-medium mt-0.5 sm:mt-1">
                       💡 {coaching.keyAdvice} • {coaching.musicalSummary}
                     </p>
                   </div>
                   {/* Indicator Dot Pill */}
-                  <div className="flex items-center gap-1 bg-white/70 px-2 py-0.5 rounded-full border border-sky-200 flex-shrink-0">
-                    <span className="text-[10px] font-bold text-sky-800">
+                  <div className="flex items-center gap-1 bg-white/70 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-sky-200 flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs font-bold text-sky-800">
                       {activePersonilIdx + 1}/{coaching.personilGuides.length}
                     </span>
                   </div>
@@ -224,31 +224,31 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                   {coaching.personilGuides.length > 0 && (() => {
                     const guide = coaching.personilGuides[Math.min(activePersonilIdx, coaching.personilGuides.length - 1)];
                     return (
-                      <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-200 p-2.5 shadow-xs flex flex-col min-h-0 overflow-hidden">
+                      <div className="flex-1 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-200 p-2.5 sm:p-4 shadow-xs flex flex-col min-h-0 overflow-hidden">
                         {/* Header Personil */}
-                        <div className="flex items-center justify-between border-b border-sky-100 pb-1.5 flex-shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            {roleIcons[guide.personil] || <Music className="w-4 h-4 text-sky-600" />}
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0f2942]">
+                        <div className="flex items-center justify-between border-b border-sky-100 pb-1.5 sm:pb-2.5 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            {roleIcons[guide.personil] || <Music className="w-4 h-4 sm:w-5 sm:h-5 text-sky-600" />}
+                            <span className="text-xs sm:text-base font-extrabold text-[#0f2942]">
                               {guide.personil}
                             </span>
                           </div>
-                          <span className="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300/60 truncate max-w-[140px]">
+                          <span className="text-[9px] sm:text-xs font-bold text-sky-700 bg-sky-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-sky-300/60 truncate max-w-[140px] sm:max-w-none">
                             {guide.focus}
                           </span>
                         </div>
 
                         {/* Tips List - Scrollable if content overflows */}
-                        <div className="flex-1 my-1.5 overflow-y-auto scrollbar-none pr-0.5 flex flex-col justify-center min-h-0">
-                          <ul className="text-[11px] sm:text-xs text-[#1e3a5f] space-y-1 list-disc list-inside font-medium leading-snug">
+                        <div className="flex-1 my-1.5 sm:my-3 overflow-y-auto scrollbar-none pr-0.5 flex flex-col justify-center min-h-0">
+                          <ul className="text-[11px] sm:text-sm text-[#1e3a5f] space-y-1 sm:space-y-2 list-disc list-inside font-medium leading-snug">
                             {guide.tips.map((tip, tIdx) => (
-                              <li key={tIdx} className="leading-tight">{tip}</li>
+                              <li key={tIdx} className="leading-tight sm:leading-normal">{tip}</li>
                             ))}
                           </ul>
                         </div>
 
                         {/* Chord / Pattern Footer */}
-                        <div className="pt-1.5 border-t border-sky-100 text-[10px] sm:text-[11px] font-mono text-amber-800 font-bold truncate flex-shrink-0 bg-amber-50/60 -mx-2.5 -mb-2.5 px-2.5 py-1.5 rounded-b-xl border-t border-amber-200/50">
+                        <div className="pt-1.5 sm:pt-2.5 border-t border-sky-100 text-[10px] sm:text-xs font-mono text-amber-800 font-bold truncate flex-shrink-0 bg-amber-50/60 -mx-2.5 -mb-2.5 sm:-mx-4 sm:-mb-4 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-b-xl sm:rounded-b-2xl border-t border-amber-200/50">
                           🎵 {guide.keyChordsOrPattern}
                         </div>
                       </div>
@@ -256,25 +256,25 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                   })()}
 
                   {/* Navigation Arrows for Swipe */}
-                  <div className="flex items-center justify-between pt-1 flex-shrink-0">
+                  <div className="flex items-center justify-between pt-1 sm:pt-2 flex-shrink-0">
                     <button
                       onClick={() => setActivePersonilIdx((prev) => Math.max(0, prev - 1))}
                       disabled={activePersonilIdx === 0}
-                      className="px-2.5 py-1 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] font-bold disabled:opacity-40 flex items-center gap-0.5 active:scale-95 shadow-2xs"
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] sm:text-xs font-bold disabled:opacity-40 flex items-center gap-0.5 sm:gap-1 active:scale-95 shadow-2xs"
                     >
-                      <ChevronLeft className="w-3 h-3" />
+                      <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Sebelum</span>
                     </button>
                     {/* Role tabs mini carousel */}
-                    <div className="flex items-center gap-1 overflow-x-auto max-w-[200px] scrollbar-none px-1">
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-[200px] sm:max-w-xs scrollbar-none px-1">
                       {coaching.personilGuides.map((g, idx) => (
                         <button
                           key={idx}
                           onClick={() => setActivePersonilIdx(idx)}
-                          className={`w-2 h-2 rounded-full transition-all ${
+                          className={`h-2 sm:h-2.5 rounded-full transition-all ${
                             activePersonilIdx === idx
-                              ? 'w-4 bg-sky-600'
-                              : 'bg-sky-200 hover:bg-sky-300'
+                              ? 'w-4 sm:w-6 bg-sky-600'
+                              : 'w-2 sm:w-2.5 bg-sky-200 hover:bg-sky-300'
                           }`}
                           title={g.personil}
                         />
@@ -283,21 +283,21 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
                     <button
                       onClick={() => setActivePersonilIdx((prev) => Math.min(coaching.personilGuides.length - 1, prev + 1))}
                       disabled={activePersonilIdx >= coaching.personilGuides.length - 1}
-                      className="px-2.5 py-1 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] font-bold disabled:opacity-40 flex items-center gap-0.5 active:scale-95 shadow-2xs"
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/80 border border-sky-200 text-sky-800 text-[10px] sm:text-xs font-bold disabled:opacity-40 flex items-center gap-0.5 sm:gap-1 active:scale-95 shadow-2xs"
                     >
                       <span>Lanjut</span>
-                      <ChevronRight className="w-3 h-3" />
+                      <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Rehearsal & Mix Doctor Mini Strip */}
-                <div className="grid grid-cols-2 gap-1.5 pt-0.5 flex-shrink-0 text-[10px]">
-                  <div className="p-1.5 rounded-lg bg-white/80 border border-sky-200/80 truncate">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-3 pt-0.5 sm:pt-1 flex-shrink-0 text-[10px] sm:text-xs">
+                  <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/80 border border-sky-200/80 truncate">
                     <span className="font-bold text-[#0f2942] block truncate">📋 Latihan</span>
                     <span className="text-[#1e3a5f] truncate block">{coaching.rehearsalPlan[0] || 'Sinkronisasi intro'}</span>
                   </div>
-                  <div className="p-1.5 rounded-lg bg-white/80 border border-sky-200/80 truncate">
+                  <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/80 border border-sky-200/80 truncate">
                     <span className="font-bold text-sky-800 block truncate">🩺 Mix Doctor</span>
                     <span className="text-[#1e3a5f] truncate block">{coaching.mixDoctorNotes}</span>
                   </div>
@@ -396,103 +396,103 @@ export const AIBrainAndAnalyzer: React.FC<AIBrainAndAnalyzerProps> = ({
 
         {/* TAB 3: KUALITAS AUDIO & REPLAYGAIN (Compact & Non-Scrollable) */}
         {activeTab === 'quality' && (
-          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 justify-between gap-1.5 sm:gap-3 overflow-hidden">
             {/* Lossless Classification Banner */}
             <div
-              className={`p-2 rounded-xl border flex items-center justify-between gap-2 shadow-2xs flex-shrink-0 ${
+              className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl border flex items-center justify-between gap-2 shadow-2xs flex-shrink-0 ${
                 quality?.isLossless
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                   : 'bg-amber-50 border-amber-300 text-amber-950'
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 {quality?.isLossless ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0" />
                 ) : (
-                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 flex-shrink-0" />
                 )}
                 <div className="min-w-0">
-                  <span className="font-extrabold text-xs text-[#0f2942] block truncate">
+                  <span className="font-extrabold text-xs sm:text-sm text-[#0f2942] block truncate">
                     {quality?.classification || 'Lossless FLAC Master'}
                   </span>
-                  <p className="text-[10px] text-[#1e3a5f] truncate font-medium">
+                  <p className="text-[10px] sm:text-xs text-[#1e3a5f] truncate font-medium">
                     {quality?.cutoffFrequency ? `Cutoff: ${quality.cutoffFrequency} Hz` : 'Full Bandwidth (>20kHz)'}
                   </p>
                 </div>
               </div>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white border border-emerald-300 font-bold text-emerald-700 flex-shrink-0">
+              <span className="text-[9px] sm:text-xs font-mono px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white border border-emerald-300 font-bold text-emerald-700 flex-shrink-0">
                 Hi-Res
               </span>
             </div>
 
             {/* Technical Specs 4-Tile Strip */}
-            <div className="grid grid-cols-4 gap-1.5 flex-shrink-0">
-              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
-                <span className="text-[9px] text-sky-800 uppercase block font-bold">Sample</span>
-                <span className="text-xs font-mono font-black text-[#0f2942]">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3 flex-shrink-0">
+              <div className="bg-white/80 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Sample</span>
+                <span className="text-xs sm:text-base font-mono font-black text-[#0f2942]">
                   {quality ? `${(quality.sampleRate / 1000).toFixed(1)}k` : '44.1k'}
                 </span>
               </div>
-              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
-                <span className="text-[9px] text-sky-800 uppercase block font-bold">Bit</span>
-                <span className="text-xs font-mono font-black text-[#0f2942]">
+              <div className="bg-white/80 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Bit</span>
+                <span className="text-xs sm:text-base font-mono font-black text-[#0f2942]">
                   {quality ? `${quality.bitDepthEstimate}-bit` : '16/24-bit'}
                 </span>
               </div>
-              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
-                <span className="text-[9px] text-sky-800 uppercase block font-bold">Dynamic</span>
-                <span className="text-xs font-mono font-black text-sky-700">
+              <div className="bg-white/80 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Dynamic</span>
+                <span className="text-xs sm:text-base font-mono font-black text-sky-700">
                   {quality ? `DR${quality.dynamicRangeScore}` : 'DR12'}
                 </span>
               </div>
-              <div className="bg-white/80 p-1.5 rounded-xl border border-sky-200/70 text-center shadow-2xs">
-                <span className="text-[9px] text-sky-800 uppercase block font-bold">Channel</span>
-                <span className="text-xs font-mono font-black text-[#0f2942]">
+              <div className="bg-white/80 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border border-sky-200/70 text-center shadow-2xs">
+                <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Channel</span>
+                <span className="text-xs sm:text-base font-mono font-black text-[#0f2942]">
                   {quality?.channels === 1 ? 'Mono' : 'Stereo'}
                 </span>
               </div>
             </div>
 
             {/* ReplayGain Compact Card */}
-            <div className="bg-white/85 p-2 rounded-xl border border-sky-200/70 shadow-2xs flex-1 flex flex-col justify-between min-h-0">
-              <div className="flex items-center justify-between border-b border-sky-100 pb-1 flex-shrink-0">
+            <div className="bg-white/85 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl border border-sky-200/70 shadow-2xs flex-1 flex flex-col justify-between min-h-0">
+              <div className="flex items-center justify-between border-b border-sky-100 pb-1 sm:pb-2 flex-shrink-0">
                 <div className="min-w-0">
-                  <h4 className="text-xs font-extrabold text-[#0f2942] truncate">
+                  <h4 className="text-xs sm:text-sm font-extrabold text-[#0f2942] truncate">
                     Normalisasi ReplayGain (ITU-R BS.1770)
                   </h4>
-                  <p className="text-[10px] text-sky-700 truncate">
+                  <p className="text-[10px] sm:text-xs text-sky-700 truncate">
                     Standar -14 LUFS kenyaringan seragam
                   </p>
                 </div>
                 <button
                   onClick={onToggleReplayGain}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold transition flex items-center gap-1 shadow-2xs flex-shrink-0 ${
+                  className={`px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-extrabold transition flex items-center gap-1 shadow-2xs flex-shrink-0 ${
                     replayGainEnabled
                       ? 'bg-emerald-500 text-white'
                       : 'bg-sky-100 text-sky-800 border border-sky-300'
                   }`}
                 >
-                  <ShieldCheck className="w-3 h-3" />
+                  <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{replayGainEnabled ? 'Aktif' : 'Off'}</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5 pt-1.5 flex-1 items-center">
-                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
-                  <span className="text-[9px] text-sky-800 uppercase block font-bold">Loudness</span>
-                  <span className="text-xs font-mono font-bold text-[#0f2942]">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-3 pt-1.5 sm:pt-3 flex-1 items-center">
+                <div className="bg-sky-50/90 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-sky-200 text-center">
+                  <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Loudness</span>
+                  <span className="text-xs sm:text-base font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.integratedLufs} LUFS` : '-14.2 LUFS'}
                   </span>
                 </div>
-                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
-                  <span className="text-[9px] text-sky-800 uppercase block font-bold">True Peak</span>
-                  <span className="text-xs font-mono font-bold text-[#0f2942]">
+                <div className="bg-sky-50/90 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-sky-200 text-center">
+                  <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">True Peak</span>
+                  <span className="text-xs sm:text-base font-mono font-bold text-[#0f2942]">
                     {replay ? `${replay.truePeakDb} dBTP` : '-0.5 dBTP'}
                   </span>
                 </div>
-                <div className="bg-sky-50/90 p-2 rounded-lg border border-sky-200 text-center">
-                  <span className="text-[9px] text-sky-800 uppercase block font-bold">Gain Offset</span>
-                  <span className="text-xs font-mono font-bold text-emerald-700">
+                <div className="bg-sky-50/90 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-sky-200 text-center">
+                  <span className="text-[9px] sm:text-xs text-sky-800 uppercase block font-bold">Gain Offset</span>
+                  <span className="text-xs sm:text-base font-mono font-bold text-emerald-700">
                     {replay
                       ? `${replay.recommendedGainDb > 0 ? '+' : ''}${replay.recommendedGainDb} dB`
                       : '+0.2 dB'}
