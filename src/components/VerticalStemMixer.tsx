@@ -186,8 +186,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
       {/* ================= DESKTOP / TABLET DAW CONSOLE STRIP (sm:grid) ================= */}
       {/* Displays stems extending all the way down to bottom dock without clipping */}
-      <div
-        className={`hidden sm:grid gap-2 sm:gap-3 flex-1 h-full min-h-0 ${
+      <div className={`hidden md:grid gap-2 sm:gap-3 flex-1 h-full min-h-0 ${
           visibleStems.length <= 4 ? 'grid-cols-4' : 'grid-cols-5'
         }`}
       >
@@ -423,9 +422,9 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
         })}
       </div>
 
-      {/* ================= UNIVERSAL MOBILE 2x2 ERGONOMIC MIXER CARDS (sm:hidden) ================= */}
+      {/* ================= UNIVERSAL MOBILE 2x2 ERGONOMIC MIXER CARDS (md:hidden) ================= */}
       {/* Built from ground up for touch screen ergonomics, thumb reach, and high readability */}
-      <div className="grid sm:hidden grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 pb-2">
+      <div className="grid md:hidden grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 pb-2">
         {visibleStems.map((stem) => {
           const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
           const isSilenced = stem.muted || (anySoloActive && !stem.solo);

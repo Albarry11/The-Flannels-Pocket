@@ -1016,22 +1016,22 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           />
 
           {/* Right Drawer Panel (Aero Glass Style) */}
-          <div className="fixed inset-y-0 right-0 z-50 w-72 max-w-[85vw] bg-gradient-to-b from-[#ebf5fe]/98 via-[#d6e9fa]/98 to-[#c2def4]/98 backdrop-blur-2xl border-l-2 border-white/90 shadow-[-12px_0_35px_rgba(2,60,120,0.35)] p-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
-            <div className="space-y-3.5 overflow-y-auto pr-1">
+          <div className="fixed inset-y-0 right-0 z-50 w-72 max-w-[85vw] bg-gradient-to-b from-[#ebf5fe]/98 via-[#d6e9fa]/98 to-[#c2def4]/98 backdrop-blur-2xl border-l-2 border-white/90 shadow-[-12px_0_35px_rgba(2,60,120,0.35)] pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 flex flex-col justify-between text-[#002963] lg:hidden animate-in slide-in-from-right duration-200">
+            <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-sky-300/60">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white shadow-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white shadow-xs flex-shrink-0">
                     <Sliders className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-xs text-[#002963] leading-none">Studio Mobile</h3>
-                    <span className="text-[9px] font-bold text-sky-700">The Flannels Pocket</span>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-xs text-[#002963] leading-none truncate">Studio Mobile</h3>
+                    <span className="text-[9px] font-bold text-sky-700 truncate block">The Flannels Pocket</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setMobileStudioOpen(false)}
-                  className="w-7 h-7 rounded-full bg-white/80 hover:bg-white text-slate-700 flex items-center justify-center border border-sky-300 shadow-2xs font-black active:scale-95"
+                  className="w-7 h-7 rounded-full bg-white/80 hover:bg-white text-slate-700 flex items-center justify-center border border-sky-300 shadow-2xs font-black active:scale-95 flex-shrink-0"
                   title="Tutup Menu"
                 >
                   <X className="w-4 h-4" />
@@ -1097,7 +1097,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                   </span>
                   {currentKeyTransposed && (
                     <span className="text-[10px] font-mono text-amber-950 font-black bg-amber-200/90 px-2 py-0.5 rounded-md border border-amber-400 shadow-2xs">
-                      Key: {currentKeyTransposed}
+                      Key: {currentKeyTransposed.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -1170,32 +1170,43 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
                 </div>
               </div>
 
-              {/* 4. Clarity Boost Section */}
-              <div className="bg-white/70 backdrop-blur-md rounded-xl p-3 border border-white/90 shadow-xs flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-white shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-amber-200" />
+              {/* 4. Clarity Boost Section - Whole Card Clickable & Dynamic Aero Glow */}
+              <button
+                type="button"
+                onClick={onToggleClearSound || onToggleReplayGain}
+                className={`w-full text-left rounded-xl p-3 border transition-all duration-200 active:scale-98 flex items-center justify-between gap-2 shadow-xs cursor-pointer select-none ${
+                  replayGainEnabled
+                    ? 'bg-gradient-to-r from-cyan-400/90 via-teal-400/90 to-emerald-400/90 border-cyan-200 shadow-[0_0_16px_rgba(6,182,212,0.45)] text-slate-950'
+                    : 'bg-white/70 hover:bg-white/90 border-white/90 text-sky-950'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-2xs flex-shrink-0 transition-colors ${
+                    replayGainEnabled ? 'bg-teal-900/20 text-white' : 'bg-gradient-to-br from-cyan-400 to-teal-500 text-white'
+                  }`}>
+                    <Sparkles className={`w-4 h-4 ${replayGainEnabled ? 'text-amber-100 animate-spin-slow' : 'text-amber-200'}`} />
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black text-sky-950 block leading-tight">Clarity Boost</span>
-                    <span className="text-[9px] font-bold text-teal-700">+2.5dB Vocal & Sound Enhancement</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black block leading-tight truncate">Clarity Boost</span>
+                    <span className={`text-[10px] font-bold block leading-tight truncate ${replayGainEnabled ? 'text-teal-950 font-black' : 'text-teal-700'}`}>
+                      +2.5dB Vocal & Sound Boost
+                    </span>
                   </div>
                 </div>
-                <button
-                  onClick={onToggleClearSound || onToggleReplayGain}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-black border shadow-2xs transition active:scale-95 ${
+                <div
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black border shadow-2xs transition pointer-events-none flex-shrink-0 ${
                     replayGainEnabled
-                      ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 border-cyan-300 shadow-md'
+                      ? 'bg-slate-950 text-cyan-200 border-teal-300/60 shadow-md'
                       : 'bg-white/80 text-slate-600 border-slate-300'
                   }`}
                 >
                   {replayGainEnabled ? 'Aktif' : 'Off'}
-                </button>
-              </div>
+                </div>
+              </button>
             </div>
 
             {/* Drawer Footer */}
-            <div className="pt-3 border-t border-sky-300/60 text-center">
+            <div className="pt-3 border-t border-sky-300/60 text-center flex-shrink-0">
               <button
                 onClick={() => setMobileStudioOpen(false)}
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-black shadow-md active:scale-98"
