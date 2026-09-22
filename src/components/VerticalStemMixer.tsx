@@ -442,67 +442,101 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 ? 'DRM'
                 : roleInfo.label.slice(0, 3).toUpperCase();
 
+            // Role tinted glass gradient & accents
+            const roleTheme =
+              stem.role === 'vocal'
+                ? {
+                    glassBg: 'from-rose-500/25 via-rose-300/15 to-white/10',
+                    border: 'border-rose-300/70',
+                    shadow: 'shadow-[0_12px_28px_rgba(244,63,94,0.18),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(244,63,94,0.15)]',
+                    accent: '#e11d48',
+                    accentClass: 'accent-rose-500',
+                  }
+                : stem.role === 'guitar' || stem.role === 'lead'
+                ? {
+                    glassBg: 'from-amber-400/25 via-amber-200/15 to-white/10',
+                    border: 'border-amber-300/70',
+                    shadow: 'shadow-[0_12px_28px_rgba(245,158,11,0.18),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(245,158,11,0.15)]',
+                    accent: '#d97706',
+                    accentClass: 'accent-amber-500',
+                  }
+                : stem.role === 'bass'
+                ? {
+                    glassBg: 'from-cyan-400/25 via-sky-200/15 to-white/10',
+                    border: 'border-cyan-300/70',
+                    shadow: 'shadow-[0_12px_28px_rgba(6,182,212,0.18),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(6,182,212,0.15)]',
+                    accent: '#0891b2',
+                    accentClass: 'accent-cyan-500',
+                  }
+                : {
+                    glassBg: 'from-indigo-400/25 via-violet-200/15 to-white/10',
+                    border: 'border-indigo-300/70',
+                    shadow: 'shadow-[0_12px_28px_rgba(99,102,241,0.18),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(99,102,241,0.15)]',
+                    accent: '#4f46e5',
+                    accentClass: 'accent-indigo-500',
+                  };
+
             return (
               <div
                 key={`m-${stem.id}`}
-                className={`rounded-full pl-3 pr-3.5 sm:pr-4 py-1.5 flex items-center gap-2 sm:gap-2.5 h-[60px] sm:h-[62px] w-full border relative overflow-hidden select-none backdrop-blur-2xl saturate-[180%] ${
+                className={`rounded-full pl-3 pr-3.5 sm:pr-4 py-1.5 flex items-center gap-2 sm:gap-2.5 h-[60px] sm:h-[62px] w-full border relative overflow-hidden select-none backdrop-blur-2xl saturate-[190%] ${
                   stem.solo
-                    ? 'bg-gradient-to-b from-amber-400/35 via-amber-500/20 to-amber-600/15 border-amber-300/90 shadow-[0_10px_25px_rgba(245,158,11,0.28),inset_0_1.5px_2px_rgba(255,255,255,0.7)] ring-1.5 ring-amber-300/80'
+                    ? 'bg-gradient-to-b from-amber-300/40 via-amber-200/25 to-white/20 border-amber-400 shadow-[0_10px_28px_rgba(245,158,11,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.9)] ring-2 ring-amber-400'
                     : stem.muted
-                    ? 'bg-gradient-to-b from-rose-500/25 via-rose-950/20 to-black/25 border-rose-300/40 opacity-70 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.3)]'
+                    ? 'bg-gradient-to-b from-slate-200/30 via-slate-300/20 to-white/10 border-slate-300/50 opacity-60 shadow-inner'
                     : isSilenced
-                    ? 'bg-gradient-to-b from-white/10 via-white/5 to-black/15 border-white/30 opacity-55 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.2)]'
-                    : 'bg-gradient-to-b from-white/30 via-white/15 to-white/5 border-white/70 shadow-[0_12px_32px_rgba(0,35,80,0.2),inset_0_1.5px_2px_rgba(255,255,255,0.75),inset_0_-1px_1px_rgba(0,0,0,0.15)]'
+                    ? 'bg-gradient-to-b from-slate-200/20 via-slate-300/10 to-white/5 border-slate-300/30 opacity-45 shadow-inner'
+                    : `bg-gradient-to-b ${roleTheme.glassBg} ${roleTheme.border} ${roleTheme.shadow}`
                 }`}
               >
-                {/* iOS Glass Specular Highlights */}
-                <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/45 via-white/10 to-transparent pointer-events-none rounded-t-full" />
-                <div className="absolute top-0 inset-x-4 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+                {/* iOS Glass Top Specular Highlights */}
+                <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/60 via-white/20 to-transparent pointer-events-none rounded-t-full" />
+                <div className="absolute top-0 inset-x-4 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
 
-                {/* 1. Kiri: Identitas Track dalam Backdrop Micro-Pill iOS */}
-                <div className="flex flex-col items-center justify-center w-8 flex-shrink-0 leading-none relative z-10 py-1 px-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/15 shadow-inner">
-                  <div className="scale-85 origin-center">{roleInfo.icon}</div>
+                {/* 1. Kiri: Identitas Track Bersih & Tajam (No clumsy black box) */}
+                <div className="flex flex-col items-center justify-center w-8 flex-shrink-0 leading-none relative z-10">
+                  <div className="scale-90 origin-center drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">{roleInfo.icon}</div>
                   <span
-                    className="text-[8px] font-black uppercase tracking-tight mt-0.5"
-                    style={{ color: roleInfo.color }}
+                    className="text-[8.5px] font-black uppercase tracking-tight mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]"
+                    style={{ color: roleTheme.accent }}
                   >
                     {shortRoleName}
                   </span>
-                  <span className="text-[7.5px] font-mono text-cyan-300 font-bold mt-0.5">
+                  <span className="text-[8px] font-mono font-black text-slate-900 mt-0.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
                     {Math.round(stem.volume * 100)}%
                   </span>
                 </div>
 
-                {/* 2. Tombol Mute & Solo Liquid Glass */}
+                {/* 2. Tombol Mute & Solo Liquid Glass Kaca Halus */}
                 <div className="flex flex-col gap-1 flex-shrink-0 relative z-10">
                   <button
                     onClick={() => onToggleMute(stem.id)}
                     className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden shadow-xs ${
                       stem.muted
                         ? 'bg-gradient-to-b from-rose-500 via-rose-600 to-red-700 text-white border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
-                        : 'bg-black/35 hover:bg-black/50 text-white/90 border-white/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-md'
+                        : 'bg-gradient-to-b from-white/80 via-white/50 to-white/30 hover:from-white text-slate-800 border-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)]'
                     }`}
                     title={stem.muted ? 'Unmute' : 'Mute'}
                   >
-                    <span className="absolute top-0 inset-x-0 h-1/2 bg-white/30 rounded-t-full pointer-events-none" />
+                    <span className="absolute top-0 inset-x-0 h-1/2 bg-white/60 rounded-t-full pointer-events-none" />
                     M
                   </button>
                   <button
                     onClick={() => onToggleSolo(stem.id)}
                     className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center cursor-pointer relative overflow-hidden shadow-xs ${
                       stem.solo
-                        ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-yellow-500 text-slate-950 border-amber-100 shadow-[0_0_10px_rgba(251,191,36,0.8)]'
-                        : 'bg-black/35 hover:bg-black/50 text-white/90 border-white/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-md'
+                        ? 'bg-gradient-to-b from-amber-400 via-yellow-400 to-amber-500 text-slate-950 border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.8)]'
+                        : 'bg-gradient-to-b from-white/80 via-white/50 to-white/30 hover:from-white text-slate-800 border-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)]'
                     }`}
                     title={stem.solo ? 'Unsolo' : 'Solo'}
                   >
-                    <span className="absolute top-0 inset-x-0 h-1/2 bg-white/30 rounded-t-full pointer-events-none" />
+                    <span className="absolute top-0 inset-x-0 h-1/2 bg-white/60 rounded-t-full pointer-events-none" />
                     S
                   </button>
                 </div>
 
-                {/* 3. Slim Vertical VU Meter */}
-                <div className="w-1.5 h-8 sm:h-9 bg-black/50 rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-white/30 shadow-inner flex-shrink-0 relative z-10">
+                {/* 3. Slim Vertical VU Meter Kaca */}
+                <div className="w-1.5 h-8 sm:h-9 bg-slate-950/20 rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-white/80 shadow-inner flex-shrink-0 relative z-10">
                   <div
                     ref={(el) => {
                       mobileMeterRefs.current[stem.id] = el;
@@ -520,7 +554,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 min-w-0 pr-1 relative z-10">
                   {/* Vol Slider */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[7.5px] font-mono text-white/90 font-bold w-4 px-0.5 py-0.2 rounded bg-black/40 text-center border border-white/10">VOL</span>
+                    <span className="text-[7.5px] font-mono text-slate-900 font-black w-3.5 text-center drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">VOL</span>
                     <div className="relative flex-1 h-3 flex items-center">
                       <input
                         type="range"
@@ -533,7 +567,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                           globalAudioEngine.setStemVolume(stem.id, val);
                         }}
                         onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                        className="w-full h-1.5 sm:h-2 rounded-full cursor-pointer accent-cyan-300 touch-none bg-black/40 border border-white/30 shadow-inner"
+                        className={`w-full h-1.5 sm:h-2 rounded-full cursor-pointer ${roleTheme.accentClass} touch-none bg-white/40 border border-white/80 shadow-inner`}
                         aria-label={`Volume stem ${roleInfo.label}`}
                       />
                     </div>
@@ -541,7 +575,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
 
                   {/* Pan Slider */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-[7.5px] font-mono text-white/90 font-bold w-4 px-0.5 py-0.2 rounded bg-black/40 text-center border border-white/10">PAN</span>
+                    <span className="text-[7.5px] font-mono text-slate-900 font-black w-3.5 text-center drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">PAN</span>
                     <div className="relative flex-1 h-2.5 flex items-center">
                       <input
                         type="range"
@@ -554,11 +588,11 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                           globalAudioEngine.setStemPan(stem.id, val);
                         }}
                         onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                        className="w-full h-1 sm:h-1.5 rounded-full cursor-pointer accent-sky-300 touch-none bg-black/40 border border-white/30 shadow-inner"
+                        className={`w-full h-1 sm:h-1.5 rounded-full cursor-pointer ${roleTheme.accentClass} touch-none bg-white/40 border border-white/80 shadow-inner`}
                         aria-label={`Pan stem ${roleInfo.label}`}
                       />
                     </div>
-                    <span className="text-[7.5px] font-mono text-cyan-300 font-bold w-4 px-0.5 py-0.2 rounded bg-black/40 text-center border border-white/10 flex-shrink-0">
+                    <span className="text-[7.5px] font-mono text-slate-900 font-black w-3.5 text-right flex-shrink-0 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
                       {stem.pan === 0
                         ? 'C'
                         : stem.pan < 0
