@@ -422,10 +422,10 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
         })}
       </div>
 
-      {/* ================= UNIVERSAL MOBILE 2x2 SLIM CAPSULE CLUSTER (md:hidden) ================= */}
-      {/* 2x2 Slim capsules rapat ngumpul di tengah secara simetris, ultra-sleek & non-bulky (Pilihan 2) */}
-      <div className="flex md:hidden flex-1 items-center justify-center min-h-0 w-full my-auto px-2 py-1">
-        <div className="grid grid-cols-2 gap-2 w-full max-w-[340px] sm:max-w-[480px]">
+      {/* ================= UNIVERSAL MOBILE 2x2 FULL-WIDTH SLIM CAPSULE (md:hidden) ================= */}
+      {/* Landscape dedicated: full-width w-full, large touch targets for Mute/Solo, max slider length */}
+      <div className="flex md:hidden flex-1 items-center justify-center min-h-0 w-full my-auto px-1 sm:px-2 py-1">
+        <div className="grid grid-cols-2 gap-2 sm:gap-2.5 w-full">
           {visibleStems.map((stem) => {
             const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
             const isSilenced = stem.muted || (anySoloActive && !stem.solo);
@@ -445,7 +445,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
             return (
               <div
                 key={`m-${stem.id}`}
-                className={`rounded-full px-2.5 py-1.5 flex items-center gap-2 h-[56px] border relative shadow-md backdrop-blur-2xl saturate-[190%] select-none ${
+                className={`rounded-full pl-3 pr-3.5 sm:pr-4 py-1.5 flex items-center gap-2 sm:gap-2.5 h-[60px] sm:h-[62px] w-full border relative shadow-md backdrop-blur-2xl saturate-[190%] select-none ${
                   stem.solo
                     ? 'bg-gradient-to-b from-[#24354a]/85 via-[#18283a]/75 to-[#0c1824]/80 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
                     : stem.muted
@@ -455,11 +455,11 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                     : 'bg-gradient-to-b from-[#17283b]/85 via-[#0e1c2b]/80 to-[#071320]/88 border-sky-400/40 shadow-xs'
                 }`}
               >
-                {/* 1. Kiri: Identitas + Persen */}
-                <div className="flex flex-col items-center justify-center w-7 flex-shrink-0 leading-none">
-                  <div className="scale-75 origin-center">{roleInfo.icon}</div>
+                {/* 1. Kiri: Identitas Track */}
+                <div className="flex flex-col items-center justify-center w-8 flex-shrink-0 leading-none">
+                  <div className="scale-85 origin-center">{roleInfo.icon}</div>
                   <span
-                    className="text-[7.5px] font-black uppercase tracking-tight mt-0.5"
+                    className="text-[8px] font-black uppercase tracking-tight mt-0.5"
                     style={{ color: roleInfo.color }}
                   >
                     {shortRoleName}
@@ -469,14 +469,14 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   </span>
                 </div>
 
-                {/* 2. Tombol Mute & Solo Kapsul Mini Bulat */}
-                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                {/* 2. Tombol Mute & Solo Ergonomis (Lebar w-7 h-5, empuk disentuh jempol) */}
+                <div className="flex flex-col gap-1 flex-shrink-0">
                   <button
                     onClick={() => onToggleMute(stem.id)}
-                    className={`w-3.5 h-3 rounded-full text-[6.5px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center shadow-xs cursor-pointer ${
                       stem.muted
                         ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_6px_rgba(244,63,94,0.6)]'
-                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                     }`}
                     title={stem.muted ? 'Unmute' : 'Mute'}
                   >
@@ -484,10 +484,10 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   </button>
                   <button
                     onClick={() => onToggleSolo(stem.id)}
-                    className={`w-3.5 h-3 rounded-full text-[6.5px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                    className={`w-7 h-4.5 sm:h-5 rounded-full text-[7.5px] font-black border transition active:scale-95 flex items-center justify-center shadow-xs cursor-pointer ${
                       stem.solo
                         ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.7)]'
-                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                     }`}
                     title={stem.solo ? 'Unsolo' : 'Solo'}
                   >
@@ -496,7 +496,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </div>
 
                 {/* 3. Slim Vertical VU Meter */}
-                <div className="w-1 h-7 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.2 border border-slate-700 shadow-inner flex-shrink-0">
+                <div className="w-1.5 h-8 sm:h-9 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
                   <div
                     ref={(el) => {
                       mobileMeterRefs.current[stem.id] = el;
@@ -510,11 +510,11 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                   />
                 </div>
 
-                {/* 4. Kanan: Slider Memanjang Tipis (VOL & PAN) */}
-                <div className="flex-1 flex flex-col justify-center gap-1 min-w-0 pr-1">
+                {/* 4. Kanan: Slider Memanjang Penuh ke Tepi Kapsul */}
+                <div className="flex-1 flex flex-col justify-center gap-1 sm:gap-1.5 min-w-0 pr-1">
                   {/* Vol Slider */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-[7px] font-mono text-slate-400 font-bold w-2.5">V</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-[7.5px] font-mono text-slate-400 font-bold w-3">VOL</span>
                     <div className="relative flex-1 h-3 flex items-center">
                       <input
                         type="range"
@@ -527,15 +527,15 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                           globalAudioEngine.setStemVolume(stem.id, val);
                         }}
                         onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                        className="w-full h-1.5 rounded-full cursor-pointer accent-cyan-400 touch-none bg-slate-900/80 border border-slate-700/60"
+                        className="w-full h-1.5 sm:h-2 rounded-full cursor-pointer accent-cyan-400 touch-none bg-slate-900/80 border border-slate-700/60"
                         aria-label={`Volume stem ${roleInfo.label}`}
                       />
                     </div>
                   </div>
 
                   {/* Pan Slider */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-[7px] font-mono text-slate-400 font-bold w-2.5">P</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-[7.5px] font-mono text-slate-400 font-bold w-3">PAN</span>
                     <div className="relative flex-1 h-2.5 flex items-center">
                       <input
                         type="range"
@@ -548,16 +548,16 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                           globalAudioEngine.setStemPan(stem.id, val);
                         }}
                         onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                        className="w-full h-1 rounded-full cursor-pointer accent-sky-400 touch-none bg-slate-900/80 border border-slate-700/60"
+                        className="w-full h-1 sm:h-1.5 rounded-full cursor-pointer accent-sky-400 touch-none bg-slate-900/80 border border-slate-700/60"
                         aria-label={`Pan stem ${roleInfo.label}`}
                       />
                     </div>
-                    <span className="text-[7px] font-mono text-cyan-300 font-bold w-2.5 text-right">
+                    <span className="text-[7.5px] font-mono text-cyan-300 font-bold w-3 text-right">
                       {stem.pan === 0
                         ? 'C'
                         : stem.pan < 0
-                        ? 'L'
-                        : 'R'}
+                        ? `L${Math.round(Math.abs(stem.pan) * 50)}`
+                        : `R${Math.round(stem.pan * 50)}`}
                     </span>
                   </div>
                 </div>
