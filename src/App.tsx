@@ -185,65 +185,32 @@ export function App() {
   }, [currentSong]);
 
   const refreshSongs = useCallback(async () => {
-    // Ticker untuk animasi progress merayap halus agar user tidak merasa stuck
-    let ticker: any = null;
-    let targetProgress = 20;
-
-    ticker = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev < targetProgress) {
-          // Bergerak naik perlahan mendekati target
-          return Math.min(targetProgress, prev + 1);
-        } else if (prev < 92) {
-          // Asymptotic micro-creep: bergerak sangat halus 1% berkala agar indikator hidup
-          return prev + (Math.random() > 0.6 ? 1 : 0);
-        }
-        return prev;
-      });
-    }, 120);
-
     try {
-      targetProgress = 35;
-      setLoadingStatusText('Menghubungkan ke Supabase Cloud...');
-
-      // 1. Direct fetch from Supabase Cloud Catalog first (automatic for all band members)
-      let songList: Song[] = [];
-      try {
-        const { syncSongsFromCloud } = await import('./services/cloudDatabase');
-        targetProgress = 60;
-        const cloudRes = await syncSongsFromCloud((msg) => {
-          if (msg) setLoadingStatusText(msg);
-        });
-        targetProgress = 80;
-        if (cloudRes.songs && cloudRes.songs.length > 0) {
-          songList = cloudRes.songs;
-        }
-      } catch (_) {}
-
-      // 2. Fallback to local storage if offline
-      if (songList.length === 0) {
-        targetProgress = 85;
-        setLoadingStatusText('Memeriksa penyimpanan lokal IndexedDB...');
-        songList = await listAllSongsFromStorage();
+      // 1. Ambil data lokal instan dari IndexedDB
+      setLoadingProgress(50);
+      setLoadingStatusText('Memuat lagu...');
+      const localSongs = await listAllSongsFromStorage();
+      if (localSongs.length > 0) {
+        setSongs(localSongs);
       }
 
-      targetProgress = 95;
-      setLoadingStatusText('Menyiapkan workspace...');
-      if (songList.length > 0) {
-        setSongs(songList);
-      } else {
-        setSongs([]);
-      }
-
-      clearInterval(ticker);
       setLoadingProgress(100);
       setLoadingStatusText('Siap!');
-      await new Promise((resolve) => setTimeout(resolve, 250));
     } catch (err) {
-      console.error('Failed to load songs:', err);
+      console.error('Failed to load songs from local storage:', err);
     } finally {
-      if (ticker) clearInterval(ticker);
       setIsLoading(false);
+    }
+
+    // 2. Background sync dengan Supabase Cloud tanpa memblokir UI
+    try {
+      const { syncSongsFromCloud } = await import('./services/cloudDatabase');
+      const cloudRes = await syncSongsFromCloud();
+      if (cloudRes.songs && cloudRes.songs.length > 0) {
+        setSongs(cloudRes.songs);
+      }
+    } catch (err) {
+      console.debug('Background cloud sync skipped/failed:', err);
     }
   }, []);
 
