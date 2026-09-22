@@ -422,9 +422,9 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
         })}
       </div>
 
-      {/* ================= UNIVERSAL MOBILE 4-ROW STUDIO CONSOLE STRIP (md:hidden) ================= */}
-      {/* Ergonomic horizontal channel strips: non-clipping, full thumb travel, integrated VU + Pan */}
-      <div className="flex md:hidden flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 pb-2">
+      {/* ================= UNIVERSAL MOBILE 2x2 NO-SCROLL ERGONOMIC GRID (md:hidden) ================= */}
+      {/* 2x2 fitted strictly to viewport height, zero vertical scrolling, perfectly symmetric */}
+      <div className="grid md:hidden grid-cols-2 grid-rows-2 gap-1.5 flex-1 h-full min-h-0 overflow-hidden pb-1">
         {visibleStems.map((stem) => {
           const roleInfo = ROLE_CONFIG[stem.role] || ROLE_CONFIG.guitar;
           const isSilenced = stem.muted || (anySoloActive && !stem.solo);
@@ -432,45 +432,47 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
           return (
             <div
               key={`m-${stem.id}`}
-              className={`rounded-2xl p-2.5 transition-all flex items-center gap-2 border relative shadow-md backdrop-blur-2xl saturate-[190%] ${
+              className={`rounded-xl p-1.5 transition-all flex flex-col justify-between border relative shadow-md overflow-hidden backdrop-blur-2xl saturate-[190%] ${
                 stem.solo
-                  ? 'bg-gradient-to-b from-[#24354a]/60 via-[#18283a]/50 to-[#0c1824]/55 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25),inset_0_1.5px_0_rgba(255,255,255,0.5)] ring-1 ring-amber-400'
+                  ? 'bg-gradient-to-b from-[#24354a]/60 via-[#18283a]/50 to-[#0c1824]/55 border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
                   : stem.muted
                   ? 'bg-gradient-to-b from-[#141b24]/40 via-[#0e141c]/35 to-[#080d13]/40 border-rose-500/35 opacity-70'
                   : isSilenced
                   ? 'bg-gradient-to-b from-[#121922]/35 via-[#0d131a]/30 to-[#070b10]/35 border-slate-700/35 opacity-50'
-                  : 'bg-gradient-to-b from-[#1b2b3d]/50 via-[#121f2d]/42 to-[#091522]/52 border-sky-400/40 shadow-sm'
+                  : 'bg-gradient-to-b from-[#1b2b3d]/50 via-[#121f2d]/42 to-[#091522]/52 border-sky-400/40 shadow-xs'
               }`}
             >
               {/* Metallic corner dots */}
               <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-slate-500 pointer-events-none" />
               <div className="absolute top-1 right-1 w-1 h-1 rounded-full bg-slate-500 pointer-events-none" />
 
-              {/* 1. Track Identity: Icon + Name + Percentage */}
-              <div className="w-14 flex flex-col items-center justify-center flex-shrink-0">
-                <div className="flex items-center gap-1">
+              {/* 1. Header Row: Icon + Label + LED + Percentage */}
+              <div className="flex items-center justify-between gap-1 w-full pb-0.5 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-1 min-w-0">
                   {roleInfo.icon}
                   <span className="text-[10px] font-black text-white uppercase tracking-tight truncate">
                     {roleInfo.label}
                   </span>
                 </div>
-                <span className="text-[9px] font-mono font-black text-cyan-300">
-                  {Math.round(stem.volume * 100)}%
-                </span>
-                <div
-                  className="w-1.5 h-1.5 rounded-full mt-0.5 animate-pulse"
-                  style={{
-                    backgroundColor: isSilenced ? '#64748b' : roleInfo.color,
-                    boxShadow: isSilenced ? 'none' : `0 0 6px ${roleInfo.color}`,
-                  }}
-                />
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className="text-[9px] font-mono font-black text-cyan-300">
+                    {Math.round(stem.volume * 100)}%
+                  </span>
+                  <div
+                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor: isSilenced ? '#64748b' : roleInfo.color,
+                      boxShadow: isSilenced ? 'none' : `0 0 6px ${roleInfo.color}`,
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* 2. Compact Mute & Solo Push Buttons (Stacked) */}
-              <div className="flex flex-col gap-1 flex-shrink-0">
+              {/* 2. Mute & Solo Buttons */}
+              <div className="grid grid-cols-2 gap-1 my-0.5 w-full flex-shrink-0">
                 <button
                   onClick={() => onToggleMute(stem.id)}
-                  className={`w-9 h-5 rounded-md text-[9px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                  className={`h-5 rounded-md text-[9px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
                     stem.muted
                       ? 'bg-gradient-to-b from-rose-500 to-red-600 text-white border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
                       : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -481,7 +483,7 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </button>
                 <button
                   onClick={() => onToggleSolo(stem.id)}
-                  className={`w-9 h-5 rounded-md text-[9px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
+                  className={`h-5 rounded-md text-[9px] font-black border transition active:scale-90 flex items-center justify-center shadow-xs ${
                     stem.solo
                       ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.7)]'
                       : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -492,68 +494,73 @@ export const VerticalStemMixer: React.FC<VerticalStemMixerProps> = ({
                 </button>
               </div>
 
-              {/* 3. Slim Vertical LED VU Meter */}
-              <div className="w-1.5 h-11 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
-                <div
-                  ref={(el) => {
-                    mobileMeterRefs.current[stem.id] = el;
-                  }}
-                  className="w-full rounded-full"
-                  style={{
-                    height: '0%',
-                    backgroundColor: '#10b981',
-                    transition: 'none',
-                  }}
-                />
-              </div>
-
-              {/* 4. Controls: Full-Width Volume Slider & Pan Slider */}
-              <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                {/* Volume Slider */}
-                <div className="relative w-full h-5 flex items-center">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={stem.volume}
-                    onInput={(e) => {
-                      const val = parseFloat((e.target as HTMLInputElement).value);
-                      globalAudioEngine.setStemVolume(stem.id, val);
+              {/* 3. Volume Slider Row with Integrated VU Meter */}
+              <div className="flex items-center gap-1.5 w-full my-auto py-0.5">
+                {/* Slim Vertical VU Meter */}
+                <div className="w-1.5 h-7 bg-[#04080e] rounded-full overflow-hidden flex flex-col-reverse p-0.5 border border-slate-700 shadow-inner flex-shrink-0">
+                  <div
+                    ref={(el) => {
+                      mobileMeterRefs.current[stem.id] = el;
                     }}
-                    onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
-                    className="w-full h-2.5 bg-slate-900/80 rounded-lg accent-cyan-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
-                    aria-label={`Volume stem ${roleInfo.label}`}
+                    className="w-full rounded-full"
+                    style={{
+                      height: '0%',
+                      backgroundColor: '#10b981',
+                      transition: 'none',
+                    }}
                   />
                 </div>
 
-                {/* Pan Slider Row */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[8px] font-mono text-slate-400 font-bold">PAN</span>
-                  <div className="relative flex-1 h-4 flex items-center">
+                {/* Volume Slider with Label */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  <div className="flex justify-between items-center text-[8px] font-mono font-bold text-slate-400 leading-none mb-0.5">
+                    <span>VOL</span>
+                  </div>
+                  <div className="relative w-full h-4 flex items-center">
                     <input
                       type="range"
-                      min="-1"
+                      min="0"
                       max="1"
-                      step="0.05"
-                      value={stem.pan}
+                      step="0.01"
+                      value={stem.volume}
                       onInput={(e) => {
                         const val = parseFloat((e.target as HTMLInputElement).value);
-                        globalAudioEngine.setStemPan(stem.id, val);
+                        globalAudioEngine.setStemVolume(stem.id, val);
                       }}
-                      onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-slate-900/80 rounded-md accent-sky-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
-                      aria-label={`Pan stem ${roleInfo.label}`}
+                      onChange={(e) => onVolumeChange(stem.id, parseFloat(e.target.value))}
+                      className="w-full h-2 bg-slate-900/80 rounded-lg accent-cyan-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
+                      aria-label={`Volume stem ${roleInfo.label}`}
                     />
                   </div>
-                  <span className="text-[8px] font-mono text-cyan-300 font-bold w-6 text-right">
-                    {stem.pan === 0
-                      ? 'C'
-                      : stem.pan < 0
-                      ? `L${Math.round(Math.abs(stem.pan) * 50)}`
-                      : `R${Math.round(stem.pan * 50)}`}
-                  </span>
                 </div>
+              </div>
+
+              {/* 4. Pan Slider Row */}
+              <div className="flex items-center gap-1 w-full pt-0.5 flex-shrink-0">
+                <span className="text-[8px] font-mono text-slate-400 font-bold">PAN</span>
+                <div className="relative flex-1 h-3.5 flex items-center">
+                  <input
+                    type="range"
+                    min="-1"
+                    max="1"
+                    step="0.05"
+                    value={stem.pan}
+                    onInput={(e) => {
+                      const val = parseFloat((e.target as HTMLInputElement).value);
+                      globalAudioEngine.setStemPan(stem.id, val);
+                    }}
+                    onChange={(e) => onPanChange(stem.id, parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-slate-900/80 rounded-md accent-sky-400 cursor-pointer touch-none shadow-inner border border-slate-700/60"
+                    aria-label={`Pan stem ${roleInfo.label}`}
+                  />
+                </div>
+                <span className="text-[8px] font-mono text-cyan-300 font-bold w-5 text-right">
+                  {stem.pan === 0
+                    ? 'C'
+                    : stem.pan < 0
+                    ? `L${Math.round(Math.abs(stem.pan) * 50)}`
+                    : `R${Math.round(stem.pan * 50)}`}
+                </span>
               </div>
             </div>
           );
