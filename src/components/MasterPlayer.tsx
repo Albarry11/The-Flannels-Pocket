@@ -627,19 +627,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
           aria-label="Posisi pemutaran lagu"
         />
 
-        {/* Small Tuner Toggle Trigger button */}
-        <button
-          onClick={() => setShowTuner(!showTuner)}
-          className={`absolute right-1 -top-5 px-1.5 py-0.2 rounded-md font-mono text-[9px] font-bold flex items-center gap-1 transition shadow-2xs ${
-            showTuner
-              ? 'bg-amber-400 text-black border border-amber-500'
-              : 'bg-white/60 hover:bg-white text-slate-600 border border-sky-300/60'
-          }`}
-          title="Buka Tuner Posisi Presisi Langsung di App"
-        >
-          <Crosshair className="w-2.5 h-2.5" />
-          <span>Tuner</span>
-        </button>
+        {/* Small Tuner Toggle Trigger button (disabled) */}
       </div>
 
       {/* ================= 1-ROW SLEEK WMPOTIFY DOCK (100% OFFSETS DRIVEN) ================= */}
@@ -1006,19 +994,7 @@ export const MasterPlayer: React.FC<MasterPlayerProps> = ({
 
       </div>
 
-      {/* Floating DEV Tuner Mode Trigger - Hidden on short landscape & small mobile */}
-      <button
-        onClick={() => setShowTuner(!showTuner)}
-        className={`hidden md:flex fixed bottom-20 right-4 z-50 px-3.5 py-1.5 rounded-full font-black text-xs items-center gap-2 shadow-2xl transition-all ${
-          showTuner
-            ? 'bg-amber-400 text-black border-2 border-amber-500 scale-105 shadow-[0_0_15px_#f59e0b]'
-            : 'bg-[#07192b]/90 hover:bg-[#0c2b4c] text-cyan-300 border border-cyan-400/60 backdrop-blur-lg hover:scale-105'
-        }`}
-        title="Buka Alat Geser Posisi Manual (Localhost Tuner)"
-      >
-        <Crosshair className="w-3.5 h-3.5" />
-        <span>{showTuner ? 'Tutup Tuner ✕' : '🎯 Mode Geser'}</span>
-      </button>
+      {/* Floating DEV Tuner Mode Trigger (disabled) */}
 
       {/* ================= MOBILE RIGHT-SIDE STUDIO DRAWER ================= */}
       {mobileStudioOpen && (
