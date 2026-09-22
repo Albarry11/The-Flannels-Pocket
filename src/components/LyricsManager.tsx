@@ -187,14 +187,14 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
   const lines = lyricsText.split('\n');
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-2 sm:p-3.5 shadow-lg relative">
-      {/* 1. Header Toolbar - Compact Integrated Segmented Switch & Actions */}
-      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1 sm:pb-1.5 mb-1 sm:mb-2 flex-wrap gap-1.5">
-        {/* Integrated Vista Tab Switcher as Header Title */}
-        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full aero-glass rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-lg relative min-h-0">
+      {/* 1. Header Toolbar - Compact Integrated Segmented Switch & Inline Search */}
+      <div className="flex items-center justify-between border-b border-sky-200/50 pb-1.5 mb-1.5 gap-1.5 flex-nowrap">
+        {/* Integrated Vista Tab Switcher */}
+        <div className="flex items-center p-0.5 rounded-lg sm:rounded-xl bg-white/50 border border-white/70 shadow-2xs backdrop-blur-md flex-shrink-0">
           <button
             onClick={() => setViewMode('songbook')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 ${
               viewMode === 'songbook'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
@@ -205,7 +205,7 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
           </button>
           <button
             onClick={() => setViewMode('editor')}
-            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+            className={`py-1 px-2 sm:px-2.5 rounded-md sm:rounded-lg font-black text-[10px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 ${
               viewMode === 'editor'
                 ? 'bg-gradient-to-b from-sky-400 via-sky-500 to-blue-600 text-white shadow-xs border border-white/60'
                 : 'text-sky-950 hover:bg-white/40'
@@ -216,70 +216,55 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
           </button>
         </div>
 
-        {/* Right Actions & Transpose Indicator */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        {/* Compact Search & Action Controls */}
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 justify-end">
           {pitchSemitones !== 0 && (
-            <span className="text-[9px] sm:text-[10px] font-mono font-bold bg-amber-100/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md shadow-2xs">
-              Transpose: {pitchSemitones > 0 ? `+${pitchSemitones}` : pitchSemitones}
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold bg-amber-100/90 text-amber-900 border border-amber-300 px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs flex-shrink-0">
+              {pitchSemitones > 0 ? `+${pitchSemitones}` : pitchSemitones}
             </span>
           )}
 
           {viewMode === 'songbook' && (
-            <label className="flex items-center gap-1 text-[9px] sm:text-[11px] text-sky-900 font-bold bg-white/80 px-2 sm:px-2.5 py-1 rounded-md sm:rounded-lg border border-sky-200 cursor-pointer select-none shadow-2xs">
+            <label className="flex items-center gap-1 text-[9px] sm:text-[11px] text-sky-900 font-bold bg-white/80 px-1.5 sm:px-2 py-1 rounded-md sm:rounded-lg border border-sky-200 cursor-pointer select-none shadow-2xs flex-shrink-0">
               <input
                 type="checkbox"
                 checked={autoScroll}
                 onChange={(e) => setAutoScroll(e.target.checked)}
-                className="w-3 h-3 rounded text-sky-600 focus:ring-0"
+                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded text-sky-600 focus:ring-0"
               />
               <ArrowDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-sky-600" />
-              <span className="hidden xs:inline">Auto-Scroll</span>
+              <span className="hidden md:inline">Auto-Scroll</span>
             </label>
           )}
+
+          {/* Inline AI Search Bar */}
+          <form onSubmit={handleSearchAI} className="flex items-center gap-1 flex-1 max-w-sm min-w-0 justify-end">
+            <div className="flex items-center gap-1 bg-white/90 border border-sky-300/80 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-0.5 sm:py-1 shadow-xs focus-within:ring-2 focus-within:ring-sky-400 min-w-0 flex-1">
+              <Search className="w-3 h-3 text-sky-600 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchTitle}
+                onChange={(e) => setSearchTitle(e.target.value)}
+                placeholder="Cari chord AI (Judul / Artis)..."
+                className="w-full bg-transparent text-[10px] sm:text-xs text-[#0f2942] font-semibold focus:outline-none placeholder:text-slate-400 min-w-0"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSearchingAI}
+              className="px-2 sm:px-2.5 py-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:opacity-95 text-white text-[9px] sm:text-[11px] font-black transition flex items-center gap-1 shadow-xs active:scale-95 disabled:opacity-50 flex-shrink-0"
+              title="Cari Chord & Lirik via AI"
+            >
+              {isSearchingAI ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3 text-amber-300" />
+              )}
+              <span className="hidden sm:inline">Cari AI</span>
+            </button>
+          </form>
         </div>
       </div>
-
-      {/* 2. AI Web Search Bar (Title & Artist Inputs) */}
-      <form onSubmit={handleSearchAI} className="mb-4 p-3 rounded-2xl bg-white/90 border border-sky-200/80 shadow-xs flex flex-col sm:flex-row items-center gap-2">
-        <div className="flex items-center gap-2 w-full sm:flex-1">
-          <Search className="w-4 h-4 text-sky-600 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchTitle}
-            onChange={(e) => setSearchTitle(e.target.value)}
-            placeholder="Judul Lagu..."
-            className="w-full bg-transparent text-xs font-bold text-[#0f2942] focus:outline-none placeholder:text-slate-400 border-b sm:border-b-0 sm:border-r border-sky-200 pb-1 sm:pb-0 sm:pr-2"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-56">
-          <input
-            type="text"
-            value={searchArtist}
-            onChange={(e) => setSearchArtist(e.target.value)}
-            placeholder="Artis / Band..."
-            className="w-full bg-transparent text-xs font-bold text-[#0f2942] focus:outline-none placeholder:text-slate-400"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSearchingAI}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:opacity-95 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20 active:scale-95 disabled:opacity-50 flex-shrink-0"
-        >
-          {isSearchingAI ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Mencari Chord & Lirik...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Cari Chord & Lirik via AI</span>
-            </>
-          )}
-        </button>
-      </form>
 
       {researchResult && (
         <div className="mb-3 p-3 rounded-2xl bg-slate-950/90 text-white border border-sky-400/30">
@@ -310,48 +295,48 @@ export const LyricsManager: React.FC<LyricsManagerProps> = ({
       )}
 
       {/* 3. Main Display View */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         {viewMode === 'songbook' ? (
           /* SONGBOOK VIEW */
           <div
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto pr-2 pb-24 p-4 sm:p-6 rounded-2xl bg-white/80 border border-sky-200/80 shadow-inner font-sans"
+            className="flex-1 overflow-y-auto pr-1.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/80 border border-sky-200/80 shadow-inner font-sans"
           >
             {lyricsText.trim() ? (
               <div className="max-w-2xl mx-auto space-y-1">
                 {lines.map((line, idx) => renderChordLine(line, idx))}
               </div>
             ) : (
-              <div className="text-center py-20 space-y-3">
-                <Music className="w-12 h-12 text-sky-400 mx-auto" />
+              <div className="text-center py-12 sm:py-20 space-y-2.5">
+                <Music className="w-10 h-10 text-sky-400 mx-auto" />
                 <h3 className="text-sm font-extrabold text-[#0f2942]">Belum Ada Chord & Lirik</h3>
-                <p className="text-xs text-slate-600 max-w-sm mx-auto">
-                  Klik tombol <strong>"Cari Chord & Lirik via AI"</strong> di atas atau beralih ke tab <strong>"Edit Tab"</strong> untuk menempelkan tab dari browser.
+                <p className="text-[11px] sm:text-xs text-slate-600 max-w-sm mx-auto">
+                  Cari cepat via bar AI di atas atau beralih ke tab <strong>"Edit Tab"</strong> untuk menempelkan tab.
                 </p>
               </div>
             )}
           </div>
         ) : (
           /* EDITOR VIEW */
-          <div className="flex-1 flex flex-col gap-3 pb-24">
-            <div className="flex items-center justify-between text-xs text-sky-900 font-bold px-1">
-              <span>Editor Tab Teks (Bisa langsung paste dari Ultimate Guitar / Chordify):</span>
-              <span className="text-[10px] text-slate-500">Format: [C] [G] sebelum lirik atau akord baris</span>
+          <div className="flex-1 flex flex-col gap-2 min-h-0">
+            <div className="flex items-center justify-between text-[11px] sm:text-xs text-sky-900 font-bold px-1">
+              <span>Editor Tab (Paste chord/lirik):</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-500">Format: [C] [G] sebelum lirik</span>
             </div>
             <textarea
               value={lyricsText}
               onChange={(e) => setLyricsText(e.target.value)}
               placeholder={`Contoh:\n[Intro]\n[C] [F] [C] [F]\n\n[Verse 1]\n[C]Dan... bila [F]esok datang kembali\nSeperti se[C]dia kala di mana kau bi[F]sa`}
-              className="flex-1 w-full p-4 rounded-2xl bg-white/90 border border-sky-300 font-mono text-xs sm:text-sm text-[#0c243b] focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner resize-none leading-relaxed"
+              className="flex-1 w-full p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white/90 border border-sky-300 font-mono text-xs sm:text-sm text-[#0c243b] focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner resize-none leading-relaxed"
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleManualSave}
-                className="px-6 py-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-black shadow-md shadow-sky-500/25 active:scale-95 transition flex items-center gap-1.5"
+                className="px-4 sm:px-5 py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 text-white text-xs font-black shadow-xs active:scale-95 transition flex items-center gap-1.5"
               >
-                <Check className="w-4 h-4" />
-                <span>Simpan Chord & Lirik</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>Simpan Tab</span>
               </button>
             </div>
           </div>
