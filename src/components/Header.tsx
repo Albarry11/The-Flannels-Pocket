@@ -251,8 +251,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* Windows Vista / 7 Aero Window Buttons (Minimize, Maximize, Close) - Desktop Non-Touch only */}
-        <div className="hidden lg:flex items-center gap-1">
+        {/* Windows Vista / 7 Aero Window Buttons (Minimize, Maximize, Close) */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('flannels-window-control', { detail: 'minimize' }))}
             className="w-7 h-5 rounded-md vista-win-btn flex items-center justify-center text-[10px] text-slate-700 font-bold transition"
