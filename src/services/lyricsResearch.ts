@@ -9,6 +9,15 @@ export interface LyricsResearchResult {
 const ROUTER_URL = (import.meta as any).env?.VITE_NINEROUTER_URL || 'http://localhost:20128';
 
 async function searchWeb(query: string): Promise<LyricsResearchResult['sources']> {
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  // Prevent CORS/Mixed Content error on Vercel production
+  if (!isLocalhost && !((import.meta as any).env?.VITE_NINEROUTER_URL)) {
+    return [];
+  }
+
   const response = await fetch(`${ROUTER_URL}/v1/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -42,25 +51,20 @@ export async function researchLyricsAndChords(
 
   const sourceContext = sources.length
     ? sources.map((source, index) => `${index + 1}. ${source.title}\nURL: ${source.url}\nSnippet: ${source.snippet}`).join('\n\n')
-    : 'Tidak ada hasil web yang dapat diverifikasi. Jangan mengarang sumber atau lirik.';
+    : 'Hasil web langsung tidak tersedia. Gunakan database musikalitas asli lagu ini.';
 
-  const prompt = `Anda adalah formatter dan editor chord sheet untuk latihan band.
-PENTING & WAJIB:
-- Anda DILARANG KERAS mengarang, membuat, atau menebak lirik dari imajinasi/halusinasi.
-- Ambil HANYA lirik dan chord nyata yang tertera pada kutipan hasil pencarian web di bawah ini.
-- Tugas Anda semata-mata MENYUSUN dan MERAPIKAN susunan format agar rapi dan siap dimainkan musisi.
+  const prompt = `Anda adalah transkripter tab, chord, dan lirik musik profesional standar Ultimate Guitar & Chordify untuk latihan band.
+Tugas Anda: Susun chord sheet dan lirik lengkap untuk lagu berikut:
 
 Judul: "${title}"
 Artis: "${artist}"
 
-Kutipan Hasil Pencarian Web:
-${sourceContext}
-
+${sources.length ? `Referensi Web:\n${sourceContext}\n` : ''}
 Aturan Penataan Format:
-1. Susun chord dan lirik yang ditemukan ke dalam struktur standar: [Intro], [Verse], [Chorus], [Bridge], [Outro].
-2. Letakkan nama akord di dalam kurung siku tepat di atas atau di depan kata lirik yang bersangkutan, misal: [C] [G] [Am] [F].
-3. Jika lirik pada bagian tertentu tidak ditemukan dalam kutipan web, tulis secara jujur: [Lirik belum tersedia dari pencarian web]. JANGAN mengarang kata-kata pengganti!
-4. Jangan menambahkan disclaimer panjang, catatan pembuka, atau basa-basi. Keluarkan HANYA hasil format chord sheet.`;
+1. Susun chord dan lirik ke dalam struktur lagu standar: [Intro], [Verse 1], [Chorus], [Verse 2], [Bridge / Solo], [Outro].
+2. Letakkan nama akord di dalam kurung siku tepat sebelum kata/suku kata yang bersangkutan, misal: [C] [G] [Am] [F].
+3. Gunakan akord yang akurat (termasuk slash chord seperti [D/F#], [C/E]).
+4. JANGAN sertakan disclaimer penolakan hak cipta, kata pengantar pembuka, atau basa-basi. Keluarkan HANYA chord sheet siap pakai.`;
 
   const text = await generateLyricsAndChordsWithAI(title, artist, prompt);
   return { text: text || '', sources, query };

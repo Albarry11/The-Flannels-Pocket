@@ -13,7 +13,12 @@ function getDefaultKey(): string {
   }
 }
 
-export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+export const GEMINI_FALLBACK_URLS = [
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+];
 
 const DEFAULT_AI_CONFIG: AIBrainConfig = {
   endpoint: GEMINI_BASE_URL,
@@ -121,41 +126,43 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
     // Continue to direct Google API call
   }
 
-  // 2. Direct Google Generative Language call
-  const targetUrl = `${GEMINI_BASE_URL}?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(targetUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
+  // 2. Direct Google Generative Language call with multi-model fallback on 503/429
+  let lastError: Error | null = null;
+  for (const endpoint of GEMINI_FALLBACK_URLS) {
+    try {
+      const targetUrl = `${endpoint}?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ],
-      generationConfig: {
-        temperature: 0.1,
-      },
-    }),
-  });
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 },
+        }),
+      });
 
-  if (!res.ok) {
-    // Auto-recovery: if stored key expired/rejected, reset to default working key
-    if (res.status === 400 || res.status === 403) {
-      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        if (rawText) return rawText;
+      }
+
+      if (res.status === 400 || res.status === 403) {
+        localStorage.removeItem(GEMINI_KEY_STORAGE);
+      }
+      const errText = await res.text();
+      lastError = new Error(`Gemini API error (${res.status}): ${errText.slice(0, 150)}`);
+      // If 503 (demand spike) or 429 (rate limit), continue loop to next model fallback
+      if (res.status !== 503 && res.status !== 429) {
+        throw lastError;
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
     }
-    const errText = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${errText.slice(0, 150)}`);
   }
 
-  const data = await res.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-  return rawText;
+  throw lastError || new Error('Semua model Gemini sedang sibuk.');
 }
 
 /**
