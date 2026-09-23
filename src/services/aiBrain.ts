@@ -13,11 +13,11 @@ function getDefaultKey(): string {
   }
 }
 
-export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 export const GEMINI_FALLBACK_URLS = [
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
 ];
 
 const DEFAULT_AI_CONFIG: AIBrainConfig = {
@@ -114,7 +114,10 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1 },
+        generationConfig: {
+          temperature: 0.1,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     });
     if (proxyRes.ok) {
@@ -138,7 +141,10 @@ async function callGeminiGenerateContent(prompt: string): Promise<string> {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1 },
+          generationConfig: {
+            temperature: 0.1,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       });
 
