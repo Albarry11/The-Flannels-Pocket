@@ -2,6 +2,8 @@ import type { Song, CloudDbConfig } from '../types';
 import { saveSongToStorage, loadSongFromStorage, listAllSongsFromStorage, deleteSongFromStorage } from './storage';
 
 const CLOUD_CONFIG_KEY = 'flannels_cloud_config';
+import { injectDefaultLyrics } from './defaultSongLyrics';
+
 export const SONGS_INDEX_FILE = 'songs-index.json';
 
 const DEFAULT_CONFIG: CloudDbConfig = {
@@ -266,7 +268,8 @@ export async function syncSongsFromCloud(
       return { success: true, count: local.length, songs: local, message: 'Katalog cloud kosong' };
     }
 
-    const cloudSongs: Song[] = JSON.parse(text);
+    const cloudSongsRaw: Song[] = JSON.parse(text);
+    const cloudSongs = injectDefaultLyrics(cloudSongsRaw);
     const cloudSongIds = new Set(cloudSongs.map((s) => s.id));
     let newOrUpdatedCount = 0;
 
@@ -287,6 +290,10 @@ export async function syncSongsFromCloud(
       } else {
         // Update stems audioUrl and audioUrls if missing or updated in cloud
         let modified = false;
+        if (cs.lyrics && (!existing.lyrics || existing.lyrics.trim() !== cs.lyrics.trim())) {
+          existing.lyrics = cs.lyrics;
+          modified = true;
+        }
         existing.stems.forEach((st, idx) => {
           const cloudStem = cs.stems[idx];
           if (cloudStem) {

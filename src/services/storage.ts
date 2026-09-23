@@ -1,6 +1,7 @@
 import { get, set, del, keys } from 'idb-keyval';
 import type { Song, StemTrack, StemRole } from '../types';
 import { globalAudioEngine } from './audioEngine';
+import { DEFAULT_SONG_LYRICS } from './defaultSongLyrics';
 import { analyzeAudioQuality, analyzeBpmAndKey, calculateReplayGain } from './audioAnalyzer';
 import { audioBufferToWavBlob } from './stemSeparator';
 import { researchSongBpmAndKeyWithAI, generateLyricsAndChordsWithAI } from './aiBrain';
@@ -38,6 +39,11 @@ export async function saveSongToStorage(song: Song): Promise<void> {
 export async function loadSongFromStorage(songId: string): Promise<Song | null> {
   const meta = await get(`${SONGS_KEY_PREFIX}${songId}`);
   if (!meta) return null;
+
+  // Auto-inject default chord sheet & lyrics if missing
+  if ((!meta.lyrics || !meta.lyrics.trim()) && DEFAULT_SONG_LYRICS[songId]) {
+    meta.lyrics = DEFAULT_SONG_LYRICS[songId];
+  }
 
   const ctx = globalAudioEngine.getContext();
   const stems: StemTrack[] = [];
